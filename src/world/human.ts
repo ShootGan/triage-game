@@ -14,6 +14,8 @@ export interface HumanOptions {
   sleeves?: 'short' | 'long';
   medic?: boolean;
   beard?: boolean;
+  /** Widoczna ciąża — zaokrąglony brzuch (tylko dorosłe kobiety). */
+  pregnant?: boolean;
 }
 
 export interface Arm {
@@ -69,6 +71,8 @@ export function createHuman(kit: Kit, o: HumanOptions = {}): Human {
     shirt, body, 0.62, sx,
   );
   if (female && !child) kit.sphere(0.075, shirt, body, 0, 0.43, 0.055, 1.9, 0.8, 0.55);
+  // Ciąża: duży, zaokrąglony brzuch z przodu tułowia (lokalne +z), nad paskiem
+  if (o.pregnant && female && !child) kit.sphere(0.15, shirt, body, 0, 0.2, 0.075, 1.05, 1.05, 0.95);
   // Kołnierz
   const collar = kit.part(new THREE.TorusGeometry(0.06, 0.018, 6, 14), medic ? '#8f1d2c' : shirt, body, 0, 0.655, 0);
   collar.rotation.x = Math.PI / 2;

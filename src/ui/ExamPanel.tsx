@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { CATEGORY_LABEL } from '../engine/triage';
 import { ACTION_ORDER, CATEGORY_COLOR, CATEGORY_ORDER } from '../game/constants';
 import { getDeps } from '../game/deps';
@@ -13,7 +13,16 @@ export function ExamPanel() {
   const doAction = useGame((s) => s.doAction);
   const tagPatient = useGame((s) => s.tagPatient);
   const selectPatient = useGame((s) => s.selectPatient);
+  const special = useGame((s) => !!s.scenario?.special);
   const { ACTION_LABEL } = getDeps();
+
+  // Easter egg (scenariusz specjalny): „ratunkowe cięcie cesarskie" → komunikat; bez wpływu na ocenę.
+  const [egg, setEgg] = useState(false);
+  useEffect(() => {
+    if (!egg) return;
+    const t = setTimeout(() => setEgg(false), 3200);
+    return () => clearTimeout(t);
+  }, [egg]);
 
   // Esc w trakcie podchodzenia — rezygnacja.
   useEffect(() => {
@@ -89,8 +98,20 @@ export function ExamPanel() {
               <span className="action-label">{ACTION_LABEL[a.id]}</span>
             </button>
           ))}
+          {special && patient.appearance.pregnant && (
+            <button className="btn action egg-btn" onClick={() => setEgg(true)}>
+              <span className="action-label">Ratunkowe cięcie cesarskie</span>
+            </button>
+          )}
         </div>
       </section>
+      {egg && (
+        <div className="egg-overlay" role="alert" onClick={() => setEgg(false)}>
+          <div className="egg-box">
+            <div className="egg-title">⚖ PROKURATOR PATRZY</div>
+          </div>
+        </div>
+      )}
 
       {/* Ostatni wynik — stały pasek (widoczny na telefonie, gdzie lista wyników jest mała); miga po każdej czynności */}
       <div className="exam-last" aria-live="polite">

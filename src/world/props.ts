@@ -31,12 +31,13 @@ export function insideFootprint(f: Footprint, x: number, z: number, margin = 0):
 }
 
 /** Autobus szkolny (przewrócony lekko na bok — pochylenie jak w prototypie). */
-export function buildBus(kit: Kit, parent: THREE.Object3D, x: number, z: number, rotY: number): THREE.Group {
+export function buildBus(kit: Kit, parent: THREE.Object3D, x: number, z: number, rotY: number, color = '#f2c230'): THREE.Group {
   const bus = new THREE.Group();
   parent.add(bus);
-  kit.box(10, 2.6, 2.6, '#f2c230', 0, 1.8, 0, bus);
+  kit.box(10, 2.6, 2.6, color, 0, 1.8, 0, bus);
   // r186: CapsuleGeometry(radius, height, capSegments, radialSegments) — `height` = długość części środkowej, jak `length` w r160
-  const roof = kit.part(new THREE.CapsuleGeometry(1.3, 7.4, 6, 12), '#f2c230', bus, 0, 2.9, 0);
+  const roof = kit.part(new THREE.CapsuleGeometry(1.3, 7.4, 6, 12), color, bus, 0, 2.9, 0);
+  if (color !== '#f2c230') kit.box(10.04, 0.3, 2.64, '#2f5fb0', 0, 1.15, 0, bus); // pas boczny autokaru
   roof.rotation.z = Math.PI / 2;
   roof.scale.set(0.35, 1, 1);
   kit.box(10.05, 0.35, 2.65, '#2a2a2e', 0, 0.62, 0, bus);
@@ -474,9 +475,9 @@ export function buildTent(kit: Kit, parent: THREE.Object3D, x: number, z: number
   return g;
 }
 
-export function buildProp(kit: Kit, parent: THREE.Object3D, kind: PropKind, x: number, z: number, rotY: number): THREE.Group {
+export function buildProp(kit: Kit, parent: THREE.Object3D, kind: PropKind, x: number, z: number, rotY: number, color?: string): THREE.Group {
   switch (kind) {
-    case 'bus': return buildBus(kit, parent, x, z, rotY);
+    case 'bus': return buildBus(kit, parent, x, z, rotY, color);
     case 'car': return buildCar(kit, parent, x, z, rotY);
     case 'glass': return buildGlass(kit, parent, x, z, rotY);
     case 'truck': return buildTruck(kit, parent, x, z, rotY);

@@ -10,7 +10,16 @@ import {
   type Range,
   type Text,
 } from './archetypes';
-import { LAYOUTS, layoutById, slotPoses, type BriefingInfo, type Role, type ScenarioLayout, type Slot } from './layouts';
+import {
+  LAYOUTS,
+  layoutById,
+  slotPoses,
+  type BriefingInfo,
+  type PregnancyRule,
+  type Role,
+  type ScenarioLayout,
+  type Slot,
+} from './layouts';
 import { createRng, type Rng } from './rng';
 import { ageText, gender, type Sex } from './text';
 
@@ -52,13 +61,13 @@ export function scenarioIds(): string[] {
 }
 
 export function codePrefix(scenarioId: string): string | null {
-  return layoutById(scenarioId)?.prefix ?? null;
+  return LAYOUTS.find((x) => x.id === scenarioId)?.prefix ?? null;
 }
 
 export function templateCode(scenarioId: string): string {
-  const l = layoutById(scenarioId);
-  if (!l) throw new Error(`Nieznany scenariusz: ${scenarioId}`);
-  return `${l.prefix}-${TEMPLATE_SUFFIX}`;
+  const prefix = codePrefix(scenarioId);
+  if (!prefix) throw new Error(`Nieznany scenariusz: ${scenarioId}`);
+  return `${prefix}-${TEMPLATE_SUFFIX}`;
 }
 
 export function isTemplateCode(code: string): boolean {
@@ -67,11 +76,11 @@ export function isTemplateCode(code: string): boolean {
 
 /** Nowy losowy kod (to jedyne miejsce z niedeterministyczną losowością). */
 export function randomCode(scenarioId: string, random: () => number = defaultRandom): string {
-  const l = layoutById(scenarioId);
-  if (!l) throw new Error(`Nieznany scenariusz: ${scenarioId}`);
+  const prefix = codePrefix(scenarioId);
+  if (!prefix) throw new Error(`Nieznany scenariusz: ${scenarioId}`);
   let s = '';
   for (let i = 0; i < CODE_LENGTH; i++) s += CODE_ALPHABET[Math.floor(random() * CODE_ALPHABET.length) % CODE_ALPHABET.length];
-  return `${l.prefix}-${s}`;
+  return `${prefix}-${s}`;
 }
 
 function defaultRandom(): number {
@@ -203,17 +212,73 @@ function ageRangeFor(layout: ScenarioLayout, arch: Archetype, g: AgeGroup): Rang
   return lo <= hi ? [lo, hi] : null;
 }
 
-function mechOk(t: Text, mechs: readonly Mechanism[], g: AgeGroup, pose: PatientPose): string | null {
+/** Widełki wieku kobiety w ciąży dla archetypu (część wspólna z PregnancyRule.age). */
+function pregnantAgeRange(rule: PregnancyRule, arch: Archetype): Range | null {
+  const lo = Math.max(rule.age[0], arch.ageRange?.[0] ?? -Infinity);
+  const hi = Math.min(rule.age[1], arch.ageRange?.[1] ?? Infinity);
+  return lo <= hi ? [lo, hi] : null;
+}
+
+/** Liczby całkowite k z udziałem k/n w widełkach [min, max]. */
+function shareBounds(share: Range, n: number): [number, number] {
+  return [Math.ceil(share[0] * n - 1e-9), Math.floor(share[1] * n + 1e-9)];
+}
+
+function mechOk(t: Text, mechs: readonly Mechanism[], g: AgeGroup, pose: PatientPose, pregnant: boolean): string | null {
   if (typeof t === 'string') return t;
   if (t.mech && !t.mech.some((m) => mechs.includes(m))) return null;
   if (t.ages && !t.ages.includes(g)) return null;
   if (t.poses && !t.poses.includes(pose)) return null;
+  if (t.notPregnant && pregnant) return null;
   return t.t;
 }
 
-function eligibleTexts(ts: readonly Text[] | undefined, mechs: readonly Mechanism[], g: AgeGroup, pose: PatientPose): string[] {
-  return (ts ?? []).map((t) => mechOk(t, mechs, g, pose)).filter((t): t is string => t !== null);
+function eligibleTexts(
+  ts: readonly Text[] | undefined,
+  mechs: readonly Mechanism[],
+  g: AgeGroup,
+  pose: PatientPose,
+  pregnant = false,
+): string[] {
+  return (ts ?? []).map((t) => mechOk(t, mechs, g, pose, pregnant)).filter((t): t is string => t !== null);
 }
+
+// ── ciąża ──
+
+/**
+ * Objaw ciąży zgodny z kategorią i kryterium rozstrzygającym (ostatni krok START) — nie przeczy parametrom:
+ * chodzący — skurcze / niepokój, żółci — ból podbrzusza przy miękkim brzuchu,
+ * czerwoni przez perfuzję — krwawienie z dróg rodnych i twardy brzuch (wstrząs), pozostali czerwoni — bez objawów wstrząsu.
+ */
+function pregnancyFindings(v: Vitals, rng: Rng): string[] {
+  const r = triage(v, false);
+  const step = r.steps.at(-1)?.id;
+  const contractions = () => `skurcze co ok. ${rng.int(4, 15)} min`;
+  if (r.category === 'green') {
+    return ['niepokój o dziecko, brzuch miękki, niebolesny', 'pobolewanie podbrzusza, brzuch miękki', 'twardnienie brzucha przy chodzeniu, ustępuje w spoczynku', contractions()];
+  }
+  if (r.category === 'yellow') {
+    return ['ból podbrzusza, brzuch miękki', 'pobolewanie podbrzusza przy ruchu', 'twardnienie brzucha co kilka minut', contractions()];
+  }
+  if (step === 'perfusion') {
+    return ['krwawienie z dróg rodnych, twardy, bolesny brzuch', 'twardy, napięty, bolesny brzuch, plamienie z dróg rodnych'];
+  }
+  if (step === 'resp-rate') return ['brzuch miękki, niebolesny', 'duszność nasila się w pozycji na plecach'];
+  if (r.category === 'black') return ['widoczna zaawansowana ciąża'];
+  return ['widoczna zaawansowana ciąża, brzuch miękki'];
+}
+
+/** Wypowiedzi ciężarnych (tylko przytomne, wykonujące polecenia). */
+const PREGNANT_REMARKS: Record<'green' | 'yellow' | 'red', readonly string[]> = {
+  green: [
+    'Trzyma się za brzuch: „Czy z dzieckiem wszystko dobrze? Ono się rusza… chyba się rusza!"',
+    '„Położna mówiła, żeby oddychać spokojnie… Oddychamy, oddychamy…"',
+    'Krzyczy: „Moje dziecko! Nie czuję ruchów! Zróbcie coś!"',
+    '„Mąż mnie zabije — mówił, żebym nie jechała na tę wycieczkę!"',
+  ],
+  yellow: ['„Nie mogę wstać… Czy dziecku nic nie będzie?"', 'Obejmuje brzuch: „Dziecko kopie… to dobry znak, prawda?"'],
+  red: ['Szepcze: „Ratujcie… dziecko…"', 'Mówi z trudem: „Proszę… najpierw… dziecko…"'],
+};
 
 /** Archetypy dostępne w danym scenariuszu (mechanizm urazu). */
 export function archetypesFor(layout: ScenarioLayout): Archetype[] {
@@ -378,6 +443,8 @@ interface Draft {
   months?: number;
   sex: Sex;
   vitals: Vitals;
+  /** Tydzień ciąży (tylko kobiety w ciąży — układy z `pregnancy`). */
+  pregnancyWeek?: number;
 }
 
 interface Generated {
@@ -402,27 +469,47 @@ function tryGenerate(layout: ScenarioLayout, code: string, rng: Rng): Generated 
 
   // Wymuszone dzieci (np. autobus szkolny, festyn) i dorośli (opiekunowie) — losowe pozycje na liście.
   const order0 = rng.shuffle(cats.map((_, i) => i));
-  const nChild = layout.minChildren ?? 0;
+  const preg = layout.pregnancy;
+  let nChild = layout.minChildren ?? 0;
+  if (layout.childShare) {
+    // udział dzieci — z zapasem miejsca na minimalną liczbę ciężarnych i obsługi
+    const reserve = preg ? shareBounds(preg.share, n)[0] + preg.minOtherAdults : 0;
+    const [lo, hi] = shareBounds(layout.childShare, n);
+    nChild = rng.int(lo, Math.max(lo, Math.min(hi, n - reserve)));
+  }
   const forcedChild = new Set(order0.slice(0, nChild));
   const forcedAdult = new Set(order0.slice(nChild, nChild + (layout.minAdults ?? 0)));
   const ADULT_GROUPS: AgeGroup[] = ['teen', 'adult', 'elderly'];
+  // Kobiety w ciąży — tylko w układach z `pregnancy` (inne układy: bez zmian i bez zużycia RNG).
+  let forcedPregnant = new Set<number>();
+  if (preg) {
+    const [lo, hi] = shareBounds(preg.share, n);
+    const nPreg = rng.int(lo, Math.max(lo, Math.min(hi, n - nChild - preg.minOtherAdults)));
+    forcedPregnant = new Set(order0.slice(nChild).filter((i) => preg.categories.includes(cats[i])).slice(0, nPreg));
+    if (forcedPregnant.size < lo) return null;
+  }
 
   const used = new Map<string, number>();
   let infants = 0;
   const drafts: Draft[] = [];
   for (let i = 0; i < cats.length; i++) {
     const cat = cats[i];
+    const pregnant = forcedPregnant.has(i);
     const candidatesFor = (grp: AgeGroup) =>
       pool.filter(
         (a) =>
           a.category === cat &&
           a.ages.includes(grp) &&
           !(a.unique && used.has(a.id)) &&
-          ageRangeFor(layout, a, grp) !== null,
+          (pregnant
+            ? !!a.pregnancy && a.sex !== 'm' && pregnantAgeRange(preg!, a) !== null
+            : ageRangeFor(layout, a, grp) !== null && !(preg && a.pregnancy === 'only')),
       );
     let group: AgeGroup;
     if (forcedChild.has(i)) {
       group = 'child';
+    } else if (pregnant) {
+      group = 'adult';
     } else {
       const groups = (Object.keys(layout.ageWeights) as AgeGroup[]).filter(
         (grp) =>
@@ -440,8 +527,8 @@ function tryGenerate(layout: ScenarioLayout, code: string, rng: Rng): Generated 
     used.set(arch.id, (used.get(arch.id) ?? 0) + 1);
     if (group === 'infant') infants++;
 
-    const range = ageRangeFor(layout, arch, group)!;
-    const sex: Sex = arch.sex ?? (rng.chance(0.5) ? 'm' : 'f');
+    const range = pregnant ? pregnantAgeRange(preg!, arch)! : ageRangeFor(layout, arch, group)!;
+    const sex: Sex = pregnant ? 'f' : (arch.sex ?? (rng.chance(0.5) ? 'm' : 'f'));
     let ageYears: number;
     let months: number | undefined;
     if (group === 'infant') {
@@ -458,7 +545,9 @@ function tryGenerate(layout: ScenarioLayout, code: string, rng: Rng): Generated 
       if (triage(v, APPEARS_CHILD[group]).category === arch.category) vitals = v;
     }
     if (!vitals) return null;
-    drafts.push({ arch, group, ageYears, months, sex, vitals });
+    const d: Draft = { arch, group, ageYears, months, sex, vitals };
+    if (pregnant) d.pregnancyWeek = rng.int(preg!.weeks[0], preg!.weeks[1]);
+    drafts.push(d);
   }
 
   const walkingGreens = drafts.filter((d) => d.vitals.canWalk).length;
@@ -484,6 +573,24 @@ function tryGenerate(layout: ScenarioLayout, code: string, rng: Rng): Generated 
 
   // ── pacjenci ──
   const roleUse = new Map<Role, number>();
+  // Role obowiązkowe (np. obaj kierowcy) — z góry, losowym dorosłym bez ciąży. Płeć tej osoby losowana
+  // od nowa wg `prefer` (np. kierowca częściej mężczyzna) — teksty i wygląd powstają dopiero niżej.
+  const fixedRole = new Map<Draft, string>();
+  const required = layout.roles.filter((ro) => ro.required);
+  if (required.length > 0) {
+    const staff = rng.shuffle(drafts.filter((d) => d.pregnancyWeek === undefined && !APPEARS_CHILD[d.group]));
+    for (const ro of required) {
+      const who = staff.find((d) => !fixedRole.has(d) && ro.ages.includes(d.group) && !d.arch.sex);
+      if (!who) return null;
+      if (ro.prefer) {
+        const other: Sex = ro.prefer.sex === 'm' ? 'f' : 'm';
+        who.sex = rng.chance(ro.prefer.p) ? ro.prefer.sex : other;
+      }
+      if (!(who.sex === 'm' ? ro.m : ro.f)) who.sex = who.sex === 'm' ? 'f' : 'm';
+      fixedRole.set(who, (who.sex === 'm' ? ro.m : ro.f)!);
+      roleUse.set(ro, (roleUse.get(ro) ?? 0) + 1);
+    }
+  }
   // Teksty już użyte w tym scenariuszu — losujemy z preferencją dla nowych (mniej powtórzeń).
   const usedText = new Map<string, number>();
   const pickFresh = (opts: string[]): string => {
@@ -493,21 +600,31 @@ function tryGenerate(layout: ScenarioLayout, code: string, rng: Rng): Generated 
   };
   const patients: ScenarioPatient[] = drafts.map((d, i) => {
     const { slot, pose } = placement.get(d)!;
+    const pregnant = d.pregnancyWeek !== undefined;
     const injuries: string[] = [];
     for (const line of d.arch.injuries) {
-      const opts = eligibleTexts(line, mechs, d.group, pose).filter((t) => !injuries.includes(gender(t, d.sex)));
+      const opts = eligibleTexts(line, mechs, d.group, pose, pregnant).filter((t) => !injuries.includes(gender(t, d.sex)));
       if (opts.length) injuries.push(gender(pickFresh(opts), d.sex));
     }
-    const extras = eligibleTexts(d.arch.extraInjuries, mechs, d.group, pose).filter((t) => !injuries.includes(gender(t, d.sex)));
+    if (pregnant) {
+      const opts = pregnancyFindings(d.vitals, rng).filter((t) => !injuries.includes(t));
+      if (opts.length) injuries.push(pickFresh(opts));
+    }
+    const extras = eligibleTexts(d.arch.extraInjuries, mechs, d.group, pose, pregnant).filter((t) => !injuries.includes(gender(t, d.sex)));
     if (extras.length && rng.chance(0.6)) injuries.push(gender(pickFresh(extras), d.sex));
 
     // Wypowiedź: gdy wszystkie warianty już padły — część pacjentów po prostu milczy.
-    const remarks = eligibleTexts(d.arch.remarks, mechs, d.group, pose);
+    // Ciężarna, przytomna: często mówi o dziecku.
+    const cat = d.arch.category;
+    const pregnantRemarks = pregnant && d.vitals.obeysCommands && cat !== 'black' ? PREGNANT_REMARKS[cat] : [];
+    const remarks = pregnantRemarks.length && rng.chance(0.5) ? [...pregnantRemarks] : eligibleTexts(d.arch.remarks, mechs, d.group, pose, pregnant);
     const allUsed = remarks.length > 0 && remarks.every((r) => usedText.has(r));
     const remark = remarks.length && !(allUsed && rng.chance(0.5)) ? gender(pickFresh(remarks), d.sex) : undefined;
 
-    const role = pickRole(layout, d.group, d.sex, roleUse, rng);
-    const label = `${noun(d.group, d.sex, d.arch)}, ${ageText(d.ageYears, d.months)}${role ? ` (${role})` : ''}`;
+    const role = pregnant ? null : (fixedRole.get(d) ?? pickRole(layout, d.group, d.sex, roleUse, rng));
+    const label = pregnant
+      ? `Kobieta w ciąży, ${ageText(d.ageYears)} (ok. ${d.pregnancyWeek}. tydzień)`
+      : `${noun(d.group, d.sex, d.arch)}, ${ageText(d.ageYears, d.months)}${role ? ` (${role})` : ''}`;
 
     const p: ScenarioPatient = {
       id: `r${String(i + 1).padStart(2, '0')}`,
@@ -521,6 +638,7 @@ function tryGenerate(layout: ScenarioLayout, code: string, rng: Rng): Generated 
       position: [slot.position[0], slot.position[1]],
       rotation: Math.round((slot.rotation + rng.float(-0.6, 0.6)) * 100) / 100,
     };
+    if (pregnant) p.appearance.pregnant = true;
     if (d.arch.majorBleeding) p.majorBleeding = true;
     if (remark) p.remark = remark;
     return p;
@@ -531,6 +649,7 @@ function tryGenerate(layout: ScenarioLayout, code: string, rng: Rng): Generated 
     infants: drafts.filter((d) => d.group === 'infant').length,
     unresponsive: patients.filter((p) => p.vitals.avpu === 'P' || p.vitals.avpu === 'U').length,
     unresponsiveChildren: patients.filter((p) => p.appearsChild && (p.vitals.avpu === 'P' || p.vitals.avpu === 'U')).length,
+    pregnant: patients.filter((p) => p.appearance.pregnant).length,
   };
 
   const t = layout.template;
@@ -546,6 +665,7 @@ function tryGenerate(layout: ScenarioLayout, code: string, rng: Rng): Generated 
     patients,
   };
   if (t.terrain) scenario.terrain = t.terrain;
+  if (t.special) scenario.special = true;
 
   // ── weryfikacja końcowa ──
   if (scenarioIssues(scenario).length > 0) return null;

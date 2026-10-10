@@ -73,6 +73,7 @@ export function scenarioIssues(s: Scenario): string[] {
     if (v.nonAmbulatoryByAge && (!p.appearsChild || p.ageYears > 2)) out.push(`${id}: nonAmbulatoryByAge tylko dla niemowląt`);
     if (p.majorBleeding && v.canWalk) out.push(`${id}: masywny krwotok, a chodzi`);
     if (p.injuries.length === 0) out.push(`${id}: brak opisu obrażeń`);
+    if (p.appearance.pregnant && (p.appearance.sex !== 'f' || p.appearsChild)) out.push(`${id}: ciąża tylko u dorosłej kobiety`);
   }
   if (!ps.some((p) => p.vitals.canWalk)) out.push('brak chodzących poszkodowanych');
   return out;

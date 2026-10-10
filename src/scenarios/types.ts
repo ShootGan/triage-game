@@ -14,6 +14,8 @@ export interface PatientAppearance {
   shirt: string;
   pants: string;
   sleeves?: 'short' | 'long';
+  /** Widoczna ciąża (zaokrąglony brzuch) — tylko dorosłe kobiety. */
+  pregnant?: boolean;
 }
 
 export type PatientPose = 'back' | 'front' | 'sitting' | 'standing';
@@ -44,6 +46,8 @@ export interface ScenarioProp {
   kind: PropKind;
   position: [number, number];
   rotation: number;
+  /** Kolor nadwozia (pojazdy) — domyślnie wg rodzaju (autobus szkolny żółty). */
+  color?: string;
 }
 
 /**
@@ -66,6 +70,8 @@ export interface Scenario {
   briefing: string;
   /** Limit czasu gry w sekundach (czas gry, nie rzeczywisty). */
   timeLimitSec: number;
+  /** Scenariusz specjalny (odznaka w menu, easter egg przy ciężarnych) — wzorzec i kody losowe. */
+  special?: boolean;
   /** Otoczenie (domyślnie 'road'). */
   terrain?: TerrainKind;
   /** Punkt zbiórki dla chodzących (x, z). */

@@ -43,7 +43,14 @@ export type RateSpec = Range | 'normal' | 'stressed';
 /** Wariant tekstu; opcjonalnie tylko dla wybranych mechanizmów urazu / grup wieku / póz. */
 export type Text =
   | string
-  | { t: string; mech?: readonly Mechanism[]; ages?: readonly AgeGroup[]; poses?: readonly PatientPose[] };
+  | {
+      t: string;
+      mech?: readonly Mechanism[];
+      ages?: readonly AgeGroup[];
+      poses?: readonly PatientPose[];
+      /** Nie dla kobiety w ciąży (np. „ślad od kierownicy" — ciężarne jadą jako pasażerki). */
+      notPregnant?: boolean;
+    };
 
 export interface VitalsSpec {
   walk: boolean;
@@ -91,6 +98,13 @@ export interface Archetype {
   weight?: number;
   /** Najwyżej raz w scenariuszu. */
   unique?: boolean;
+  /**
+   * Ciąża (tylko układy z `pregnancy`, np. „Zderzenie autobusów"):
+   * 'ok' — archetyp pasuje do dorosłej kobiety w ciąży (teksty jej nie przeczą),
+   * 'only' — wyłącznie dla kobiety w ciąży (np. y-ciaza). Brak = nie dla ciężarnej.
+   * W układach bez `pregnancy` pole jest ignorowane.
+   */
+  pregnancy?: 'ok' | 'only';
 }
 
 const ADULTLIKE: readonly AgeGroup[] = ['teen', 'adult', 'elderly'];
@@ -109,6 +123,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   // ═════════════════════════ ZIELONI ═════════════════════════
   {
     id: 'g-otarcia',
+    pregnancy: 'ok',
     category: 'green',
     criterion: 'chodzi',
     source: ['a01', 'f02', 'c03'],
@@ -136,6 +151,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   },
   {
     id: 'g-rana-cieta',
+    pregnancy: 'ok',
     category: 'green',
     criterion: 'chodzi',
     source: ['p02', 't04'],
@@ -155,6 +171,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   },
   {
     id: 'g-reka',
+    pregnancy: 'ok',
     category: 'green',
     criterion: 'chodzi',
     source: ['p03'],
@@ -175,6 +192,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   },
   {
     id: 'g-krwawa-glowa',
+    pregnancy: 'ok',
     category: 'green',
     criterion: 'chodzi (dystraktor: twarz zalana krwią)',
     source: ['a02'],
@@ -193,6 +211,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   },
   {
     id: 'g-kark',
+    pregnancy: 'ok',
     category: 'green',
     criterion: 'chodzi',
     source: ['a04'],
@@ -238,6 +257,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   },
   {
     id: 'g-hiperwentylacja',
+    pregnancy: 'ok',
     category: 'green',
     criterion: 'chodzi (mimo oddechów > 30/min — krok „chodzi" rozstrzyga)',
     source: ['c01'],
@@ -254,6 +274,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   },
   {
     id: 'g-skrecenie',
+    pregnancy: 'ok',
     category: 'green',
     criterion: 'chodzi',
     source: ['c02'],
@@ -272,6 +293,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   },
   {
     id: 'g-nos',
+    pregnancy: 'ok',
     category: 'green',
     criterion: 'chodzi',
     source: ['c04'],
@@ -289,6 +311,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   },
   {
     id: 'g-stluczenia',
+    pregnancy: 'ok',
     category: 'green',
     criterion: 'chodzi',
     source: ['f02', 'p02'],
@@ -388,6 +411,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   // ═════════════════════════ ŻÓŁCI ═════════════════════════
   {
     id: 'y-podudzie',
+    pregnancy: 'ok',
     category: 'yellow',
     criterion: 'nie chodzi; oddech, perfuzja i stan świadomości prawidłowe',
     source: ['p04', 'c06', 'f04'],
@@ -413,6 +437,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   },
   {
     id: 'y-udo',
+    pregnancy: 'ok',
     category: 'yellow',
     criterion: 'nie chodzi; parametry prawidłowe',
     source: ['p05'],
@@ -447,6 +472,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   },
   {
     id: 'y-otwarte-zlamanie',
+    pregnancy: 'ok',
     category: 'yellow',
     criterion: 'nie chodzi; parametry prawidłowe',
     source: ['a07'],
@@ -478,6 +504,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   },
   {
     id: 'y-zebra',
+    pregnancy: 'ok',
     category: 'yellow',
     criterion: 'nie chodzi; oddechy ≤ 30/min, perfuzja i świadomość prawidłowe',
     source: ['c07'],
@@ -494,6 +521,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   },
   {
     id: 'y-ciaza',
+    pregnancy: 'only',
     category: 'yellow',
     criterion: 'ciąża nie zmienia algorytmu (START); nie chodzi, parametry prawidłowe',
     source: ['t05'],
@@ -547,6 +575,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   },
   {
     id: 'y-kregoslup',
+    pregnancy: 'ok',
     category: 'yellow',
     criterion: 'nie chodzi; parametry prawidłowe',
     source: [],
@@ -620,6 +649,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   // ═════════════════════════ CZERWONI — START ═════════════════════════
   {
     id: 'r-tachypnoe',
+    pregnancy: 'ok',
     category: 'red',
     criterion: 'START: oddechy > 30/min',
     source: ['p06', 'a08'],
@@ -628,7 +658,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     vitals: { ...STABLE([32, 40]), crt: [1.5, 2] },
     injuries: [[
       { t: 'otarcie klatki piersiowej od pasa bezpieczeństwa', mech: ['komunikacyjny'] },
-      { t: 'ślad od kierownicy na klatce piersiowej', mech: ['komunikacyjny'] },
+      { t: 'ślad od kierownicy na klatce piersiowej', mech: ['komunikacyjny'], notPregnant: true },
       { t: 'ślad ucisku barierki na klatce piersiowej', mech: ['tlum'] },
       'trzeszczenia przy ucisku żeber po lewej',
       'zasinienie klatki piersiowej po prawej',
@@ -659,6 +689,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   },
   {
     id: 'r-wiotka-klatka',
+    pregnancy: 'ok',
     category: 'red',
     criterion: 'START: oddechy > 30/min',
     source: ['c13'],
@@ -693,6 +724,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   },
   {
     id: 'r-krwotok',
+    pregnancy: 'ok',
     category: 'red',
     criterion: 'START: brak tętna promieniowego / CRT > 2 s (masywny krwotok)',
     source: ['a09', 't11', 'c12'],
@@ -717,6 +749,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   },
   {
     id: 'r-krwotok-V',
+    pregnancy: 'ok',
     category: 'red',
     criterion: 'START: brak tętna promieniowego / CRT > 2 s (masywny krwotok)',
     source: ['p07'],
@@ -734,6 +767,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   },
   {
     id: 'r-miednica',
+    pregnancy: 'ok',
     category: 'red',
     criterion: 'START: CRT > 2 s (tętno promieniowe obecne)',
     source: ['a12'],
@@ -762,6 +796,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   },
   {
     id: 'r-glowa-V',
+    pregnancy: 'ok',
     category: 'red',
     criterion: 'START: nie wykonuje prostych poleceń',
     source: ['a10'],
@@ -793,6 +828,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   },
   {
     id: 'r-glowa-P',
+    pregnancy: 'ok',
     category: 'red',
     criterion: 'START: nie wykonuje prostych poleceń',
     source: [],
@@ -808,6 +844,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   },
   {
     id: 'r-bezdech-udroznienie',
+    pregnancy: 'ok',
     category: 'red',
     criterion: 'START: bezdech, oddycha po udrożnieniu dróg oddechowych',
     source: ['p08', 'a11', 'c10'],
@@ -977,6 +1014,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     vitals: { walk: false, breathing: 'none', rate: [0, 0], pulse: false, crt: [5, 6], avpu: 'U', obeys: false },
     injuries: [['rozległa rana głowy z deformacją czaszki'], ['szerokie, niereagujące źrenice']],
     poses: ['back', 'front'],
+    pregnancy: 'ok',
   },
   {
     id: 'b-klatka',
@@ -991,6 +1029,7 @@ export const ARCHETYPES: readonly Archetype[] = [
       [{ t: 'zasypan{y|a} gruzem do pasa — wydobyt{y|a} przez świadków', mech: ['wybuch'] }, 'szerokie, niereagujące źrenice'],
     ],
     poses: ['back'],
+    pregnancy: 'ok',
   },
   {
     id: 'b-asfiksja',

@@ -223,7 +223,7 @@ export class GameView implements IGameView {
     ];
     buildTerrain(this.kit, scene, Math.max(80, Math.ceil((maxAbs + 30) / 10) * 20), scenario.terrain ?? 'road', keepOut);
     for (const pr of scenario.props) {
-      buildProp(this.kit, scene, pr.kind, pr.position[0], pr.position[1], pr.rotation);
+      buildProp(this.kit, scene, pr.kind, pr.position[0], pr.position[1], pr.rotation, pr.color);
       const f = propFootprint(pr.kind, pr.position[0], pr.position[1], pr.rotation);
       if (f) this.footprints.push(f);
     }
@@ -313,6 +313,7 @@ export class GameView implements IGameView {
       sleeves: a.sleeves ?? 'short',
       female: a.sex === 'f',
       child: a.child,
+      pregnant: a.pregnant,
     });
     h.root.userData.patientId = p.id;
     this.scene.add(h.root);

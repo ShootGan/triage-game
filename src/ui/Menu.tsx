@@ -72,9 +72,12 @@ export function MenuScreen() {
               className={`choice ${selected === s.id ? 'active' : ''}`}
               onClick={() => setScenario(s.id)}
             >
-              <span className="choice-name">{s.title}</span>
+              <span className="choice-name">
+                {s.title} {s.special && <span className="badge special">Specjalny</span>}
+              </span>
               <span className="choice-desc">
                 {countText(s.id, s.patients.length)} · limit ok. {Math.round(s.timeLimitSec / 60)} min
+                {s.special && ' · klasyk szkoleń ratowniczych'}
               </span>
             </button>
           ))}

@@ -188,6 +188,8 @@ Scenariusz = plik TS (`src/scenarios/*.ts`, typy w `types.ts`) + test; ogólne r
 
 **Kod zadania** = ziarno losowania, np. `AUTOBUS-4F7K`: widoczny w odprawie i debriefie, można go wpisać w menu → identyczna sytuacja (powtórka, to samo zadanie dla całej grupy).
 
+**Proporcje grup (opcjonalnie w układzie):** `childShare` — udział dzieci (np. „Zderzenie autobusów": 45–55% uczniów 6–10 lat), `pregnancy` — udział kobiet w ciąży wśród poszkodowanych (30–40%, wiek 18–42, 20.–39. tydzień): etykieta „Kobieta w ciąży, ok. N lat (ok. W. tydzień)", objaw ciąży zgodny z kategorią (np. skurcze u chodzącej, krwawienie z dróg rodnych tylko przy zaburzonej perfuzji); ciąża nie zmienia algorytmu (START). Role obowiązkowe (`required`) — np. obaj kierowcy, wychowawca, położna.
+
 **Wzorce:** każdy scenariusz zachowuje jeden ręcznie ułożony zestaw pacjentów — do testów i dostępny w grze pod stałym kodem (np. `AUTOBUS-WZOR`).
 
 ## 9. Architektura

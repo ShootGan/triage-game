@@ -1,4 +1,6 @@
+import type { TriageCategory } from '../../engine/triage';
 import { busScenario } from '../bus';
+import { busesScenario } from '../buses';
 import { concertScenario } from '../concert';
 import { festivalScenario } from '../festival';
 import { pileupScenario } from '../pileup';
@@ -41,6 +43,31 @@ export interface Role {
   /** Najwyżej tyle osób z tą rolą. */
   max?: number;
   weight?: number;
+  /**
+   * Rola obowiązkowa: generator nadaje ją zawsze (komuś z dorosłych poza ciężarnymi), np. obaj kierowcy.
+   * Układ z rolami obowiązkowymi powinien mieć `max: 1` przy każdej z nich.
+   */
+  required?: boolean;
+  /** Przy roli obowiązkowej: płeć osoby `sex` z prawdopodobieństwem `p` (np. kierowca — częściej mężczyzna). */
+  prefer?: { sex: 'm' | 'f'; p: number };
+}
+
+/**
+ * Kobiety w ciąży (np. kursantki szkoły rodzenia): część dorosłych kobiet dostaje `appearance.pregnant`,
+ * etykietę „Kobieta w ciąży, ok. N lat (ok. W. tydzień)" i jedną linię objawów ciąży zgodną z kategorią.
+ * Ciąża nie zmienia algorytmu (START) ani kategorii — o kategorii decydują parametry archetypu.
+ */
+export interface PregnancyRule {
+  /** Udział ciężarnych wśród wszystkich poszkodowanych [min, max] (ułamki). */
+  share: Range;
+  /** Wiek ciężarnych (lata). */
+  age: Range;
+  /** Tydzień ciąży. */
+  weeks: Range;
+  /** Kategorie, które mogą przypaść ciężarnej (np. bez czarnych). */
+  categories: readonly TriageCategory[];
+  /** Co najmniej tylu dorosłych bez ciąży (obsługa: kierowcy, opiekunowie, położna). */
+  minOtherAdults: number;
 }
 
 export interface Clothes {
@@ -55,6 +82,8 @@ export interface BriefingInfo {
   /** Poszkodowani z AVPU P/U (w tym bezdech). */
   unresponsive: number;
   unresponsiveChildren: number;
+  /** Kobiety w ciąży. */
+  pregnant: number;
 }
 
 export interface ScenarioLayout {
@@ -73,6 +102,13 @@ export interface ScenarioLayout {
   minChildren?: number;
   /** Minimalna liczba dorosłych (nastolatek/dorosły/senior), np. opiekunowie, rodzice. */
   minAdults?: number;
+  /**
+   * Udział dzieci (JumpSTART, grupa 'child') [min, max] — zastępuje `minChildren`;
+   * pozostali poszkodowani losowani wg `ageWeights` (bez 'child' — wtedy udział jest dokładny).
+   */
+  childShare?: Range;
+  /** Kobiety w ciąży wśród dorosłych (patrz PregnancyRule). */
+  pregnancy?: PregnancyRule;
   maxInfants: number;
   roles: readonly Role[];
   /** Szansa, że dorosły/nastolatek ma dopisaną rolę w etykiecie. */
@@ -358,7 +394,94 @@ const festival: ScenarioLayout = {
   ],
 };
 
-export const LAYOUTS: readonly ScenarioLayout[] = [bus, pileup, tenement, concert, festival];
+// ───────────────────────────── ZDERZENIE AUTOBUSÓW ─────────────────────────────
+/** Wzorzec scenariusza specjalnego (odznaka „Specjalny" i easter egg) — także dla kodów losowych. */
+export const BUSES_TEMPLATE: Scenario = { ...busesScenario, special: true };
+const CLASS_SHIRT = '#ff8a00'; // pomarańczowe koszulki wycieczki szkolnej (jak we wzorcu)
+const buses: ScenarioLayout = {
+  id: 'buses',
+  prefix: 'ZDERZENIE',
+  template: BUSES_TEMPLATE,
+  mechanisms: ['komunikacyjny'],
+  count: [20, 26],
+  // dzieci wymuszane przez childShare; reszta to dorośli (ciężarne + obsługa)
+  ageWeights: { adult: 1 },
+  ageRanges: { child: [6, 10], adult: [24, 62] },
+  childShare: [0.45, 0.55],
+  pregnancy: { share: [0.3, 0.4], age: [18, 42], weeks: [20, 39], categories: ['green', 'yellow', 'red', 'black'], minOtherAdults: 4 },
+  maxInfants: 0,
+  roles: [
+    { m: 'kierowca autokaru', f: 'kierująca autokarem', ages: ['adult'], max: 1, required: true, prefer: { sex: 'm', p: 0.85 } },
+    { m: 'kierowca autobusu szkolnego', f: 'kierująca autobusem szkolnym', ages: ['adult'], max: 1, required: true, prefer: { sex: 'm', p: 0.85 } },
+    { m: 'wychowawca klasy', f: 'wychowawczyni klasy', ages: ['adult'], max: 1, required: true, prefer: { sex: 'f', p: 0.8 } },
+    { m: 'położny ze szkoły rodzenia', f: 'położna ze szkoły rodzenia', ages: ['adult'], max: 1, required: true, prefer: { sex: 'f', p: 0.9 } },
+    { m: 'nauczyciel', f: 'nauczycielka', ages: ['adult'], max: 1, weight: 1.5 },
+    { m: 'opiekun wycieczki szkolnej', f: 'opiekunka wycieczki szkolnej', ages: ['adult'], max: 1 },
+    { m: 'partner jednej z kursantek', f: 'siostra jednej z kursantek', ages: ['adult'], max: 2 },
+  ],
+  roleChance: 1,
+  clothes: {
+    child: {
+      shirts: [CLASS_SHIRT, CLASS_SHIRT, CLASS_SHIRT, '#f4d03f', '#3498db', '#e74c3c', '#2ecc71', '#ff9ff3'],
+      pants: ['#3a7bd5', '#27ae60', '#2874a6', '#e74c3c', '#ff9ff3', '#34495e', '#8e44ad', '#1abc9c'],
+    },
+  },
+  briefing: (i) =>
+    lines(
+      'SWD PRM — zadysponowanie, kod 1.',
+      'Zdarzenie masowe: czołowe zderzenie autokaru z autobusem szkolnym na drodze krajowej. Gęsta mgła, mokra nawierzchnia.',
+      'W autokarze grupa kobiet w ciąży — wyjazd zorganizowany przez szkołę rodzenia, z położną. W autobusie szkolnym uczniowie klas 1–4 z opiekunami.',
+      `Autobus szkolny zepchnięty częściowo na pobocze. Zgłaszający: wielu poszkodowanych, dużo ciężarnych i dzieci, część leży na jezdni i na trawie${
+        i.unresponsiveChildren >= 2 ? '; kilkoro dzieci nie reaguje' : i.unresponsiveChildren === 1 ? '; jedno dziecko nie reaguje' : ''
+      }.`,
+      'PSP i Policja zadysponowane, kolejne ZRM w drodze. Jesteś pierwszym ZRM na miejscu — przeprowadź segregację wstępną (START / JumpSTART).',
+    ),
+  slots: [
+    // pozycje pacjentów wzorca (z01–z22)
+    S(-6.5, 6.5, 2.4, 'na poboczu', false, false),
+    S(-4, 7.6, 3, 'na trawie', false),
+    S(-2.2, 6.8, -2.8, 'na trawie', false),
+    S(1.5, 6.5, 2.9, 'na trawie', false),
+    S(4.5, 7.2, -2.6, 'na trawie', false),
+    S(7.5, 7, -2.2, 'na trawie', false),
+    S(10, 6.5, -2, 'na trawie', false),
+    S(-8, 4.2, 0.6, 'na poboczu', false),
+    S(-1.5, 4.2, -2.6, 'na poboczu', true),
+    S(3, 3.2, 2.8, 'na poboczu', true),
+    S(7, 4, 1.2, 'na poboczu', false),
+    S(6, -8, 0.4, 'za autobusem szkolnym', true),
+    S(-5.2, 4.4, 0.3, 'przy autokarze', true),
+    S(-1.8, -3.8, -0.5, 'między autobusami', true),
+    S(10.5, 3, 2, 'na poboczu', false),
+    S(2, -6.5, -0.7, 'za autobusem szkolnym', true),
+    S(2.4, 0.4, 0.9, 'na jezdni', true),
+    S(-10.8, 4.6, 1.2, 'na poboczu', false),
+    S(9.6, -7.2, -2.4, 'na trawie', false),
+    S(-8.6, -2.4, 2.6, 'za autokarem', true),
+    S(0, 8.4, 3.1, 'na trawie', false),
+    S(10.6, -0.6, -1.8, 'przy autobusie szkolnym', true),
+    // dodatkowe
+    S(-11, -2.5, 1, 'za autokarem', true),
+    S(-9.5, -6.5, 0.6, 'na trawie', false),
+    S(-7, -4.5, 0.3, 'za autokarem', true),
+    S(-5.5, -2.5, -0.4, 'za autokarem', true),
+    S(-4.5, -6.5, 0.8, 'na trawie', false),
+    S(-1, -7.5, -0.3, 'na trawie', false),
+    S(0.5, -4.5, 1.6, 'między autobusami', true),
+    S(0, 2.2, -1.2, 'na jezdni', true),
+    S(-3.5, 2.7, 2.2, 'przy autokarze', true),
+    S(6, 0.5, -1.4, 'przy autobusie szkolnym', true),
+    S(8.2, -1, 1.9, 'przy autobusie szkolnym', true),
+    S(11.5, -4.5, -1.6, 'za autobusem szkolnym', true),
+    S(4.5, -6, 0.2, 'za autobusem szkolnym', true),
+    S(-11, 0.5, 1.4, 'przy autokarze', true),
+    S(-11.5, 8, 2.2, 'przy punkcie zbiórki', false, false),
+    S(-9.5, 8.5, 2.8, 'przy punkcie zbiórki', false, false),
+    S(11.5, 8.5, -2.6, 'na trawie', false),
+  ],
+};
+
+export const LAYOUTS: readonly ScenarioLayout[] = [bus, pileup, tenement, concert, festival, buses];
 
 export function layoutById(id: string): ScenarioLayout | undefined {
   return LAYOUTS.find((l) => l.id === id);

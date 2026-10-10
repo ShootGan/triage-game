@@ -29,6 +29,7 @@ const PREFIX: Record<string, string> = {
   tenement: 'KAMIENICA',
   concert: 'KONCERT',
   festival: 'FESTYN',
+  buses: 'ZDERZENIE',
 };
 
 /** Deterministyczne „losowe" kody do testu właściwości. */
@@ -67,6 +68,8 @@ describe('kody zadań', () => {
     ['karambol_X9ZZ', 'pileup', 'KARAMBOL-X9ZZ'],
     ['FESTYN–AB2C', 'festival', 'FESTYN-AB2C'],
     ['koncert-2345', 'concert', 'KONCERT-2345'],
+    ['zderzenie wzor', 'buses', 'ZDERZENIE-WZOR'],
+    ['Zderzenie-ab2c', 'buses', 'ZDERZENIE-AB2C'],
   ])('parseCode(%j) → %s / %s', (input, scenarioId, code) => {
     expect(parseCode(input)).toEqual({ scenarioId, code });
   });
@@ -143,7 +146,7 @@ describe('wzorce', () => {
 });
 
 describe('rozkład kategorii', () => {
-  it.each([10, 11, 12, 13, 14, 15])('n = %i: istnieje co najmniej jeden dopuszczalny rozkład', (n) => {
+  it.each([10, 11, 12, 13, 14, 15, 20, 21, 22, 23, 24, 25, 26])('n = %i: istnieje co najmniej jeden dopuszczalny rozkład', (n) => {
     const mixes = categoryMixes(n);
     expect(mixes.length).toBeGreaterThan(0);
     for (const [g, y, r, b] of mixes) {
@@ -302,3 +305,116 @@ describe('test właściwości: 300 losowych kodów na scenariusz', () => {
     expect(seenArchetypes.size).toBeGreaterThanOrEqual(Math.min(15, archetypesFor(l).length - 3));
   });
 });
+
+describe('zderzenie autobusów: ciężarne, dzieci, obsługa', () => {
+  const l = LAYOUTS.find((x) => x.id === 'buses')!;
+  const N = 300;
+
+  it('układ: udział dzieci i ciężarnych, wzorzec specjalny, sloty', () => {
+    expect(l.prefix).toBe('ZDERZENIE');
+    expect(l.childShare).toEqual([0.45, 0.55]);
+    expect(l.pregnancy?.share).toEqual([0.3, 0.4]);
+    expect(l.template.special).toBe(true);
+    expect(l.slots.length).toBeGreaterThanOrEqual(30);
+    expect(patientCountRange('buses')).toEqual([20, 26]);
+    // wzorzec: ≥ 8 ciężarnych, ≥ 9 dzieci
+    expect(l.template.patients.filter((p) => p.appearance.pregnant).length).toBeGreaterThanOrEqual(8);
+    expect(l.template.patients.filter((p) => p.appearsChild).length).toBeGreaterThanOrEqual(9);
+    // sloty ≥ 0,6 m od obrysów obu autobusów
+    for (const s of l.slots) {
+      for (const pr of l.template.props) {
+        const inside = insidePropFootprint(pr.kind, pr.position[0], pr.position[1], pr.rotation, s.position[0], s.position[1], 0.6);
+        expect(inside, `${s.position}`).toBe(false);
+      }
+    }
+  });
+
+  it('WZOR = wzorzec (scenariusz specjalny)', () => {
+    const s = generateScenario('buses', 'ZDERZENIE-WZOR');
+    const { code: _c, ...rest } = s;
+    expect(rest).toEqual(l.template);
+    expect(s.special).toBe(true);
+    expect(s.patients).toHaveLength(22);
+  });
+
+  it('determinizm i odcisk znanego kodu', () => {
+    const a = generateScenario('buses', 'ZDERZENIE-4F7K');
+    expect(generateScenario('buses', 'ZDERZENIE-4F7K')).toEqual(a);
+    expect(generateScenario('buses', 'ZDERZENIE-9XQ2').patients).not.toEqual(a.patients);
+    expect(a.special).toBe(true);
+    const fingerprint = a.patients.map((p) => `${p.label}|${p.vitals.breathing.rate}|${p.position.join(',')}`).join('\n');
+    expect(fingerprint).toMatchSnapshot();
+  });
+
+  it(`${N} kodów: proporcje, ciąża tylko u dorosłych kobiet (START), obsługa`, () => {
+    const stat = { child: [] as number[], preg: [] as number[], n: [] as number[] };
+    const pregCats = new Set<TriageCategory>();
+    for (const code of codesFor('buses', N)) {
+      const g = generateDetailed('buses', code);
+      const s = g.scenario;
+      const n = s.patients.length;
+      expect(g.archetypeIds, code).not.toBeNull();
+      expect(s.special, code).toBe(true);
+      expect(scenarioIssues(s), code).toEqual([]);
+
+      const kids = s.patients.filter((p) => p.appearsChild);
+      const preg = s.patients.filter((p) => p.appearance.pregnant);
+      stat.child.push(kids.length / n);
+      stat.preg.push(preg.length / n);
+      stat.n.push(n);
+      expect(kids.length / n, code).toBeGreaterThanOrEqual(0.45 - 1e-9);
+      expect(kids.length / n, code).toBeLessThanOrEqual(0.55 + 1e-9);
+      expect(preg.length / n, code).toBeGreaterThanOrEqual(0.3 - 1e-9);
+      expect(preg.length / n, code).toBeLessThanOrEqual(0.4 + 1e-9);
+      for (const k of kids) {
+        expect(k.ageYears, code).toBeGreaterThanOrEqual(6);
+        expect(k.ageYears, code).toBeLessThanOrEqual(10);
+        expect(triage(k.vitals, true).protocol).toBe('JumpSTART');
+      }
+
+      s.patients.forEach((p, i) => {
+        const arch = archetypeById(g.archetypeIds![i])!;
+        const r = triage(p.vitals, p.appearsChild);
+        expect(r.category, `${code} ${p.id}`).toBe(arch.category);
+        const text = p.injuries.join(' ');
+        if (p.appearance.pregnant) {
+          pregCats.add(r.category);
+          expect(p.appearance.sex, code).toBe('f');
+          expect(p.appearsChild, code).toBe(false);
+          expect(p.ageYears, code).toBeGreaterThanOrEqual(18);
+          expect(p.ageYears, code).toBeLessThanOrEqual(42);
+          expect(r.protocol).toBe('START');
+          expect(p.label, code).toContain('w ciąży');
+          expect(p.label, code).toMatch(/^Kobieta w ciąży, ok\. \d+ lat \(ok\. [23]\d\. tydzień\)$/);
+          expect(arch.pregnancy, `${code} ${arch.id}`).toBeTruthy();
+          expect(text).not.toMatch(/kierownic/);
+          // objaw ciąży zgodny z kryterium: krwawienie z dróg rodnych tylko przy zaburzonej perfuzji,
+          // skurcze / ból podbrzusza tylko u zielonych i żółtych (bez cech wstrząsu)
+          if (/dróg rodnych/.test(text)) expect(r.steps.at(-1)?.id, `${code} ${p.id}`).toBe('perfusion');
+          if (/skurcze|podbrzusza/.test(text)) {
+            expect(['green', 'yellow'], `${code} ${p.id}`).toContain(r.category);
+            expect(p.vitals.peripheralPulse && p.vitals.crtSeconds <= 2, `${code} ${p.id}`).toBe(true);
+          }
+        } else {
+          expect(p.label, code).not.toMatch(/ciąży/);
+          expect(text).not.toMatch(/ciąż|dróg rodnych|skurcze/);
+          expect(arch.pregnancy).not.toBe('only');
+        }
+      });
+
+      // obsługa: obaj kierowcy, wychowawca/wychowawczyni, położna/położny
+      const labels = s.patients.map((p) => p.label).join('\n');
+      expect(labels, code).toMatch(/\((kierowca autokaru|kierująca autokarem)\)/);
+      expect(labels, code).toMatch(/\((kierowca autobusu szkolnego|kierująca autobusem szkolnym)\)/);
+      expect(labels, code).toMatch(/\(wychowaw(ca|czyni) klasy\)/);
+      expect(labels, code).toMatch(/\(położn[ay] ze szkoły rodzenia\)/);
+      expect(s.patients.filter((p) => !p.appearsChild && !p.appearance.pregnant).length, code).toBeGreaterThanOrEqual(4);
+    }
+    // ciąża nie zmienia START — ciężarna może mieć każdą kategorię, łącznie z czarną
+    expect([...pregCats].sort()).toEqual(['black', 'green', 'red', 'yellow']);
+    const sum = (a: number[]) => a.reduce((x, y) => x + y, 0);
+    const fmt = (a: number[]) => `min ${Math.min(...a).toFixed(3)} / śr. ${(sum(a) / a.length).toFixed(3)} / max ${Math.max(...a).toFixed(3)}`;
+    console.log(`[buses] n: ${fmt(stat.n)}; dzieci: ${fmt(stat.child)}; ciężarne: ${fmt(stat.preg)}`);
+  });
+});
+
