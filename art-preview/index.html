@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Próbka pixel art</title>
+<style>
+  body { background: #1a1c2c; color: #f4f4f4; font-family: monospace; margin: 16px; }
+  h2 { font-size: 14px; font-weight: normal; color: #94b0c2; margin: 24px 0 8px; }
+  canvas { image-rendering: pixelated; display: block; }
+  .row { display: flex; gap: 24px; align-items: flex-end; flex-wrap: wrap; }
+  .row figure { margin: 0; text-align: center; font-size: 11px; color: #94b0c2; }
+</style>
+</head>
+<body>
+<h2>Scena izometryczna (480×270, skala 2×)</h2>
+<canvas id="scene" width="480" height="270" style="width:960px;height:540px"></canvas>
+<h2>Sprite'y (skala 6×)</h2>
+<div class="row" id="sprites"></div>
+
+<script>
+const PAL = {
+  k: '#1a1c2c', // kontur
+  s: '#f4c19a', S: '#d9967a', // skóra
+  h: '#5a3b2a', H: '#e0b050', // włosy ciemne / jasne
+  r: '#d6303a', R: '#8f1d2c', // mundur ZRM
+  y: '#e8eaa0', // pasy odblaskowe
+  b: '#333c57', w: '#f4f4f4',
+  c: '#3b5dc9', C: '#29366f', // niebieska kurtka
+  j: '#41506b', // dżinsy
+  g: '#f2a23c', // pomarańczowa bluza (dziecko)
+  B: '#a01c1c', // krew
+};
+
+const SPRITES = {
+  ratownik: [
+    "......kkkk......",
+    ".....khhhhk.....",
+    "....khhhhhhk....",
+    "....khsssshk....",
+    "....kskssksk....",
+    "....kssssssk....",
+    ".....kSSSSk.....",
+    "...kkrrrrrrkk...",
+    "..krrrrrrrrrrk..",
+    "..krRrrwwrrRrk..",
+    "..krRrrrrrrRrk..",
+    "..kyyyyyyyyyyk..",
+    "..krRrrrrrrRrk..",
+    "..ksRrrrrrrRsk..",
+    "..kskrrrrrrksk..",
+    "...k.kRRRRk.k...",
+    "....kRRRRRRk....",
+    "....kRRkkRRk....",
+    "....kyykkyyk....",
+    "....kRRkkRRk....",
+    "....kRRkkRRk....",
+    "....kbbkkbbk....",
+    "...kbbbkkbbbk...",
+    "...kkkk..kkkk...",
+  ],
+  dorosly: [
+    "..kkkk..........................",
+    ".khhhhk.kkkkkkkkkkkk............",
+    "khhssskkccccccccccckkkkkkkkkk...",
+    "khsskssccccCcccccccjjjjjjjjjk...",
+    "khsssssccccCccBBcccjjjjjjjjjkk..",
+    "kSssssccccCcccccccjjjjjjjjjjbbk.",
+    ".kSSSkcccccCcccccjjjjjjjjjjjbbk.",
+    "..kkk.kkkkkkkkkkkkkkkkkkkkkkkk..",
+  ],
+  dziecko: [
+    "..kkk...............",
+    ".kHHHk.kkkkkkkk.....",
+    "kHsskkgggggggkkkkk..",
+    "kHksskgggggggjjjjk..",
+    "kSsssggggggggjjjjbk.",
+    ".kSSkgggggggkjjjjbk.",
+    "..kk.kkkkkkkkkkkkk..",
+  ],
+};
+
+function drawSprite(ctx, rows, x, y, scale = 1) {
+  rows.forEach((row, j) => [...row].forEach((ch, i) => {
+    if (ch === '.') return;
+    ctx.fillStyle = PAL[ch];
+    ctx.fillRect(x + i * scale, y + j * scale, scale, scale);
+  }));
+}
+
+// Kafelek izometryczny 32×16 z ditheringiem
+function drawTile(ctx, x, y, base, dark, seed) {
+  for (let ty = 0; ty < 16; ty++) {
+    const half = ty < 8 ? ty * 2 + 2 : (15 - ty) * 2 + 2;
+    for (let tx = 16 - half; tx < 16 + half; tx++) {
+      const n = Math.sin((tx + seed * 7) * 12.9898 + (ty + seed * 3) * 78.233) * 43758.5453;
+      ctx.fillStyle = (n - Math.floor(n)) < 0.18 ? dark : base;
+      ctx.fillRect(x + tx, y + ty, 1, 1);
+    }
+  }
+}
+
+function drawTag(ctx, x, y, color) {
+  ctx.fillStyle = PAL.k; ctx.fillRect(x, y, 1, 9);
+  ctx.fillStyle = color; ctx.fillRect(x + 1, y, 5, 4);
+  ctx.fillStyle = PAL.k; ctx.fillRect(x + 1, y + 4, 5, 1);
+}
+
+// Prosty blok autobusu (izometryczny prostopadłościan)
+function drawBus(ctx, ox, oy) {
+  const len = 96, wid = 32, h = 34;
+  const top = [[ox, oy], [ox + len, oy + len / 2], [ox + len - wid, oy + len / 2 + wid / 2], [ox - wid, oy + wid / 2]];
+  const poly = (pts, c) => { ctx.fillStyle = c; ctx.beginPath(); pts.forEach(([a, b], i) => i ? ctx.lineTo(a, b) : ctx.moveTo(a, b)); ctx.closePath(); ctx.fill(); };
+  const up = pts => pts.map(([a, b]) => [a, b - h]);
+  poly([top[3], top[2], [top[2][0], top[2][1] - h], [top[3][0], top[3][1] - h]], '#c9a227'); // bok przedni
+  poly([top[2], top[1], [top[1][0], top[1][1] - h], [top[2][0], top[2][1] - h]], '#9a7a1c'); // tył
+  poly(up(top), '#e8c547'); // dach
+  // okna
+  ctx.fillStyle = '#29366f';
+  for (let i = 0; i < 6; i++) {
+    const t = i / 6 + 0.04, x = top[3][0] + (top[2][0] - top[3][0]) * t, y = top[3][1] + (top[2][1] - top[3][1]) * t;
+    for (let k = 0; k < 11; k++) for (let m = 0; m < 9; m++) ctx.fillRect(Math.round(x + k), Math.round(y - h + 6 + m + k / 2), 1, 1);
+  }
+  ctx.fillStyle = '#ffffff'; ctx.font = '7px monospace';
+}
+
+const scene = document.getElementById('scene').getContext('2d');
+scene.fillStyle = '#2b4a2f'; scene.fillRect(0, 0, 480, 270);
+const OX = 224, OY = 20;
+const iso = (i, j) => [OX + (i - j) * 16, OY + (i + j) * 8];
+for (let j = 0; j < 14; j++) for (let i = 0; i < 14; i++) {
+  const road = j >= 5 && j <= 7;
+  const [x, y] = iso(i, j);
+  if (road) drawTile(scene, x, y, '#4a4e5a', '#3c3f49', i * 31 + j);
+  else drawTile(scene, x, y, '#3f7a3a', '#346632', i * 31 + j);
+  if (road && j === 6 && i % 2 === 0) { scene.fillStyle = '#e8eaa0'; scene.fillRect(x + 14, y + 7, 4, 2); }
+}
+drawBus(scene, ...iso(3, 5).map((v, k) => v + (k ? 4 : 16)));
+
+const patients = [
+  { s: 'dorosly', t: [9, 3], tag: '#d6303a' },
+  { s: 'dziecko', t: [10, 9], tag: '#e8c547' },
+  { s: 'dorosly', t: [6, 10], tag: null },
+  { s: 'dziecko', t: [12, 6], tag: '#3fa34d' },
+  { s: 'dorosly', t: [2, 11], tag: '#1a1c2c' },
+];
+for (const p of patients) {
+  const [x, y] = iso(...p.t);
+  const spr = SPRITES[p.s];
+  drawSprite(scene, spr, x + 16 - spr[0].length / 2, y + 8 - spr.length + 2);
+  if (p.tag) drawTag(scene, x + 16 + spr[0].length / 2 - 4, y - spr.length - 2, p.tag);
+}
+const [px, py] = iso(8, 8);
+drawSprite(scene, SPRITES.ratownik, px + 8, py - 16);
+
+// Arkusz sprite'ów
+const wrap = document.getElementById('sprites');
+for (const [name, rows] of Object.entries(SPRITES)) {
+  const c = document.createElement('canvas');
+  c.width = rows[0].length; c.height = rows.length;
+  c.style.width = c.width * 6 + 'px'; c.style.height = c.height * 6 + 'px';
+  drawSprite(c.getContext('2d'), rows, 0, 0);
+  const f = document.createElement('figure');
+  f.append(c, Object.assign(document.createElement('figcaption'), { textContent: name }));
+  wrap.append(f);
+}
+</script>
+</body>
+</html>

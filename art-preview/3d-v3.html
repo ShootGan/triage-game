@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Próbka 3D pixel v3</title>
+<style>
+  body { background: #1a1c2c; color: #94b0c2; font-family: monospace; margin: 16px; font-size: 12px; }
+  canvas { image-rendering: pixelated; width: 100%; max-width: 1280px; aspect-ratio: 16 / 9; display: block; }
+  label, button { margin-right: 12px; }
+  #stage { position: relative; max-width: 1280px; overflow: hidden; }
+  #markers { position: absolute; inset: 0; pointer-events: none; }
+  .mk { position: absolute; left: 0; top: 0; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%;
+        border: 3px solid #1a1c2c; box-shadow: 0 0 0 2px #f4f4f4, 2px 3px 0 2px rgba(0,0,0,.35);
+        display: flex; align-items: center; justify-content: center; font: bold 13px monospace; color: #f4f4f4; }
+  .mk.pending { background: #6b7280; animation: pulse 1.2s steps(2) infinite; }
+  .mk.dark { color: #f4f4f4; }
+  .mk.light { color: #1a1c2c; }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 2px #f4f4f4, 0 0 0 5px rgba(244,244,244,.4); } }
+  button { background: #333c57; color: #f4f4f4; border: 0; padding: 4px 10px; font: inherit; cursor: pointer; }
+</style>
+</head>
+<body>
+<p>3D + filtr pixel art (wersja 3) · przeciągnij = obrót · kółko = zoom</p>
+<p>
+  <button data-view="overview">Przegląd</button>
+  <button data-view="exam">Badanie (dorosły)</button>
+  <button data-view="child">Badanie (dziecko)</button>
+  <button data-view="medic">Ratownik</button>
+  <button data-view="hair">Fryzury</button>
+  &nbsp;
+  <label><input type="radio" name="res" value="640" checked> 640×360</label>
+  <label><input type="radio" name="res" value="480"> 480×270</label>
+  <label><input type="radio" name="res" value="1280"> bez filtra</label>
+  <label><input type="checkbox" id="outline"> kontur</label>
+</p>
+<div id="stage"><canvas id="c"></canvas><div id="markers"></div></div>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+const NEAR = 0.1, FAR = 80;
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
+renderer.setPixelRatio(1);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap;
+
+// ---------- Post-process: kontur z głębokości ----------
+const post = new THREE.ShaderMaterial({
+  uniforms: { tDiffuse: { value: null }, tDepth: { value: null }, res: { value: new THREE.Vector2() }, outline: { value: 0 }, thr: { value: 0.3 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+  fragmentShader: `
+    uniform sampler2D tDiffuse, tDepth; uniform vec2 res; uniform float outline, thr; varying vec2 vUv;
+    float D(vec2 o){ return texture2D(tDepth, vUv + o / res).r * ${(FAR - NEAR).toFixed(1)}; }
+    void main(){
+      vec4 c = texture2D(tDiffuse, vUv);
+      float d = D(vec2(0.0));
+      float e = max(0.0, d - D(vec2(1.0,0.0))) + max(0.0, d - D(vec2(-1.0,0.0)))
+              + max(0.0, d - D(vec2(0.0,1.0))) + max(0.0, d - D(vec2(0.0,-1.0)));
+      if (outline > 0.5 && e > thr) c.rgb = mix(c.rgb, vec3(0.07, 0.06, 0.1), 0.7);
+      gl_FragColor = c;
+      #include <colorspace_fragment>
+    }`,
+  depthTest: false, depthWrite: false,
+});
+const postScene = new THREE.Scene();
+postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), post));
+const postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+let rt;
+function setRes(w) {
+  const h = Math.round(w * 9 / 16);
+  renderer.setSize(w, h, false);
+  rt?.dispose();
+  rt = new THREE.WebGLRenderTarget(w, h, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });
+  rt.depthTexture = new THREE.DepthTexture(w, h);
+  post.uniforms.tDiffuse.value = rt.texture;
+  post.uniforms.tDepth.value = rt.depthTexture;
+  post.uniforms.res.value.set(w, h);
+}
+setRes(640);
+document.querySelectorAll('input[name=res]').forEach(r => r.onchange = () => setRes(+r.value));
+document.getElementById('outline').onchange = e => post.uniforms.outline.value = e.target.checked ? 1 : 0;
+
+// ---------- Scena, kamera, światło ----------
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#9fc4d8');
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, NEAR, FAR);
+const cam = { angle: Math.PI * 0.3, zoom: 4, target: new THREE.Vector3(0, 0, 3.5), elev: 20 };
+function placeCamera() {
+  const z = cam.zoom;
+  Object.assign(camera, { left: -z * 16 / 9, right: z * 16 / 9, top: z, bottom: -z });
+  camera.updateProjectionMatrix();
+  const t = cam.target;
+  camera.position.set(t.x + Math.cos(cam.angle) * 25, t.y + cam.elev, t.z + Math.sin(cam.angle) * 25);
+  camera.lookAt(t);
+  post.uniforms.thr.value = 0.12 + z * 0.05;
+}
+
+scene.add(new THREE.HemisphereLight('#d8e6ff', '#4a4a3a', 1.3));
+const sun = new THREE.DirectionalLight('#fff0d8', 2.8);
+sun.position.set(8, 18, 10); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 14, bottom: -14 });
+scene.add(sun);
+
+const gm = new THREE.DataTexture(new Uint8Array([70, 140, 200, 255]), 4, 1, THREE.RedFormat);
+gm.minFilter = gm.magFilter = THREE.NearestFilter; gm.needsUpdate = true;
+const matCache = {};
+const toon = c => (typeof c === 'string' ? (matCache[c] ??= new THREE.MeshToonMaterial({ color: c, gradientMap: gm })) : c);
+
+function part(geo, color, parent = scene, x = 0, y = 0, z = 0) {
+  const m = new THREE.Mesh(geo, toon(color));
+  m.position.set(x, y, z); m.castShadow = m.receiveShadow = true;
+  parent.add(m); return m;
+}
+const box = (w, h, d, c, x, y, z, p) => part(new THREE.BoxGeometry(w, h, d), c, p, x, y, z);
+const sphere = (r, c, p, x, y, z, sx = 1, sy = 1, sz = 1) => { const m = part(new THREE.SphereGeometry(r, 16, 12), c, p, x, y, z); m.scale.set(sx, sy, sz); return m; };
+const joint = (p, x = 0, y = 0, z = 0) => { const g = new THREE.Group(); g.position.set(x, y, z); p.add(g); return g; };
+function lathe(profile, color, parent, sz = 1, sx = 1) {
+  const m = part(new THREE.LatheGeometry(profile.map(([r, y]) => new THREE.Vector2(r, y)), 20), color, parent);
+  m.scale.set(sx, 1, sz); return m;
+}
+// Zwężająca się kończyna wisząca w dół od stawu
+function limb(parent, r0, r1, len, color) {
+  const g = new THREE.CylinderGeometry(r0, r1, len, 12); g.translate(0, -len / 2, 0);
+  part(g, color, parent);
+  sphere(r0, color, parent, 0, 0, 0);
+}
+
+// ---------- Teren ----------
+box(40, 0.2, 40, '#5f9a4a', 0, -0.1, 0);
+box(40, 0.22, 6, '#55585f', 0, -0.09, 0);
+box(40, 0.25, 0.35, '#a8a8a0', 0, 0, 3.15); box(40, 0.25, 0.35, '#a8a8a0', 0, 0, -3.15);
+for (let x = -18; x < 19; x += 3) box(1.4, 0.23, 0.18, '#f0f0e0', x, -0.08, 0);
+for (let i = 0; i < 160; i++) {
+  const x = (Math.sin(i * 91.7) * 0.5 + 0.5) * 36 - 18, z = (Math.sin(i * 37.3) * 0.5 + 0.5) * 30 - 15;
+  if (Math.abs(z) < 3.6) continue;
+  part(new THREE.ConeGeometry(0.06, 0.25, 4), i % 3 ? '#4f8a3c' : '#77b05a', scene, x, 0.12, z);
+}
+
+// Autobus
+const bus = new THREE.Group(); scene.add(bus);
+box(10, 2.6, 2.6, '#f2c230', 0, 1.8, 0, bus);
+const roof = part(new THREE.CapsuleGeometry(1.3, 7.4, 6, 12), '#f2c230', bus, 0, 2.9, 0);
+roof.rotation.z = Math.PI / 2; roof.scale.set(0.35, 1, 1);
+box(10.05, 0.35, 2.65, '#2a2a2e', 0, 0.62, 0, bus);
+box(10.06, 0.12, 2.66, '#2a2a2e', 0, 1.55, 0, bus);
+for (let i = 0; i < 7; i++) box(1.0, 0.9, 2.66, '#3d5470', -4 + i * 1.25, 2.3, 0, bus);
+box(0.1, 1.2, 2.2, '#3d5470', 5.0, 2.2, 0, bus);
+for (const x of [-3.4, 3.4]) for (const z of [-1.3, 1.3]) part(new THREE.CylinderGeometry(0.55, 0.55, 0.35, 14), '#22232a', bus, x, 0.55, z).rotation.x = Math.PI / 2;
+bus.position.set(-5, 0.15, -0.8); bus.rotation.set(0, 0.3, 0.12);
+
+// Samochód
+const car = new THREE.Group(); scene.add(car);
+box(3.6, 0.7, 1.7, '#b03a3a', 0, 0.7, 0, car);
+box(1.9, 0.6, 1.6, '#b03a3a', -0.3, 1.3, 0, car);
+box(1.92, 0.42, 1.62, '#3d5470', -0.3, 1.32, 0, car);
+box(0.1, 0.25, 1.4, '#e8e8d0', 1.8, 0.8, 0, car);
+for (const x of [-1.2, 1.2]) for (const z of [-0.85, 0.85]) part(new THREE.CylinderGeometry(0.34, 0.34, 0.25, 12), '#22232a', car, x, 0.34, z).rotation.x = Math.PI / 2;
+car.position.set(5, 0, -1.6); car.rotation.y = -0.9;
+for (let i = 0; i < 18; i++) box(0.12, 0.04, 0.1, '#cfe3ea', 3 + Math.sin(i * 3) * 1.5, 0.02, -0.2 + Math.cos(i * 5) * 1.2);
+
+// ---------- Napis na plecach ----------
+function textTex(lines, bg = '#d6303a', fg = '#f4f4f4') {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 48;
+  const x = c.getContext('2d');
+  x.fillStyle = bg; x.fillRect(0, 0, 128, 48);
+  x.fillStyle = fg; x.font = 'bold 15px sans-serif'; x.textAlign = 'center';
+  lines.forEach((l, i) => x.fillText(l, 64, 20 + i * 18));
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.MeshToonMaterial({ map: t, gradientMap: gm });
+}
+
+// ---------- Włosy: jedna gładka powłoka dopasowana do czaszki ----------
+const SKULL_R = 0.105, SKULL_SCALE = [0.88, 1.02, 0.98], SKULL_Y = 0.01;
+const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+// Linia włosów: wysokość (w jednostkach promienia czaszki) zależna od kierunku: przód / bok / tył
+function hairShell(head, color, { front, side, back, thick = 0.1, crown = null, volume = 0.06, sweep = 0 }) {
+  const g = new THREE.SphereGeometry(1, 40, 30);
+  const p = g.attributes.position, v = new THREE.Vector3();
+  for (let i = 0; i < p.count; i++) {
+    v.fromBufferAttribute(p, i).normalize();
+    const a = Math.abs(Math.atan2(v.x, v.z)); // 0 = przód, π = tył
+    let hl = a < Math.PI / 2 ? front + (side - front) * smooth(0, Math.PI / 2, a) : side + (back - side) * smooth(Math.PI / 2, Math.PI, a);
+    if (sweep) hl -= sweep * Math.max(0, v.x) * (a < Math.PI / 2 ? 1 : 0); // przedziałek / grzywka na bok
+    let s = smooth(hl - 0.08, hl + 0.06, v.y);
+    if (crown !== null) s *= 1 - smooth(crown - 0.1, crown + 0.05, v.y); // łysina na czubku
+    const r = 0.9 + s * (0.1 + thick + volume * Math.max(0, v.y));
+    p.setXYZ(i, v.x * r * SKULL_R, v.y * r * SKULL_R, v.z * r * SKULL_R);
+  }
+  g.computeVertexNormals();
+  const m = part(g, color, head, 0, SKULL_Y, 0);
+  m.scale.set(...SKULL_SCALE);
+  return m;
+}
+function makeHair(head, style, color) {
+  if (style === 'none') return;
+  if (style === 'bald') return hairShell(head, color, { front: 5, side: -0.3, back: -0.55, thick: 0.05, crown: 0.15, volume: 0 });
+  if (style === 'short') return hairShell(head, color, { front: 0.5, side: 0.15, back: -0.5, thick: 0.1 });
+  if (style === 'long' || style === 'ponytail') {
+    hairShell(head, color, { front: 0.42, side: style === 'long' ? -0.35 : 0.05, back: -0.6, thick: 0.1, sweep: 0.1 });
+  }
+  if (style === 'long') {
+    // spływające włosy: jedna gładka bryła z tyłu, zachodząca na powłokę (bez szczelin)
+    const drape = part(new THREE.CapsuleGeometry(0.085, 0.17, 8, 16), color, head, 0, -0.08, -0.052);
+    drape.scale.set(1.12, 1, 0.62); drape.rotation.x = 0.1;
+    for (const s of [-1, 1]) {
+      const strand = part(new THREE.CapsuleGeometry(0.03, 0.12, 6, 10), color, head, s * 0.082, -0.06, -0.01);
+      strand.scale.set(0.8, 1, 1); strand.rotation.z = s * 0.06;
+    }
+  }
+  if (style === 'ponytail') {
+    part(new THREE.TorusGeometry(0.02, 0.008, 6, 12), '#d02a6a', head, 0, 0.03, -0.112).rotation.x = 0.3;
+    const tail = part(new THREE.CapsuleGeometry(0.03, 0.1, 6, 10), color, head, 0, -0.03, -0.135);
+    tail.rotation.x = 0.35; tail.scale.set(1, 1, 0.85);
+  }
+}
+
+// ---------- Postać ----------
+function human(o) {
+  const {
+    skin = '#f1c27d', shirt = '#3b5dc9', pants = '#41506b', hair = '#5a3b2a', shoes = '#2a2a2e',
+    hairStyle = 'short', female = false, child = false, sleeves = 'short', medic = false, beard = false,
+  } = o;
+  const skinDark = new THREE.Color(skin).multiplyScalar(0.75).getStyle();
+  const root = new THREE.Group(); scene.add(root);
+  const body = joint(root, 0, 0.94, 0);
+  const sx = female ? 0.9 : 1;
+
+  // Miednica + tułów (profil obrotowy, spłaszczony)
+  lathe([[0, -0.1], [0.12, -0.09], [0.17, -0.04], [0.18 + (female ? 0.015 : 0), 0.04], [0.17, 0.12], [0, 0.12]], pants, body, 0.66, sx);
+  const belt = part(new THREE.CylinderGeometry(0.172, 0.172, 0.03, 20, 1, true), '#2a2a2e', body, 0, 0.1, 0); belt.scale.set(sx, 1, 0.67);
+  const torso = lathe([[0, 0.08], [0.165, 0.08], [0.155, 0.2], [0.165, 0.32], [0.19, 0.44], [0.2, 0.52], [0.17, 0.6], [0.1, 0.645], [0.055, 0.66], [0, 0.66]], shirt, body, 0.62, sx);
+  if (female && !child) { const b = sphere(0.075, shirt, body, 0, 0.43, 0.055, 1.9, 0.8, 0.55); }
+  // Kołnierz
+  const collar = part(new THREE.TorusGeometry(0.06, 0.018, 6, 14), medic ? '#8f1d2c' : shirt, body, 0, 0.655, 0); collar.rotation.x = Math.PI / 2;
+  if (medic) {
+    const band = part(new THREE.CylinderGeometry(0.168, 0.168, 0.045, 20, 1, true), '#e9ecb8', body, 0, 0.3, 0); band.scale.z = 0.63;
+    const band2 = part(new THREE.CylinderGeometry(0.162, 0.162, 0.045, 20, 1, true), '#e9ecb8', body, 0, 0.22, 0); band2.scale.z = 0.63;
+    const back = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.11), textTex(['RATOWNIK', 'MEDYCZNY']));
+    back.position.set(0, 0.47, -0.128); back.rotation.y = Math.PI; body.add(back);
+    box(0.05, 0.06, 0.01, '#f4f4f4', 0.09, 0.47, 0.125, body); // naszywka
+  }
+
+  // Szyja i głowa
+  part(new THREE.CylinderGeometry(0.045, 0.052, 0.1, 10), skin, body, 0, 0.7, 0);
+  const head = joint(body, 0, 0.82, 0.005);
+  sphere(0.105, skin, head, 0, 0.01, 0, 0.88, 1.02, 0.98);
+  sphere(0.08, skin, head, 0, -0.045, 0.022, 0.92, 0.82, 0.88); // żuchwa
+  box(0.022, 0.04, 0.03, skin, 0, -0.005, 0.1, head); // nos
+  for (const s of [-1, 1]) {
+    sphere(0.025, skin, head, s * 0.093, 0, -0.005, 0.5, 1, 0.8); // ucho
+    sphere(0.016, '#f4f4f4', head, s * 0.038, 0.018, 0.085, 1.2, 0.8, 0.6);
+    sphere(0.009, '#2a2030', head, s * 0.038, 0.018, 0.094);
+    box(0.034, 0.008, 0.01, hair, s * 0.038, 0.045, 0.092, head).rotation.z = s * -0.12; // brew
+  }
+  box(0.035, 0.006, 0.01, skinDark, 0, -0.06, 0.088, head); // usta
+  makeHair(head, hairStyle, hair);
+  if (beard) {
+    sphere(0.074, hair, head, 0, -0.06, 0.03, 0.98, 0.78, 0.84);
+    box(0.05, 0.012, 0.02, hair, 0, -0.042, 0.095, head); // wąsy
+  }
+  if (child) head.scale.setScalar(1.3);
+
+  // Ręce
+  const arms = [], legs = [];
+  for (const s of [-1, 1]) {
+    const sh = joint(body, s * 0.205 * sx, 0.55, 0);
+    sh.rotation.z = s * 0.06;
+    limb(sh, 0.06, 0.048, 0.27, shirt);
+    if (medic) { const r = part(new THREE.CylinderGeometry(0.054, 0.054, 0.035, 10, 1, true), '#e9ecb8', sh, 0, -0.18, 0); }
+    const el = joint(sh, 0, -0.27, 0);
+    limb(el, 0.046, 0.036, 0.24, sleeves === 'long' ? shirt : skin);
+    if (sleeves === 'long') limb(joint(el, 0, -0.22, 0), 0.034, 0.034, 0.02, medic ? '#2a2a2e' : skin);
+    const hand = joint(el, 0, -0.245, 0);
+    box(0.035, 0.08, 0.07, medic ? '#3a5a9a' : skin, 0, -0.04, 0, hand); // dłoń (ratownik w rękawiczkach)
+    box(0.025, 0.04, 0.022, medic ? '#3a5a9a' : skin, 0, -0.02, 0.04, hand).rotation.x = 0.5; // kciuk
+    arms.push({ sh, el, hand });
+
+    // Nogi
+    const hip = joint(body, s * 0.095 * (female ? 1.05 : 1), -0.03, 0);
+    limb(hip, 0.088, 0.062, 0.42, pants);
+    const knee = joint(hip, 0, -0.42, 0);
+    limb(knee, 0.06, 0.044, 0.41, pants);
+    if (medic) part(new THREE.CylinderGeometry(0.056, 0.052, 0.035, 10, 1, true), '#e9ecb8', knee, 0, -0.22, 0);
+    const ankle = joint(knee, 0, -0.43, 0);
+    box(0.09, 0.07, 0.2, shoes, 0, -0.01, 0.035, ankle);
+    sphere(0.045, shoes, ankle, 0, -0.012, 0.13, 1, 0.75, 1);
+    legs.push({ hip, knee, ankle });
+    if (child) hip.scale.set(1.1, 0.82, 1.1); // dziecko: krótsze, krępe nogi
+  }
+  if (child) body.position.y = 0.94 * 0.82;
+  root.scale.setScalar(child ? 0.58 : 0.92);
+  return { root, body, torso, head, arms, legs };
+}
+
+// ---------- Pozy ----------
+function place(h, x, z, rotY) { h.root.position.set(x, 0, z); h.root.rotation.y = rotY; return h; }
+function lyingBack(h, { x, z, rotY, kneeUp = -1, armOut = [0.35, 0.35], headTurn = 0 }) {
+  h.body.position.y = 0.13; h.body.rotation.x = -Math.PI / 2;
+  h.arms.forEach((a, i) => { a.sh.rotation.z = (i ? 1 : -1) * armOut[i]; a.el.rotation.x = -0.15; });
+  h.legs.forEach((l, i) => { l.hip.rotation.z = (i ? 1 : -1) * 0.06; l.ankle.rotation.x = 0.9; l.ankle.rotation.z = (i ? 1 : -1) * 0.4; });
+  if (kneeUp >= 0) { h.legs[kneeUp].hip.rotation.x = -0.8; h.legs[kneeUp].knee.rotation.x = 1.4; h.legs[kneeUp].ankle.rotation.set(-0.3, 0, 0); }
+  h.head.rotation.y = headTurn;
+  return place(h, x, z, rotY);
+}
+function lyingFront(h, { x, z, rotY }) {
+  h.body.position.y = 0.14; h.body.rotation.x = Math.PI / 2;
+  h.head.rotation.y = 1.3;
+  h.arms[0].sh.rotation.z = -1.5; h.arms[0].el.rotation.z = -1.3;
+  h.arms[1].sh.rotation.z = 0.25;
+  h.legs[1].hip.rotation.set(-0.5, 0, 0.25); h.legs[1].knee.rotation.x = 0.9;
+  h.legs.forEach(l => l.ankle.rotation.x = 0.6);
+  return place(h, x, z, rotY);
+}
+function sitting(h, { x, z, rotY }) {
+  h.body.position.y = 0.14; h.body.rotation.x = 0.25;
+  h.legs.forEach(l => { l.hip.rotation.x = -1.45 - 0.25; l.knee.rotation.x = 1.9; l.ankle.rotation.x = -0.4; });
+  h.arms.forEach((a, i) => { a.sh.rotation.set(-1.0, 0, (i ? -1 : 1) * 0.3); a.el.rotation.x = -1.1; });
+  h.head.rotation.x = 0.55;
+  return place(h, x, z, rotY);
+}
+function kneeling(h, { x, z, rotY }) {
+  const lean = 0.45;
+  h.body.position.y = 0.5; h.body.rotation.x = lean;
+  h.legs[0].hip.rotation.x = -1.55 - lean; h.legs[0].knee.rotation.x = 1.55; h.legs[0].ankle.rotation.x = 0.05;
+  h.legs[1].hip.rotation.x = 0.05 - lean; h.legs[1].knee.rotation.x = 1.55; h.legs[1].ankle.rotation.x = 1.2;
+  h.arms.forEach((a, i) => { a.sh.rotation.set(-1.15, 0, (i ? -1 : 1) * 0.12); a.el.rotation.x = -0.35; });
+  h.head.rotation.x = 0.45;
+  return place(h, x, z, rotY);
+}
+function standing(h, { x, z, rotY }) {
+  h.arms.forEach((a, i) => { a.sh.rotation.z = (i ? 1 : -1) * 0.08; a.el.rotation.x = -0.2; });
+  return place(h, x, z, rotY);
+}
+
+
+// ---------- Poszkodowani ----------
+const p1 = lyingBack(human({ shirt: '#3b5dc9', pants: '#41506b', hair: '#4a3020', beard: true }), { x: 2.2, z: 4.6, rotY: 0.5, kneeUp: 0, headTurn: 0.3 });
+const p2 = lyingBack(human({ shirt: '#f2a23c', pants: '#c04a7a', hair: '#e0b050', hairStyle: 'ponytail', child: true, female: true }), { x: -1.4, z: 4.9, rotY: -0.7, armOut: [0.9, 0.2], headTurn: -0.5 });
+const p3 = lyingFront(human({ shirt: '#7a3b8a', pants: '#333c57', hair: '#1a1c2c', hairStyle: 'long', female: true, sleeves: 'long' }), { x: -6, z: 4.2, rotY: 1.9 });
+const p4 = sitting(human({ shirt: '#3fa34d', pants: '#41506b', hair: '#3a2a20', child: true }), { x: 6.5, z: 4.4, rotY: -2.4 });
+const p5 = lyingBack(human({ shirt: '#d0d0d0', pants: '#333c57', hair: '#b8b8b8', hairStyle: 'bald', skin: '#c68e5f', sleeves: 'long' }), { x: 2, z: -4.8, rotY: 2.6, armOut: [1.2, 0.1], kneeUp: 1 });
+const p6 = standing(human({ shirt: '#e0d050', pants: '#41506b', hair: '#6a4a30', hairStyle: 'long', female: true }), { x: 8.5, z: 6.5, rotY: -2.6 });
+part(new THREE.CircleGeometry(0.42, 12), '#7a1010', scene, 2.45, 0.025, 4.0).rotation.x = -Math.PI / 2;
+
+const medic = kneeling(human({ shirt: '#d6303a', pants: '#8f1d2c', hair: '#3a2a20', sleeves: 'long', medic: true, shoes: '#1a1a1e' }), { x: 2.75, z: 3.75, rotY: -0.5 });
+// torba medyczna
+box(0.45, 0.28, 0.25, '#c02828', 3.6, 0.14, 4.3); box(0.12, 0.12, 0.26, '#f4f4f4', 3.6, 0.16, 4.3); box(0.04, 0.12, 0.27, '#f4f4f4', 3.6, 0.16, 4.3).rotation.y = 0;
+
+// ---------- Znaczniki triage (UI) ----------
+const TRIAGE = {
+  red: { bg: '#d6303a', cls: 'dark', label: '' },
+  yellow: { bg: '#f2c230', cls: 'light', label: '' },
+  green: { bg: '#3fa34d', cls: 'dark', label: '' },
+  black: { bg: '#1a1c2c', cls: 'dark', label: '✝' },
+  pending: { bg: '', cls: 'pending', label: '?' },
+};
+const markerLayer = document.getElementById('markers');
+const markers = [[p1, 'red'], [p2, 'yellow'], [p3, 'pending'], [p4, 'green'], [p5, 'black'], [p6, 'green']].map(([h, t]) => {
+  const el = document.createElement('div');
+  const d = TRIAGE[t];
+  el.className = 'mk ' + d.cls; el.textContent = d.label;
+  if (d.bg) el.style.background = d.bg;
+  markerLayer.append(el);
+  return { h, el };
+});
+const _v = new THREE.Vector3();
+function updateMarkers() {
+  const w = canvas.clientWidth, hgt = canvas.clientHeight;
+  for (const { h, el } of markers) {
+    h.torso.getWorldPosition(_v);
+    _v.project(camera);
+    const x = (_v.x + 1) / 2 * w, y = (1 - _v.y) / 2 * hgt;
+    el.style.display = Math.abs(_v.x) > 1.1 || Math.abs(_v.y) > 1.1 ? 'none' : '';
+    const k = Math.min(4, Math.max(1, 4 / cam.zoom)) * w / 960;
+    el.style.transform = `translate(${Math.round(x + 34 * k)}px, ${Math.round(y - 30 * k)}px)`;
+  }
+}
+
+const breathing = [p1, p2, p5, p3];
+
+// Rząd porównawczy fryzur (poza sceną)
+[
+  { hairStyle: 'short', hair: '#4a3020', shirt: '#3b5dc9' },
+  { hairStyle: 'short', hair: '#1a1c2c', shirt: '#55606e', beard: true },
+  { hairStyle: 'long', hair: '#6a4a30', shirt: '#e0d050', female: true },
+  { hairStyle: 'long', hair: '#e0b050', shirt: '#7a3b8a', female: true },
+  { hairStyle: 'ponytail', hair: '#2a1a14', shirt: '#3fa34d', female: true },
+  { hairStyle: 'bald', hair: '#9a9a9a', shirt: '#d0d0d0', skin: '#c68e5f' },
+  { hairStyle: 'ponytail', hair: '#e0b050', shirt: '#f2a23c', female: true, child: true },
+  { hairStyle: 'short', hair: '#8a4a20', shirt: '#d6303a', child: true },
+].forEach((o, i) => standing(human({ pants: '#41506b', ...o }), { x: 14 + i * 0.75, z: 12, rotY: 0.35 + (i % 2) * 0.5 }));
+
+// ---------- Widoki ----------
+const views = {
+  overview: { zoom: 4, target: [0, 0, 3.5], elev: 20 },
+  exam: { zoom: 0.9, target: [2.25, 0.2, 4.55], elev: 22 },
+  child: { zoom: 0.65, target: [-1.4, 0.15, 4.9], elev: 24 },
+  medic: { zoom: 1.0, target: [2.5, 0.4, 4.1], elev: 14 },
+  hair: { zoom: 1.45, target: [16.9, 0.95, 12.2], elev: 6 },
+};
+function setView(v) { const o = views[v]; cam.zoom = o.zoom; cam.target.set(...o.target); cam.elev = o.elev; placeCamera(); }
+document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => setView(b.dataset.view));
+setView('overview');
+
+let drag = null;
+canvas.onpointerdown = e => drag = e.clientX;
+window.onpointerup = () => drag = null;
+window.onpointermove = e => { if (drag !== null) { cam.angle += (e.clientX - drag) * 0.01; drag = e.clientX; placeCamera(); } };
+canvas.onwheel = e => { e.preventDefault(); cam.zoom = Math.min(12, Math.max(0.4, cam.zoom * (e.deltaY > 0 ? 1.15 : 0.87))); placeCamera(); };
+
+const clock = new THREE.Clock();
+renderer.setAnimationLoop(() => {
+  const t = clock.getElapsedTime();
+  breathing.forEach((p, i) => { const k = 1 + Math.sin(t * (2.0 + i * 1.1)) * 0.07; p.torso.scale.z = 0.62 * k; });
+  renderer.setRenderTarget(rt); renderer.render(scene, camera);
+  renderer.setRenderTarget(null); renderer.render(postScene, postCam);
+  updateMarkers();
+});
+</script>
+</body>
+</html>

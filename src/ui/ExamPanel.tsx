@@ -1,0 +1,148 @@
+import { useEffect } from 'react';
+import { CATEGORY_LABEL } from '../engine/triage';
+import { ACTION_ORDER, CATEGORY_COLOR, CATEGORY_ORDER } from '../game/constants';
+import { getDeps } from '../game/deps';
+import { useGame } from '../game/store';
+
+export function ExamPanel() {
+  const selectedId = useGame((s) => s.selectedId);
+  const approaching = useGame((s) => s.scenario?.patients.find((p) => p.id === s.approachingId) ?? null);
+  const patient = useGame((s) => s.scenario?.patients.find((p) => p.id === s.selectedId) ?? null);
+  const exam = useGame((s) => (s.selectedId ? s.exams[s.selectedId] : undefined));
+  const tag = useGame((s) => (s.selectedId ? s.tags[s.selectedId] : undefined));
+  const doAction = useGame((s) => s.doAction);
+  const tagPatient = useGame((s) => s.tagPatient);
+  const selectPatient = useGame((s) => s.selectPatient);
+  const { ACTION_LABEL } = getDeps();
+
+  // Esc w trakcie podchodzenia — rezygnacja.
+  useEffect(() => {
+    if (!approaching) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { e.preventDefault(); selectPatient(null); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [approaching, selectPatient]);
+
+  // Skróty klawiszowe: Q–I czynności, 1–4 kategorie triage, Esc zamyka.
+  useEffect(() => {
+    if (!selectedId) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.altKey || e.metaKey || e.repeat) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        selectPatient(null);
+        return;
+      }
+      const k = e.key.toUpperCase();
+      const act = ACTION_ORDER.find((a) => a.key === k);
+      if (act) {
+        e.preventDefault();
+        doAction(act.id);
+        return;
+      }
+      const cat = CATEGORY_ORDER.find((c) => c.key === e.key);
+      if (cat) {
+        e.preventDefault();
+        tagPatient(selectedId, cat.id);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selectedId, doAction, tagPatient, selectPatient]);
+
+  if (!patient) {
+    if (!approaching) return null;
+    return (
+      <aside className="approach-box panel">
+        <span className="approach-dots">Podchodzisz do:</span> {approaching.label}
+        <span className="muted"> · Esc — rezygnuj</span>
+      </aside>
+    );
+  }
+  const log = exam?.log ?? [];
+
+  return (
+    <aside className="exam-panel panel">
+      <header className="exam-head">
+        <div>
+          <div className="h-small">Poszkodowany</div>
+          <h2 className="exam-title">{patient.label}</h2>
+        </div>
+        <button className="btn icon" onClick={() => selectPatient(null)} title="Zamknij (Esc)">
+          ✕<span className="key">Esc</span>
+        </button>
+      </header>
+
+      <section className="exam-actions">
+        <div className="h-small">Czynności</div>
+        <div className="actions-grid">
+          {ACTION_ORDER.map((a) => (
+            <button key={a.id} className="btn action" onClick={() => doAction(a.id)}>
+              <span className="key">{a.key}</span>
+              <span className="action-label">{ACTION_LABEL[a.id]}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <div className="exam-scroll">
+        {patient.injuries.length > 0 && (
+          <section>
+            <div className="h-small">Widoczne obrażenia</div>
+            <ul className="injuries">
+              {patient.injuries.map((i, n) => (
+                <li key={n}>{i}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+        {patient.remark && <blockquote className="remark">{quoteRemark(patient.remark)}</blockquote>}
+
+        <section>
+          <div className="h-small">Wyniki</div>
+          {log.length === 0 ? (
+            <p className="muted">Brak — wykonaj czynność.</p>
+          ) : (
+            <ol className="results-log">
+              {[...log].reverse().map((r, i) => (
+                <li key={log.length - i} className={i === 0 ? 'latest' : ''}>
+                  <span className="log-text">{r.text}</span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+
+      </div>
+
+      <footer className="exam-tags">
+        <div className="h-small">
+          Kategoria triage {tag && <span className="current-tag">— obecnie: {CATEGORY_LABEL[tag]}</span>}
+        </div>
+        <div className="tags-row">
+          {CATEGORY_ORDER.map((c) => (
+            <button
+              key={c.id}
+              className={`btn tag tag-${c.id} ${tag === c.id ? 'active' : ''}`}
+              style={{ background: CATEGORY_COLOR[c.id] }}
+              onClick={() => tagPatient(patient.id, c.id)}
+            >
+              <span className="key">{c.key}</span>
+              {CATEGORY_LABEL[c.id]}
+            </button>
+          ))}
+        </div>
+      </footer>
+    </aside>
+  );
+}
+
+/** Dodaje cudzysłów „…", chyba że tekst scenariusza już zawiera cytat. */
+function quoteRemark(r: string): string {
+  const t = r.trim();
+  return /[„"“”]/.test(t) ? t : `„${t}"`;
+}

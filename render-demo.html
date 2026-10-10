@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Render demo</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #1a1c2c; overflow: hidden; font: 12px monospace; color: #f4f4f4; }
+  #stage { position: fixed; inset: 0; }
+  #markers { position: absolute; inset: 0; pointer-events: none; }
+  .mk { position: absolute; left: 0; top: 0; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%;
+        border: 2px solid #f4f4f4; background: rgba(26, 28, 44, .5); }
+  .mk span { position: absolute; left: 22px; top: 1px; white-space: nowrap; text-shadow: 1px 1px 0 #000; }
+  #bar { position: fixed; left: 8px; top: 8px; display: flex; flex-wrap: wrap; gap: 4px; max-width: calc(100% - 16px); }
+  #bar button { background: #333c57; color: #f4f4f4; border: 0; padding: 4px 8px; font: inherit; cursor: pointer; }
+  #log { position: fixed; left: 8px; bottom: 8px; text-shadow: 1px 1px 0 #000; }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c"></canvas><div id="markers"></div></div>
+<div id="bar"></div>
+<div id="log"></div>
+<script type="module" src="/src/render/demo.ts"></script>
+</body>
+</html>
