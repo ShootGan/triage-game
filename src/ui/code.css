@@ -1,0 +1,55 @@
+/* Kody zadań: menu (wybór sytuacji, wpisywanie kodu), odprawa, debrief. Bez stałych szerokości — działa od 360 px. */
+
+/* --- wybór sytuacji (Losowa / Wzorzec) --- */
+.variant-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.variant-row .choice { flex: 1 1 180px; min-width: 0; }
+.variant-row .choice.dimmed { opacity: 0.55; }
+
+/* --- wpisywanie kodu --- */
+.code-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+.code-input {
+  flex: 1 1 200px; min-width: 0;
+  font-family: var(--font-body); font-size: 22px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--text); background: var(--panel-2);
+  border: 2px solid var(--panel); padding: 6px 10px; border-radius: 0;
+}
+.code-input::placeholder { color: var(--muted); text-transform: none; letter-spacing: 0; }
+.code-input:focus { outline: none; border-color: var(--yellow); }
+.code-input[aria-invalid='true'] { border-color: var(--red); }
+.code-form .btn { flex: 0 0 auto; justify-content: center; }
+.code-error { color: #ff8a8a; font-size: 18px; margin: 6px 0 0; overflow-wrap: anywhere; }
+.code-loaded {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin: 8px 0 0; padding: 6px 10px; border: 2px dashed var(--yellow); background: rgba(242, 194, 48, 0.06);
+}
+.code-loaded .code-value { font-size: 14px; }
+.code-loaded .muted { flex: 1 1 160px; font-size: 18px; }
+
+/* --- plakietka kodu (odprawa, debrief) --- */
+.code-badge {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
+  padding: 6px 10px; margin: 0 0 12px;
+  border: 2px solid var(--accent); background: rgba(41, 48, 74, 0.85);
+}
+.code-badge-label { font-family: var(--font-head); font-size: 13px; letter-spacing: 1px; color: var(--accent); text-transform: uppercase; }
+/* kody to wyłącznie A–Z, 2–9 i „-" — można użyć czcionki tytułowej (bez polskich znaków) */
+.code-value {
+  font-family: var(--font-title); font-size: 16px; color: var(--yellow); letter-spacing: 1px;
+  overflow-wrap: anywhere; user-select: all;
+}
+.code-badge .btn { padding: 2px 10px; }
+.code-note { flex: 1 1 100%; color: var(--muted); font-size: 17px; }
+.code-copied { color: var(--green); font-size: 18px; }
+
+/* Odprawa (styl radiostacji) — zielone akcenty */
+.radio .code-badge { border-color: #5ad07a; background: #12241a; }
+.radio .code-badge-label { color: #7fae8c; }
+
+/* Debrief — przyciski w nagłówku zawijają się na wąskim ekranie */
+.debrief-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.debrief-code { margin: 12px 0 0; }
+
+@media (max-width: 420px) {
+  .code-value { font-size: 13px; }
+  .code-form .btn { flex: 1 1 auto; }
+}

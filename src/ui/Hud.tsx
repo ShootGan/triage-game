@@ -28,7 +28,7 @@ export function Hud() {
   const [confirming, setConfirming] = useState(false);
 
   return (
-    <div className="hud">
+    <div className={`hud ${confirming ? 'confirming' : ''}`}>
       <div className={`hud-clock ${warn ? 'warn' : ''}`} title="Czas segregacji (rzeczywisty)">
         <span className="hud-label">CZAS</span>
         <span className="hud-time">{formatClock(clock)}</span>
@@ -44,9 +44,10 @@ export function Hud() {
             {counts[c.id]}
           </span>
         ))}
-        <span className="count untagged">
+        <span className="count untagged" title="Niezbadani">
           <span className="chip chip-pending">?</span>
-          niezbadani: {untagged}
+          <span className="lbl-long">niezbadani: </span>
+          {untagged}
         </span>
       </div>
 
@@ -54,23 +55,31 @@ export function Hud() {
 
       <div className="hud-actions">
         {!walkersCalled ? (
-          <button className="btn" onClick={callWalkers}>
-            Kto może chodzić — do mnie!
+          <button className="btn" onClick={callWalkers} title="Kto może chodzić — do mnie!">
+            <span className="lbl-long">Kto może chodzić — do mnie!</span>
+            <span className="lbl-short">Chodzący — do mnie!</span>
           </button>
         ) : !walkersGroupTagged ? (
-          <button className="btn green" onClick={tagWalkersGreen}>
-            Oznacz grupę jako ZIELONI
+          <button className="btn green" onClick={tagWalkersGreen} title="Oznacz grupę jako ZIELONI">
+            <span className="lbl-long">Oznacz grupę jako ZIELONI</span>
+            <span className="lbl-short">Grupa → ZIELONI</span>
           </button>
         ) : (
-          <span className="hud-note">Grupa chodzących: ZIELONI ✓</span>
+          <span className="hud-note">
+            <span className="lbl-long">Grupa chodzących: ZIELONI ✓</span>
+            <span className="lbl-short">Chodzący: ZIELONI ✓</span>
+          </span>
         )}
         {!confirming ? (
-          <button className="btn danger" onClick={() => setConfirming(true)}>
-            Zakończ segregację
+          <button className="btn danger" onClick={() => setConfirming(true)} title="Zakończ segregację">
+            <span className="lbl-long">Zakończ segregację</span>
+            <span className="lbl-short">Zakończ</span>
           </button>
         ) : (
           <span className="confirm">
-            {untagged > 0 ? `Nieoznaczonych: ${untagged}. Zakończyć?` : 'Przekazać meldunek?'}
+            <span className="confirm-q">
+              {untagged > 0 ? `Nieoznaczonych: ${untagged}. Zakończyć?` : 'Przekazać meldunek?'}
+            </span>
             <button className="btn danger" onClick={endTriage} autoFocus>
               Tak
             </button>

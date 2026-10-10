@@ -7,6 +7,14 @@ export interface ScreenPoint {
   visible: boolean;
 }
 
+/** Marginesy ekranu zasłonięte przez interfejs (px CSS od krawędzi canvasa). */
+export interface ViewInsets {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
 /**
  * Kontrakt warstwy 3D. Implementacja: src/render/GameView.ts
  * UI (React) tworzy GameView na <canvas> i rozmawia z nim tylko przez to API.
@@ -30,6 +38,11 @@ export interface IGameView {
   setBleedingControlled(id: string): void;
   /** Opcjonalne podświetlenie kategorii na postaci (np. kolorowa opaska na ramieniu). */
   setTag(id: string, category: TriageCategory | null): void;
+  /**
+   * Opcjonalne: obszar ekranu zasłonięty przez UI (HUD u góry, panel badania z prawej lub od dołu).
+   * Kadr przeglądu i badania jest centrowany w odsłoniętej części. Wołane po każdej zmianie układu.
+   */
+  setViewInsets?(insets: ViewInsets): void;
   dispose(): void;
 }
 

@@ -1,0 +1,15 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`determinizm > stała wartość dla znanego kodu (wykrywa przypadkową zmianę generatora) 1`] = `
+"Dziewczynka, ok. 10 lat (mieszkanka kamienicy)|29|1,3.2
+Nastolatek, ok. 15 lat (mieszkaniec kamienicy)|18|1,0.7
+Chłopiec, ok. 4 lat (mieszkaniec kamienicy)|31|1.5,-1.3
+Mężczyzna, ok. 70 lat (mieszkaniec kamienicy)|0|-1,1.2
+Kobieta, ok. 18 lat (sąsiadka z naprzeciwka)|21|-7.5,-0.8
+Dziewczynka, ok. 6 lat (mieszkanka kamienicy)|20|10,4.5
+Kobieta, ok. 31 lat (sąsiadka z naprzeciwka)|30|4.5,-4.6
+Mężczyzna, ok. 56 lat (mieszkaniec III piętra)|21|5.5,4
+Mężczyzna, ok. 21 lat (dozorca)|22|4.5,-1
+Mężczyzna, ok. 65 lat (mieszkaniec parteru)|17|-1,3.2
+Chłopiec, ok. 5 lat (mieszkaniec kamienicy)|11|-10,0.5"
+`;

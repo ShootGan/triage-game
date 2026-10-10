@@ -2,6 +2,7 @@ import { ACTION_LABEL, ACTION_SECONDS, initialExamState, performAction } from '.
 import { scoreGame } from '../engine/scoring';
 import { createGameView } from '../render/GameView';
 import { busScenario } from '../scenarios/bus';
+import { parseCode, patientCountRange, randomCode, scenarioFromCode, templateCode } from '../scenarios/generator';
 import { concertScenario } from '../scenarios/concert';
 import { festivalScenario } from '../scenarios/festival';
 import { pileupScenario } from '../scenarios/pileup';
@@ -11,6 +12,7 @@ import type { GameDeps } from './deps';
 /** Prawdziwe moduły (3D, badanie, ocena, scenariusze). */
 export const realDeps: GameDeps = {
   scenarios: [busScenario, pileupScenario, tenementScenario, concertScenario, festivalScenario],
+  codes: { randomCode, templateCode, parseCode, scenarioFromCode, patientCountRange },
   createGameView,
   ACTION_LABEL,
   ACTION_SECONDS,

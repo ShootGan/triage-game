@@ -4,13 +4,29 @@ import type { TriageCategory } from '../engine/triage';
 import type { GameViewFactory } from '../render/types';
 import type { Scenario, ScenarioPatient } from '../scenarios/types';
 
+/** Kody zadań i losowanie zestawów poszkodowanych (src/scenarios/generator). */
+export interface ScenarioCodes {
+  /** Nowy losowy kod dla scenariusza, np. „KAMIENICA-4F7K". */
+  randomCode(scenarioId: string): string;
+  /** Kod ręcznego wzorca, np. „KAMIENICA-WZOR". */
+  templateCode(scenarioId: string): string;
+  /** Odczyt kodu wpisanego przez gracza (wielkość liter, spacje, brak myślnika — tolerowane). */
+  parseCode(input: string): { scenarioId: string; code: string } | { error: string };
+  /** Scenariusz z kodu (deterministyczny) albo komunikat błędu po polsku. */
+  scenarioFromCode(input: string): Scenario | { error: string };
+  /** Widełki liczby poszkodowanych w losowaniu (do opisu w menu). */
+  patientCountRange(scenarioId: string): [number, number] | null;
+}
+
 /**
  * Zależności gry wstrzykiwane przy starcie aplikacji.
  * Produkcyjnie: src/game/realDeps.ts (prawdziwe moduły innych warstw).
  * Tryb deweloperski `?stub`: src/ui/dev/stubDeps.ts.
  */
 export interface GameDeps {
+  /** Scenariusze bazowe (wzorce) — tytuły, limity, kolejność w menu. */
   scenarios: Scenario[];
+  codes: ScenarioCodes;
   createGameView: GameViewFactory;
   ACTION_LABEL: Record<ExamActionId, string>;
   ACTION_SECONDS: Record<ExamActionId, number>;

@@ -59,7 +59,10 @@ export function ExamPanel() {
     return (
       <aside className="approach-box panel">
         <span className="approach-dots">Podchodzisz do:</span> {approaching.label}
-        <span className="muted"> · Esc — rezygnuj</span>
+        <span className="muted kbd-only"> · Esc — rezygnuj</span>
+        <button className="btn icon touch-only" onClick={() => selectPatient(null)}>
+          ✕ Rezygnuj
+        </button>
       </aside>
     );
   }
@@ -89,20 +92,17 @@ export function ExamPanel() {
         </div>
       </section>
 
-      <div className="exam-scroll">
-        {patient.injuries.length > 0 && (
-          <section>
-            <div className="h-small">Widoczne obrażenia</div>
-            <ul className="injuries">
-              {patient.injuries.map((i, n) => (
-                <li key={n}>{i}</li>
-              ))}
-            </ul>
-          </section>
+      {/* Ostatni wynik — stały pasek (widoczny na telefonie, gdzie lista wyników jest mała); miga po każdej czynności */}
+      <div className="exam-last" aria-live="polite">
+        {log.length === 0 ? (
+          <span className="muted">Wynik pojawi się tutaj po wykonaniu czynności.</span>
+        ) : (
+          <span key={log.length} className="exam-last-text">{log[log.length - 1].text}</span>
         )}
-        {patient.remark && <blockquote className="remark">{quoteRemark(patient.remark)}</blockquote>}
+      </div>
 
-        <section>
+      <div className="exam-scroll">
+        <section className="exam-results">
           <div className="h-small">Wyniki</div>
           {log.length === 0 ? (
             <p className="muted">Brak — wykonaj czynność.</p>
@@ -117,6 +117,17 @@ export function ExamPanel() {
           )}
         </section>
 
+        {patient.injuries.length > 0 && (
+          <section>
+            <div className="h-small">Widoczne obrażenia</div>
+            <ul className="injuries">
+              {patient.injuries.map((i, n) => (
+                <li key={n}>{i}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+        {patient.remark && <blockquote className="remark">{quoteRemark(patient.remark)}</blockquote>}
       </div>
 
       <footer className="exam-tags">

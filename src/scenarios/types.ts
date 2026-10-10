@@ -56,6 +56,11 @@ export type TerrainKind = 'road' | 'street' | 'field';
 
 export interface Scenario {
   id: string;
+  /**
+   * Kod zadania, z którego powstał zestaw pacjentów (np. „KAMIENICA-4F7K"; „KAMIENICA-WZOR" = ręczny wzorzec).
+   * Ten sam kod → identyczna sytuacja. Brak = scenariusz bazowy (wzorzec) prosto z pliku.
+   */
+  code?: string;
   title: string;
   /** Komunikat dyspozytora na start. */
   briefing: string;

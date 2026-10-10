@@ -4,7 +4,10 @@ export const NEAR = 0.1;
 export const FAR = 80;
 
 export interface PixelPipelineOptions {
-  /** Wewnętrzna szerokość renderu w px (wysokość wynika z proporcji canvasa). Domyślnie 640. */
+  /**
+   * Wewnętrzna szerokość renderu w px (wysokość wynika z proporcji canvasa). Domyślnie 640.
+   * Na canvasie pionowym stała jest wysokość: width·9/16 (domyślnie 360).
+   */
   width?: number;
   /** Kontur z bufora głębokości (domyślnie wyłączony). */
   outline?: boolean;
@@ -93,12 +96,20 @@ export class PixelPipeline {
     this.post.uniforms.thr.value = 0.12 + zoom * 0.05;
   }
 
-  /** Dopasowanie wewnętrznej rozdzielczości do proporcji canvasa (szerokość stała). */
+  /**
+   * Dopasowanie wewnętrznej rozdzielczości do proporcji canvasa. Poziomo: szerokość stała (640).
+   * Pionowo (telefon): stała wysokość 640·9/16 = 360, szerokość z proporcji — inaczej render miałby
+   * 640×1400 px i piksele mniejsze niż piksele ekranu (rozmyty, kosztowny obraz bez efektu pixel-art).
+   */
   resize(): void {
     const cw = this.canvas.clientWidth || 16;
     const ch = this.canvas.clientHeight || 9;
-    const w = this.baseWidth;
-    const h = Math.max(1, Math.round((w * ch) / cw));
+    let w = this.baseWidth;
+    let h = Math.max(1, Math.round((w * ch) / cw));
+    if (ch > cw) {
+      h = Math.round((this.baseWidth * 9) / 16);
+      w = Math.max(1, Math.round((h * cw) / ch));
+    }
     if (w === this.width && h === this.height && this.rt) return;
     this.width = w;
     this.height = h;

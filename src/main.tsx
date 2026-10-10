@@ -3,6 +3,12 @@ import App from './App';
 import { setDeps, type GameDeps } from './game/deps';
 import './ui/styles.css';
 
+// iOS Safari ignoruje user-scalable=no — blokujemy gest powiększania całej strony (szczypanie
+// na scenie obsługuje GameView jako zoom kamery; touch-action w CSS blokuje przewijanie/zoom).
+for (const type of ['gesturestart', 'gesturechange', 'gestureend']) {
+  document.addEventListener(type, (e) => e.preventDefault(), { passive: false });
+}
+
 const root = createRoot(document.getElementById('root')!);
 const useStub = new URLSearchParams(window.location.search).has('stub');
 

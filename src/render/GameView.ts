@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import type { TriageCategory } from '../engine/triage';
 import type { Scenario, ScenarioPatient, PatientPose } from '../scenarios/types';
-import type { GameViewFactory, IGameView, ScreenPoint } from './types';
+import type { GameViewFactory, IGameView, ScreenPoint, ViewInsets } from './types';
 import { PixelPipeline, type PixelPipelineOptions } from './pixelPipeline';
-import { CameraRig } from './camera';
+import { CameraRig, viewAxes } from './camera';
 import { Kit } from '../world/materials';
 import { buildTerrain } from '../world/terrain';
 import { PROP_HALF_SIZE } from '../scenarios/propSizes';
@@ -33,10 +33,18 @@ const POSE_MAP: Record<PatientPose, PoseName> = {
 const OVERVIEW_ELEV = 20;
 const FOCUS_ELEV = 22;
 const CLICK_SLOP_PX = 5;
-/** Przesunięcie kadru przy badaniu (ułamek połowy szerokości widoku) — miejsce na panel po prawej. */
-const FOCUS_PANEL_SHIFT = 0.4;
-/** Przesunięcie kadru przeglądu w dół (ułamek połowy wysokości widoku) — miejsce na pasek HUD. */
-const OVERVIEW_HUD_SHIFT = 0.12;
+/** Palec drży bardziej niż mysz — większy próg, zanim dotyk stanie się obrotem. */
+const TOUCH_SLOP_PX = 10;
+/** Dłuższe przytrzymanie palca nie jest „tapnięciem" (wybór pacjenta). */
+const TAP_MAX_MS = 500;
+/** Tolerancja wyboru: gdy promień chybi — pacjent, którego klatka piersiowa jest najbliżej (px CSS). */
+const PICK_TOL_PX = 28;
+const PICK_TOL_TOUCH_PX = 36;
+/** Minimalny odsłonięty ułamek ekranu (zabezpieczenie przed zbyt dużymi marginesami UI). */
+const MIN_FREE_FRAC = 0.3;
+/** Przy badaniu w kadrze musi się zmieścić pacjent z ratownikiem: pół-szerokość / pół-wysokość (m). */
+const FOCUS_HALF_W = 1.3;
+const FOCUS_HALF_H = 0.95;
 const POOL_COLOR = '#7a1010';
 const POOL_START = 0.7;
 const POOL_MAX = 1.6;
@@ -44,6 +52,19 @@ const POOL_GROW_PER_SEC = 0.008;
 const MEDIC_SPEED = 2.4; // m/s — szybki marsz
 const BLEED_BEAT_HZ = 2.2; // wytryski krwi na sekundę (tachykardia)
 const WALKER_GAP = 0.9;
+
+/** Gest jednego wskaźnika: przeciąganie = obrót, krótkie puszczenie w miejscu = wybór pacjenta. */
+interface Gesture {
+  id: number;
+  x: number;
+  y: number;
+  lastX: number;
+  dragging: boolean;
+  /** false po geście dwupalcowym — puszczenie nie wybiera pacjenta. */
+  tap: boolean;
+  t0: number;
+  touch: boolean;
+}
 
 interface WalkState {
   /** Kolejne punkty trasy (omijanie pojazdów i leżących); ostatni = cel. */
@@ -124,22 +145,46 @@ export class GameView implements IGameView {
   private readonly frameCbs: Array<() => void> = [];
   private focusedId: string | null = null;
   private medicMove: MedicMove | null = null;
+  /** Ostatnio znana orientacja ekranu (do doboru kąta kamery po obrocie telefonu). */
+  private portrait = false;
   private arriveCb: (() => void) | null = null;
   /** Docelowe miejsce ratownika (po dojściu). */
   private readonly medicGoal = new THREE.Vector3();
+  /** Punkt, który ma leżeć na środku odsłoniętej części ekranu (cel kamery przed przesunięciem). */
+  private readonly subject = new THREE.Vector3();
+  /** Obszar ekranu zasłonięty przez UI (px CSS) — patrz setViewInsets. */
+  private insets: ViewInsets = { top: 0, right: 0, bottom: 0, left: 0 };
+  private insetsKnown = false;
   private lastTime = -1;
   private elapsed = 0;
   private disposed = false;
 
   // wejście
-  private pointerDown: { id: number; x: number; y: number; lastX: number; dragging: boolean } | null = null;
+  /** Aktywne wskaźniki (palce / mysz) — do szczypania dwoma palcami. */
+  private readonly pointers = new Map<number, { x: number; y: number }>();
+  private pointerDown: Gesture | null = null;
+  /** Odległość między palcami w poprzednim kroku szczypania (0 = brak szczypania). */
+  private pinchDist = 0;
+  private lastPointerTouch = false;
   private hoverPos: { x: number; y: number } | null = null;
   private hoverDirty = false;
 
   constructor(private readonly canvas: HTMLCanvasElement, private readonly scenario: Scenario, opts: GameViewOptions = {}) {
     this.pipe = new PixelPipeline(canvas, opts);
     this.pipe.onResize = () => {
+      const prev = this.rig.aspect;
       this.rig.aspect = this.pipe.aspect;
+      // Wyraźna zmiana proporcji (obrót telefonu, zmiana okna) — nowy kadr dopasowany do ekranu.
+      // Drobne zmiany (chowający się pasek adresu przeglądarki) nie kasują zoomu gracza.
+      if (Math.abs(this.rig.aspect - prev) / prev > 0.12) {
+        // zmiana orientacji na pionową (lub pierwszy prawdziwy rozmiar canvasa) — dobór kąta kamery
+        const portrait = this.rig.aspect < 1;
+        if (portrait !== this.portrait) {
+          this.portrait = portrait;
+          if (portrait && !this.focusedId) this.pickPortraitAngle();
+        }
+        this.reframe();
+      }
       this.rig.apply();
     };
     this.rig.aspect = this.pipe.aspect;
@@ -199,8 +244,11 @@ export class GameView implements IGameView {
     this.bag = buildMedBag(this.kit, scene);
     this.placeMedicOverview(true);
 
-    // Kamera — przegląd od razu, bez animacji
+    // Kamera — przegląd od razu, bez animacji. Na ekranie pionowym — kąt najlepiej wypełniający kadr.
+    this.portrait = this.rig.aspect < 1;
+    this.pickPortraitAngle();
     this.setOverviewGoal();
+    this.applyFraming();
     this.rig.snap();
     this.pipe.setOutlineZoom(this.rig.cur.zoom);
 
@@ -211,6 +259,7 @@ export class GameView implements IGameView {
     canvas.addEventListener('pointercancel', this.onPointerCancel);
     canvas.addEventListener('pointerleave', this.onPointerLeave);
     canvas.addEventListener('wheel', this.onWheel, { passive: false });
+    canvas.addEventListener('contextmenu', this.onContextMenu);
 
     this.pipe.renderer.setAnimationLoop(this.tick);
   }
@@ -481,6 +530,36 @@ export class GameView implements IGameView {
     return e.human.torso.localToWorld(out.copy(_chest));
   }
 
+  /**
+   * Ekran pionowy (telefon): kąt kamery, przy którym scena najlepiej wypełnia kadr
+   * (np. droga biegnie wzdłuż ekranu, a nie w poprzek). Wołane raz na starcie.
+   */
+  private pickPortraitAngle(): void {
+    if (this.rig.aspect >= 1) return;
+    const pts = this.overviewPoints();
+    const { fw, fh } = this.freeFrac();
+    const base = this.rig.goal.angle;
+    let best = base;
+    let bestZoom = this.rig.frame(pts, base, OVERVIEW_ELEV, 1.4, fw, fh).zoom;
+    for (let k = 1; k < 16; k++) {
+      const a = base + (k * Math.PI) / 8;
+      const z = this.rig.frame(pts, a, OVERVIEW_ELEV, 1.4, fw, fh).zoom;
+      if (z < bestZoom * 0.97) { best = a; bestZoom = z; }
+    }
+    this.rig.goal.angle = best;
+  }
+
+  private overviewPoints(): THREE.Vector3[] {
+    const pts: THREE.Vector3[] = [];
+    for (const e of this.patients.values()) {
+      const r = e.human.root.position;
+      pts.push(new THREE.Vector3(r.x, 0, r.z), new THREE.Vector3(r.x, 1.2, r.z));
+    }
+    const [cx, cz] = this.scenario.collectionPoint;
+    pts.push(new THREE.Vector3(cx, 0, cz), new THREE.Vector3(cx, 1.2, cz));
+    return pts;
+  }
+
   private setOverviewGoal(): void {
     const pts: THREE.Vector3[] = [];
     for (const e of this.patients.values()) {
@@ -490,14 +569,69 @@ export class GameView implements IGameView {
     // punkt zbiórki też w kadrze — chodzący nie znikają z przeglądu
     const [cx, cz] = this.scenario.collectionPoint;
     pts.push(new THREE.Vector3(cx, 0, cz), new THREE.Vector3(cx, 1.2, cz));
-    const f = this.rig.frame(pts, this.rig.goal.angle, OVERVIEW_ELEV, 1.4);
-    // Górny pasek HUD zasłania górę kadru — przesuwamy kadr tak, by scena leżała niżej na ekranie
-    // (cel kamery odsunięty od kamery po ziemi; ~0,6 = sin kąta patrzenia ≈ 38°).
-    const a = this.rig.goal.angle;
-    const d = (f.zoom * OVERVIEW_HUD_SHIFT) / 0.62;
-    f.target.x -= Math.cos(a) * d;
-    f.target.z -= Math.sin(a) * d;
+    // Kadr ma się zmieścić w części ekranu niezasłoniętej przez HUD / panele;
+    // przesunięcie celu do środka tej części robi applyFraming (co klatkę).
+    const { fw, fh } = this.freeFrac();
+    const f = this.rig.frame(pts, this.rig.goal.angle, OVERVIEW_ELEV, 1.4, fw, fh);
+    this.subject.copy(f.target);
     this.rig.setGoal(f.target, f.zoom, OVERVIEW_ELEV);
+  }
+
+  /** Kadr badania: pacjent (z ratownikiem) w odsłoniętej części ekranu. */
+  private setFocusGoal(e: PatientEntity): void {
+    const t = this.chestWorld(e, this.subject);
+    // cel lekko przesunięty w stronę ratownika — obaj w kadrze (jak widok „badanie" w prototypie)
+    const m = this.medicGoal;
+    t.x += (m.x - t.x) * 0.3;
+    t.z += (m.z - t.z) * 0.3;
+    // zoom bazowy; na wąskim / pionowym ekranie (panel od dołu) oddalamy, by postać się zmieściła
+    const s = e.human.child ? 0.77 : 1;
+    const { fw, fh } = this.freeFrac();
+    const zoom = Math.max(1.5 * s, (FOCUS_HALF_W * s) / (this.rig.aspect * fw), (FOCUS_HALF_H * s) / fh);
+    this.rig.setGoal(t, zoom, FOCUS_ELEV);
+  }
+
+  /** Ponowne dopasowanie kadru (po zmianie rozmiaru ekranu lub układu UI). */
+  private reframe(): void {
+    const e = this.focusedId ? this.patients.get(this.focusedId) : undefined;
+    if (e) this.setFocusGoal(e);
+    else this.setOverviewGoal();
+  }
+
+  /** Odsłonięty ułamek szerokości i wysokości canvasa. */
+  private freeFrac(): { fw: number; fh: number } {
+    const w = this.canvas.clientWidth;
+    const h = this.canvas.clientHeight;
+    if (w <= 0 || h <= 0) return { fw: 1, fh: 1 };
+    const i = this.insets;
+    return {
+      fw: Math.max(MIN_FREE_FRAC, (w - i.left - i.right) / w),
+      fh: Math.max(MIN_FREE_FRAC, (h - i.top - i.bottom) / h),
+    };
+  }
+
+  /**
+   * Cel kamery = subject przesunięty tak, by subject wypadł na środku odsłoniętej części ekranu.
+   * Liczone co klatkę z bieżącego kąta i zoomu — działa też po obrocie / zoomie gracza.
+   */
+  private applyFraming(): void {
+    const g = this.rig.goal;
+    g.target.copy(this.subject);
+    const w = this.canvas.clientWidth;
+    const h = this.canvas.clientHeight;
+    if (w <= 0 || h <= 0) return;
+    const i = this.insets;
+    const { fw, fh } = this.freeFrac();
+    // środek odsłoniętego obszaru względem środka canvasa (px, y w dół), ograniczony jak we freeFrac
+    const mx = (w * (1 - fw)) / 2;
+    const my = (h * (1 - fh)) / 2;
+    const dx = THREE.MathUtils.clamp((i.left - i.right) / 2, -mx, mx);
+    const dy = THREE.MathUtils.clamp((i.top - i.bottom) / 2, -my, my);
+    if (dx === 0 && dy === 0) return;
+    const pxToWorld = (2 * g.zoom) / h;
+    const { right, up } = viewAxes(g.angle, g.elev);
+    // obiekt ma być o (dx, dy) od środka ekranu → kamera patrzy w punkt przesunięty przeciwnie
+    g.target.addScaledVector(right, -dx * pxToWorld).addScaledVector(up, dy * pxToWorld);
   }
 
   // ---------- IGameView ----------
@@ -536,18 +670,23 @@ export class GameView implements IGameView {
       if (this.medicMove) this.arriveCb = onArrive;
       else onArrive();
     }
-    const t = this.chestWorld(e, new THREE.Vector3());
-    // cel lekko przesunięty w stronę ratownika — obaj w kadrze (jak widok „badanie" w prototypie)
-    const m = this.medicGoal;
-    t.x += (m.x - t.x) * 0.3;
-    t.z += (m.z - t.z) * 0.3;
-    // Panel badania zajmuje prawą część ekranu — pacjent w lewej, odsłoniętej części kadru.
-    const zoom = e.human.child ? 1.15 : 1.5;
-    const a = this.rig.goal.angle;
-    const shift = zoom * this.rig.aspect * FOCUS_PANEL_SHIFT;
-    t.x += Math.sin(a) * shift;
-    t.z -= Math.cos(a) * shift;
-    this.rig.setGoal(t, zoom, FOCUS_ELEV);
+    // Panel badania (z prawej lub od dołu) zasłania część ekranu — pacjent w odsłoniętej części.
+    this.setFocusGoal(e);
+  }
+
+  /** Opcjonalne w IGameView: obszar ekranu zasłonięty przez UI (px CSS). */
+  setViewInsets(insets: ViewInsets): void {
+    const r = (v: number): number => Math.max(0, Math.round(v));
+    const next: ViewInsets = { top: r(insets.top), right: r(insets.right), bottom: r(insets.bottom), left: r(insets.left) };
+    const p = this.insets;
+    const diff = Math.abs(next.top - p.top) + Math.abs(next.right - p.right) + Math.abs(next.bottom - p.bottom) + Math.abs(next.left - p.left);
+    const first = !this.insetsKnown;
+    this.insetsKnown = true;
+    if (diff <= 2 && !first) return;
+    this.insets = next;
+    // Przegląd: zoom dopasowujemy tylko za pierwszym razem (wysokość HUD-u może się zmieniać,
+    // np. przy potwierdzeniu — bez skoków zoomu). Badanie: zawsze (np. panel właśnie się pojawił).
+    if (this.focusedId || first) this.reframe();
   }
 
   onPatientClick(cb: (id: string) => void): void {
@@ -628,6 +767,7 @@ export class GameView implements IGameView {
     c.removeEventListener('pointercancel', this.onPointerCancel);
     c.removeEventListener('pointerleave', this.onPointerLeave);
     c.removeEventListener('wheel', this.onWheel);
+    c.removeEventListener('contextmenu', this.onContextMenu);
     c.style.cursor = '';
     this.clickCbs.length = 0;
     this.frameCbs.length = 0;
@@ -661,8 +801,9 @@ export class GameView implements IGameView {
 
     if (this.focusedId) {
       const e = this.patients.get(this.focusedId);
-      if (e && e.walk) this.chestWorld(e, this.rig.goal.target);
+      if (e && e.walk) this.chestWorld(e, this.subject);
     }
+    this.applyFraming();
     this.rig.update(dt);
     this.pipe.setOutlineZoom(this.rig.cur.zoom);
 
@@ -732,7 +873,11 @@ export class GameView implements IGameView {
 
   // ---------- Wejście ----------
 
-  private pick(clientX: number, clientY: number): string | null {
+  /**
+   * Pacjent pod punktem ekranu: najpierw promień (dokładny kształt postaci), a gdy chybi —
+   * pacjent, którego rzut klatki piersiowej jest najbliżej, w promieniu tol px (palec jest gruby).
+   */
+  private pick(clientX: number, clientY: number, tol = PICK_TOL_PX): string | null {
     const rect = this.canvas.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return null;
     const ndc = new THREE.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
@@ -746,22 +891,74 @@ export class GameView implements IGameView {
         o = o.parent;
       }
     }
-    return null;
+    let best: string | null = null;
+    let bestD = tol;
+    const cam = this.rig.camera;
+    for (const [id, e] of this.patients) {
+      this.chestWorld(e, _v).project(cam);
+      if (_v.z < -1 || _v.z > 1) continue;
+      const sx = rect.left + ((_v.x + 1) / 2) * rect.width;
+      const sy = rect.top + ((1 - _v.y) / 2) * rect.height;
+      const d = Math.hypot(sx - clientX, sy - clientY);
+      if (d <= bestD) { bestD = d; best = id; }
+    }
+    return best;
   }
 
+  /** Odległość między dwoma pierwszymi aktywnymi wskaźnikami (px). */
+  private pointerSpread(): number {
+    const it = this.pointers.values();
+    const a = it.next().value;
+    const b = it.next().value;
+    return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0;
+  }
+
+  /**
+   * Wejście (Pointer Events — mysz, dotyk, rysik):
+   * - jeden wskaźnik: przeciąganie = obrót kamery, krótkie puszczenie w miejscu = wybór pacjenta;
+   * - dwa palce: szczypanie = zoom (obrót i wybór wstrzymane do puszczenia wszystkich palców).
+   */
   private readonly onPointerDown = (ev: PointerEvent): void => {
-    if (ev.button !== 0) return;
-    this.pointerDown = { id: ev.pointerId, x: ev.clientX, y: ev.clientY, lastX: ev.clientX, dragging: false };
+    const touch = ev.pointerType !== 'mouse';
+    this.lastPointerTouch = touch;
+    if (!touch && ev.button !== 0) return;
+    if (touch) ev.preventDefault(); // bez emulowanych zdarzeń myszy / zaznaczania tekstu
+    this.pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
     try { this.canvas.setPointerCapture(ev.pointerId); } catch { /* ignoruj */ }
+    if (this.pointers.size === 1) {
+      this.pointerDown = { id: ev.pointerId, x: ev.clientX, y: ev.clientY, lastX: ev.clientX, dragging: false, tap: true, t0: ev.timeStamp, touch };
+      return;
+    }
+    // drugi (kolejny) palec: koniec obrotu i tapnięcia, początek szczypania
+    const g = this.pointerDown;
+    if (g) {
+      g.tap = false;
+      g.dragging = false;
+    }
+    this.pinchDist = this.pointerSpread();
   };
 
   private readonly onPointerMove = (ev: PointerEvent): void => {
+    const p = this.pointers.get(ev.pointerId);
+    if (p) {
+      p.x = ev.clientX;
+      p.y = ev.clientY;
+    }
+    if (p && this.pointers.size >= 2) {
+      const dist = this.pointerSpread();
+      // palce się rozsuwają → przybliżenie (mniejszy zoom = mniejszy wycinek sceny)
+      if (this.pinchDist > 0 && dist > 0) this.rig.zoomBy(this.pinchDist / dist, true);
+      this.pinchDist = dist;
+      return;
+    }
     const d = this.pointerDown;
     if (d && d.id === ev.pointerId) {
-      if (!d.dragging && Math.hypot(ev.clientX - d.x, ev.clientY - d.y) > CLICK_SLOP_PX) {
+      const slop = d.touch ? TOUCH_SLOP_PX : CLICK_SLOP_PX;
+      if (!d.dragging && Math.hypot(ev.clientX - d.x, ev.clientY - d.y) > slop) {
         d.dragging = true;
+        d.tap = false;
         d.lastX = d.x;
-        this.canvas.style.cursor = 'grabbing';
+        if (!d.touch) this.canvas.style.cursor = 'grabbing';
       }
       if (d.dragging) {
         this.rig.rotate((ev.clientX - d.lastX) * 0.01);
@@ -769,28 +966,56 @@ export class GameView implements IGameView {
       }
       return;
     }
+    if (ev.pointerType !== 'mouse') return; // kursor „rączka" tylko dla myszy
     this.hoverPos = { x: ev.clientX, y: ev.clientY };
     this.hoverDirty = true;
   };
 
-  private readonly onPointerUp = (ev: PointerEvent): void => {
-    const d = this.pointerDown;
-    if (!d || d.id !== ev.pointerId) return;
-    this.pointerDown = null;
+  /** Puszczenie / anulowanie wskaźnika. Zwraca zakończony gest, jeśli był to ostatni wskaźnik. */
+  private releasePointer(ev: PointerEvent): Gesture | null {
+    const known = this.pointers.delete(ev.pointerId);
     try { this.canvas.releasePointerCapture(ev.pointerId); } catch { /* ignoruj */ }
+    if (!known) return null;
+    if (this.pointers.size > 0) {
+      // po szczypaniu został jeden palec — może dalej obracać (od nowego punktu), ale nie wybiera
+      this.pinchDist = this.pointers.size >= 2 ? this.pointerSpread() : 0;
+      if (this.pointers.size === 1) {
+        const [id, p] = this.pointers.entries().next().value as [number, { x: number; y: number }];
+        this.pointerDown = { id, x: p.x, y: p.y, lastX: p.x, dragging: false, tap: false, t0: 0, touch: true };
+      }
+      return null;
+    }
+    this.pinchDist = 0;
+    const g = this.pointerDown;
+    this.pointerDown = null;
+    return g && g.id === ev.pointerId ? g : null;
+  }
+
+  private readonly onPointerUp = (ev: PointerEvent): void => {
+    const d = this.releasePointer(ev);
+    if (!d) return;
     if (d.dragging) {
       this.canvas.style.cursor = '';
-      this.hoverPos = { x: ev.clientX, y: ev.clientY };
-      this.hoverDirty = true;
+      if (!d.touch) {
+        this.hoverPos = { x: ev.clientX, y: ev.clientY };
+        this.hoverDirty = true;
+      }
       return;
     }
-    const id = this.pick(ev.clientX, ev.clientY);
+    if (!d.tap) return;
+    if (d.touch && ev.timeStamp - d.t0 > TAP_MAX_MS) return; // przytrzymanie ≠ wybór
+    const id = this.pick(ev.clientX, ev.clientY, d.touch ? PICK_TOL_TOUCH_PX : PICK_TOL_PX);
     if (id) for (const cb of this.clickCbs) cb(id);
   };
 
-  private readonly onPointerCancel = (): void => {
-    this.pointerDown = null;
-    this.canvas.style.cursor = '';
+  private readonly onPointerCancel = (ev: PointerEvent): void => {
+    this.releasePointer(ev);
+    if (!this.pointerDown) this.canvas.style.cursor = '';
+  };
+
+  /** Przytrzymanie palca nie otwiera menu kontekstowego (mysz — bez zmian). */
+  private readonly onContextMenu = (ev: Event): void => {
+    if (this.lastPointerTouch) ev.preventDefault();
   };
 
   private readonly onPointerLeave = (): void => {

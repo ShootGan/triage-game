@@ -14,11 +14,22 @@ export const MODE_LABEL: Record<GameMode, string> = {
   practice: 'Ćwiczenie',
 };
 
+/** Skąd pacjenci: losowy zestaw (nowy kod przy każdym starcie) albo ręczny wzorzec scenariusza. */
+export type ScenarioVariant = 'random' | 'template';
+
+export const VARIANT_LABEL: Record<ScenarioVariant, string> = {
+  random: 'Losowa (nowy kod)',
+  template: 'Wzorzec',
+};
+
 export interface GameState {
   phase: Phase;
   mode: GameMode;
   scenarioId: string | null;
   scenario: Scenario | null;
+  variant: ScenarioVariant;
+  /** Kod wczytany w menu — ma pierwszeństwo przed `variant`, dopóki gracz go nie usunie / nie zmieni scenariusza. */
+  loadedCode: string | null;
 
   /** Rzeczywisty czas segregacji w sekundach (stoper od wjazdu na miejsce). */
   clockSec: number;
@@ -37,7 +48,16 @@ export interface GameState {
 
   setMode(mode: GameMode): void;
   setScenario(id: string): void;
+  setVariant(v: ScenarioVariant): void;
+  /** Wczytuje kod wpisany przez gracza; zwraca komunikat błędu albo null. */
+  loadCode(input: string): string | null;
+  clearLoadedCode(): void;
+  /** Odprawa: scenariusz z wczytanego kodu, wzorca albo nowego losowego kodu. */
   goToBriefing(): void;
+  /** Odprawa dla konkretnego kodu (bez zmiany ustawień menu). */
+  playCode(code: string): void;
+  /** Nowy losowy kod tego samego scenariusza. */
+  newRandom(): void;
   startPlaying(): void;
   selectPatient(id: string | null): void;
   doAction(action: ExamActionId): void;
@@ -109,6 +129,8 @@ export const useGame = create<GameState>()((set, get) => {
     mode: 'learn',
     scenarioId: null,
     scenario: null,
+    variant: 'random',
+    loadedCode: null,
     hintOpen: false,
     ...freshRound,
 
@@ -117,16 +139,49 @@ export const useGame = create<GameState>()((set, get) => {
     },
 
     setScenario(id) {
-      set({ scenarioId: id });
+      const { loadedCode } = get();
+      const keep = loadedCode !== null && getDeps().codes.parseCode(loadedCode);
+      set({ scenarioId: id, loadedCode: keep && !('error' in keep) && keep.scenarioId === id ? loadedCode : null });
+    },
+
+    setVariant(variant) {
+      set({ variant, loadedCode: null });
+    },
+
+    loadCode(input) {
+      const p = getDeps().codes.parseCode(input);
+      if ('error' in p) return p.error;
+      set({ scenarioId: p.scenarioId, loadedCode: p.code });
+      return null;
+    },
+
+    clearLoadedCode() {
+      set({ loadedCode: null });
     },
 
     goToBriefing() {
-      const { scenarios } = getDeps();
-      const id = get().scenarioId ?? scenarios[0]?.id;
-      const scenario = scenarios.find((s) => s.id === id) ?? null;
-      if (!scenario) return;
+      const s = get();
+      const { scenarios, codes } = getDeps();
+      if (s.loadedCode) return get().playCode(s.loadedCode);
+      const id = s.scenarioId ?? scenarios[0]?.id;
+      if (!id || !scenarios.some((x) => x.id === id)) return;
+      get().playCode(s.variant === 'template' ? codes.templateCode(id) : codes.randomCode(id));
+    },
+
+    playCode(code) {
+      const result = getDeps().codes.scenarioFromCode(code);
+      if ('error' in result) {
+        console.error(`Nie udało się zbudować scenariusza z kodu ${code}: ${result.error}`);
+        return;
+      }
       stopClock();
-      set({ ...freshRound, scenarioId: scenario.id, scenario, phase: 'briefing' });
+      set({ ...freshRound, scenarioId: result.id, scenario: result, phase: 'briefing' });
+    },
+
+    newRandom() {
+      const id = get().scenario?.id ?? get().scenarioId;
+      if (!id) return;
+      get().playCode(getDeps().codes.randomCode(id));
     },
 
     startPlaying() {
@@ -213,8 +268,11 @@ export const useGame = create<GameState>()((set, get) => {
       set({ score, selectedId: null, approachingId: null, phase: 'debrief' });
     },
 
+    /** Ta sama sytuacja jeszcze raz (ten sam kod → identyczni pacjenci). */
     restart() {
-      get().goToBriefing();
+      const code = get().scenario?.code;
+      if (code) get().playCode(code);
+      else get().goToBriefing();
     },
 
     toMenu() {

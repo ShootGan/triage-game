@@ -26,20 +26,29 @@ export class CameraRig {
   /** Szybkość dążenia do celu (1/s). */
   stiffness = 6;
 
+  /**
+   * Górna granica zoomu. Na ekranie pionowym (telefon) rośnie tak, by w poziomie mieścił się
+   * ten sam wycinek sceny co na ekranie 16:9 — przegląd obejmuje wszystkich poszkodowanych.
+   */
+  get zoomMax(): number {
+    return this.aspect >= 1 ? ZOOM_MAX : (ZOOM_MAX * 16) / 9 / this.aspect;
+  }
+
   /** Obrót przeciągnięciem — natychmiastowy (bieżący i docelowy). */
   rotate(delta: number): void {
     this.cur.angle += delta;
     this.goal.angle += delta;
   }
 
-  /** Zoom kółkiem — płynny, ograniczony. */
-  zoomBy(factor: number): void {
-    this.goal.zoom = THREE.MathUtils.clamp(this.goal.zoom * factor, ZOOM_MIN, ZOOM_MAX);
+  /** Zoom kółkiem — płynny, ograniczony. instant = także stan bieżący (szczypanie palcami). */
+  zoomBy(factor: number, instant = false): void {
+    this.goal.zoom = THREE.MathUtils.clamp(this.goal.zoom * factor, ZOOM_MIN, this.zoomMax);
+    if (instant) this.cur.zoom = this.goal.zoom;
   }
 
   setGoal(target: THREE.Vector3, zoom: number, elev: number): void {
     this.goal.target.copy(target);
-    this.goal.zoom = THREE.MathUtils.clamp(zoom, ZOOM_MIN, ZOOM_MAX);
+    this.goal.zoom = THREE.MathUtils.clamp(zoom, ZOOM_MIN, this.zoomMax);
     this.goal.elev = elev;
   }
 
@@ -78,14 +87,12 @@ export class CameraRig {
 
   /**
    * Kadr obejmujący wszystkie punkty przy danym kącie i wysokości kamery.
-   * Zwraca cel na ziemi (y=0) i zoom z marginesem.
+   * Zwraca cel na ziemi (y=0) i zoom z marginesem. fracW/fracH — ułamek szerokości/wysokości
+   * ekranu, który pozostaje odsłonięty (reszta zasłonięta przez UI); kadr ma się zmieścić w nim.
    */
-  frame(points: THREE.Vector3[], angle: number, elev: number, margin = 1.2): { target: THREE.Vector3; zoom: number } {
+  frame(points: THREE.Vector3[], angle: number, elev: number, margin = 1.2, fracW = 1, fracH = 1): { target: THREE.Vector3; zoom: number } {
     if (points.length === 0) return { target: new THREE.Vector3(), zoom: 4 };
-    // kierunek patrzenia i osie widoku
-    const dir = new THREE.Vector3(-Math.cos(angle) * DIST, -elev, -Math.sin(angle) * DIST).normalize();
-    const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0, 1, 0)).normalize();
-    const up = new THREE.Vector3().crossVectors(right, dir).normalize();
+    const { dir, right, up } = viewAxes(angle, elev);
     let minR = Infinity, maxR = -Infinity, minU = Infinity, maxU = -Infinity;
     for (const p of points) {
       const r = p.dot(right);
@@ -95,11 +102,19 @@ export class CameraRig {
     }
     const halfW = (maxR - minR) / 2 + margin;
     const halfH = (maxU - minU) / 2 + margin;
-    const zoom = Math.max(halfW / this.aspect, halfH, 2);
+    const zoom = Math.max(halfW / (this.aspect * fracW), halfH / fracH, 2);
     // środek kadru w przestrzeni widoku → punkt na ziemi wzdłuż kierunku patrzenia
     const c = right.multiplyScalar((minR + maxR) / 2).add(up.multiplyScalar((minU + maxU) / 2));
     c.addScaledVector(dir, -c.y / dir.y);
     c.y = 0;
     return { target: c, zoom };
   }
+}
+
+/** Kierunek patrzenia oraz osie ekranu (prawo, góra) w świecie dla danego kąta i wysokości kamery. */
+export function viewAxes(angle: number, elev: number): { dir: THREE.Vector3; right: THREE.Vector3; up: THREE.Vector3 } {
+  const dir = new THREE.Vector3(-Math.cos(angle) * DIST, -elev, -Math.sin(angle) * DIST).normalize();
+  const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0, 1, 0)).normalize();
+  const up = new THREE.Vector3().crossVectors(right, dir).normalize();
+  return { dir, right, up };
 }

@@ -4,6 +4,8 @@ import { CATEGORY_LABEL, type TriageCategory } from '../engine/triage';
 import { CATEGORY_COLOR, CATEGORY_ORDER, formatClock } from '../game/constants';
 import { getDeps } from '../game/deps';
 import { MODE_LABEL, useGame } from '../game/store';
+import { CodeBadge } from './Briefing';
+import './code.css';
 
 const VERDICT_LABEL: Record<Verdict, string> = {
   correct: 'POPRAWNIE',
@@ -27,6 +29,7 @@ export function DebriefScreen() {
   const mode = useGame((s) => s.mode);
   const tags = useGame((s) => s.tags);
   const restart = useGame((s) => s.restart);
+  const newRandom = useGame((s) => s.newRandom);
   const toMenu = useGame((s) => s.toMenu);
 
   if (!score) return null;
@@ -44,15 +47,27 @@ export function DebriefScreen() {
             <div className="h-small">Debrief · {MODE_LABEL[mode]}</div>
             <h1 className="title-sm">{scenario?.title ?? 'Wynik'}</h1>
           </div>
-          <div className="row">
+          <div className="debrief-actions">
             <button className="btn primary" onClick={restart}>
-              Zagraj ponownie
+              {scenario?.code ? 'Zagraj ten sam kod' : 'Zagraj ponownie'}
             </button>
+            {scenario?.code && (
+              <button className="btn" onClick={newRandom}>
+                Nowy losowy
+              </button>
+            )}
             <button className="btn" onClick={toMenu}>
               Menu
             </button>
           </div>
         </header>
+        {scenario?.code && (
+          <CodeBadge
+            className="debrief-code"
+            code={scenario.code}
+            note="Podaj ten kod innym — po wpisaniu w menu dostaną identyczną sytuację."
+          />
+        )}
 
         <div className="summary">
           <div className="big-stat">
