@@ -205,6 +205,13 @@ describe('proste polecenia', () => {
     expect(run(patient({ obeysCommands: false, avpu: 'P' }), ['commands']).result.text).toBe('Nie reaguje na głos ani na polecenia');
     expect(run(patient({ obeysCommands: false, avpu: 'U' }), ['commands']).result.text).toBe('Nie reaguje na głos ani na polecenia');
   });
+
+  it('niemowlę: brak wykonywania poleceń wynika z wieku, a nie ze splątania', () => {
+    const infant = patient({ obeysCommands: false, avpu: 'A', nonAmbulatoryByAge: true }, { ageYears: 0.8, appearsChild: true });
+    const text = run(infant, ['commands']).result.text;
+    expect(text).toContain('Niemowlę');
+    expect(text).not.toContain('splątany');
+  });
 });
 
 describe('AVPU', () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { triage, type TriageCategory, type Vitals } from '../engine/triage';
 import { busScenario } from './bus';
+import type { PropKind } from './propSizes';
 
 /** Źródło prawdy: zamierzona kategoria każdego pacjenta. */
 const EXPECTED: Record<string, TriageCategory> = {
@@ -66,10 +67,11 @@ describe('scenariusz: wypadek autobusu szkolnego', () => {
 
   it('pozycje: nikt w obrysie pojazdu', () => {
     // Prostokąt pojazdu w jego lokalnym układzie (z zapasem).
-    const footprint = { bus: [5.5, 1.8], car: [2.6, 1.3] } as const;
+    const footprint: Partial<Record<PropKind, readonly [number, number]>> = { bus: [5.5, 1.8], car: [2.6, 1.3] };
     for (const prop of busScenario.props) {
-      if (prop.kind === 'glass') continue;
-      const [hl, hw] = footprint[prop.kind];
+      const f = footprint[prop.kind];
+      if (!f) continue;
+      const [hl, hw] = f;
       for (const p of patients) {
         const dx = p.position[0] - prop.position[0];
         const dz = p.position[1] - prop.position[1];

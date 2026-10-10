@@ -98,7 +98,12 @@ function rescueBreathsResult(p: ScenarioPatient, s: PatientExamState): Outcome {
   return { text: text + note, patch: { rescueBreathsGiven: true } };
 }
 
-function commandsResult(v: Vitals): Outcome {
+function commandsResult(p: ScenarioPatient): Outcome {
+  const v = p.vitals;
+  // Niemowlę / małe dziecko nie wykonuje poleceń z powodu wieku — to nie jest objaw.
+  if (p.ageYears < 2 && v.avpu === 'A') {
+    return { text: 'Niemowlę — za małe na polecenia; przytomne, wodzi wzrokiem (oceń AVPU)' };
+  }
   if (v.obeysCommands) return { text: 'Wykonuje proste polecenia' };
   switch (v.avpu) {
     case 'A':
@@ -149,7 +154,7 @@ function outcome(p: ScenarioPatient, s: PatientExamState, action: ExamActionId):
     case 'crt':
       return { text: `Nawrót kapilarny: ${num(v.crtSeconds)} s` };
     case 'commands':
-      return commandsResult(v);
+      return commandsResult(p);
     case 'avpu':
       return avpuResult(v);
     case 'bleeding':

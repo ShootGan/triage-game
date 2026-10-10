@@ -1,32 +1,229 @@
 import * as THREE from 'three';
 import type { Kit } from './materials';
+import type { TerrainKind } from '../scenarios/types';
+
+export type { TerrainKind } from '../scenarios/types';
+
+/*
+ * Wysokości powierzchni: wszystko, po czym leżą pacjenci, ma wierzch ≤ 0.02 m
+ * (kałuże krwi rysowane są na y = 0.025). Wyżej wystają tylko krawężniki i detale poza strefą poszkodowanych.
+ */
+
+/** Strefa wolna od dekoracji terenu: [x, z, promień] (pacjenci, rekwizyty, punkt zbiórki). */
+export type KeepOut = ReadonlyArray<readonly [number, number, number]>;
 
 /**
- * Teren: trawa, droga wzdłuż osi X (|z| < 3), krawężniki, pasy, kępki trawy.
+ * Teren wg rodzaju otoczenia (patrz TerrainKind w scenarios/types.ts).
  * `size` — bok kwadratu terenu (min. 40 m jak w prototypie).
+ * `keepOut` — miejsca, w których nie stawiamy wystających dekoracji (krzaki, latarnie, ławki, kosze).
  */
-export function buildTerrain(kit: Kit, parent: THREE.Object3D, size = 40): THREE.Group {
+export function buildTerrain(kit: Kit, parent: THREE.Object3D, size = 40, kind: TerrainKind = 'road', keepOut: KeepOut = []): THREE.Group {
   const g = new THREE.Group();
   parent.add(g);
-  kit.box(size, 0.2, size, '#5f9a4a', 0, -0.1, 0, g);
-  kit.box(size, 0.22, 6, '#55585f', 0, -0.09, 0, g);
-  kit.box(size, 0.25, 0.35, '#a8a8a0', 0, 0, 3.15, g);
-  kit.box(size, 0.25, 0.35, '#a8a8a0', 0, 0, -3.15, g);
-
-  // Pasy (współdzielona geometria)
-  const half = size / 2;
-  const laneGeo = kit.own(new THREE.BoxGeometry(1.4, 0.23, 0.18));
-  for (let x = -half + 2; x < half - 1; x += 3) kit.part(laneGeo, '#f0f0e0', g, x, -0.08, 0);
-
-  // Kępki trawy — deterministyczny rozrzut jak w prototypie (160 na 40×40 m)
-  const tuftGeo = kit.own(new THREE.ConeGeometry(0.06, 0.25, 4));
-  const k = size / 40;
-  const count = Math.round(160 * k * k);
-  for (let i = 0; i < count; i++) {
-    const x = ((Math.sin(i * 91.7) * 0.5 + 0.5) * 36 - 18) * k;
-    const z = ((Math.sin(i * 37.3) * 0.5 + 0.5) * 30 - 15) * k;
-    if (Math.abs(z) < 3.6) continue;
-    kit.part(tuftGeo, i % 3 ? '#4f8a3c' : '#77b05a', g, x, 0.12, z);
+  const free = (x: number, z: number, r: number): boolean => keepOut.every(([kx, kz, kr]) => Math.hypot(x - kx, z - kz) > kr + r);
+  switch (kind) {
+    case 'road': buildRoad(kit, g, size); break;
+    case 'street': buildStreet(kit, g, size, free); break;
+    case 'field': buildField(kit, g, size, free); break;
   }
   return g;
+}
+
+type FreeFn = (x: number, z: number, r: number) => boolean;
+
+// ---------- Pomocnicze ----------
+
+/** Materiał toon z powtarzalną teksturą z canvasa (`px` × `px`), powtórzoną repX × repY razy na ścianie. */
+function patternMat(kit: Kit, px: number, draw: (c: CanvasRenderingContext2D, px: number) => void, repX: number, repY: number): THREE.Material {
+  const cv = document.createElement('canvas');
+  cv.width = px;
+  cv.height = px;
+  const ctx = cv.getContext('2d');
+  if (ctx) draw(ctx, px);
+  const t = kit.own(new THREE.CanvasTexture(cv));
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = THREE.RepeatWrapping;
+  t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(repX, repY);
+  t.anisotropy = 4;
+  return kit.own(new THREE.MeshToonMaterial({ map: t, gradientMap: kit.gradientMap }));
+}
+
+/** Deterministyczny „szum" 0..1 (jak w prototypie). */
+const hash = (i: number, a: number): number => Math.sin(i * a) * 0.5 + 0.5;
+
+/** Jezdnia wzdłuż X (|z| < 3) z krawężnikami i przerywaną linią środkową. */
+function carriageway(kit: Kit, g: THREE.Object3D, size: number, asphalt: string, gap?: [number, number]): void {
+  kit.box(size, 0.22, 6, asphalt, 0, -0.09, 0, g);
+  kit.box(size, 0.25, 0.35, '#a8a8a0', 0, 0, 3.15, g);
+  kit.box(size, 0.25, 0.35, '#a8a8a0', 0, 0, -3.15, g);
+  const half = size / 2;
+  const laneGeo = kit.own(new THREE.BoxGeometry(1.4, 0.23, 0.18));
+  for (let x = -half + 2; x < half - 1; x += 3) {
+    if (gap && x > gap[0] - 0.8 && x < gap[1] + 0.8) continue; // bez linii na przejściu dla pieszych
+    kit.part(laneGeo, '#f0f0e0', g, x, -0.08, 0);
+  }
+}
+
+/** Kępki trawy — deterministyczny rozrzut (gęstość: `per40` sztuk na 40 × 40 m), pomijane gdzie `skip`. */
+function tufts(kit: Kit, g: THREE.Object3D, size: number, per40: number, skip: (x: number, z: number) => boolean): void {
+  const tuftGeo = kit.own(new THREE.ConeGeometry(0.06, 0.25, 4));
+  const k = size / 40;
+  const count = Math.round(per40 * k * k);
+  for (let i = 0; i < count; i++) {
+    const x = (hash(i, 91.7) * 36 - 18) * k;
+    const z = (hash(i, 37.3) * 30 - 15) * k;
+    if (skip(x, z)) continue;
+    kit.part(tuftGeo, i % 3 ? '#4f8a3c' : '#77b05a', g, x, 0.12, z);
+  }
+}
+
+// ---------- 'road' ----------
+
+/** Trawa, droga wzdłuż osi X (|z| < 3), krawężniki, pasy, kępki trawy. */
+function buildRoad(kit: Kit, g: THREE.Object3D, size: number): void {
+  kit.box(size, 0.2, size, '#5f9a4a', 0, -0.1, 0, g);
+  carriageway(kit, g, size, '#55585f');
+  tufts(kit, g, size, 160, (_x, z) => Math.abs(z) < 3.6);
+}
+
+// ---------- 'street' ----------
+
+/**
+ * Ulica w mieście: jezdnia |z| < 3 (krawężniki, pasy, przejście dla pieszych przy x ≈ 13),
+ * chodniki z płyt 3.3 < |z| < 6, dalej plac z kostki. Latarnie, ławka i kosz przy |z| ≈ 5.7, |x| > 10.
+ */
+function buildStreet(kit: Kit, g: THREE.Object3D, size: number, free: FreeFn): void {
+  // plac — kostka granitowa w półcegłę (kafel tekstury = 1 m, kostki 0.25 × 0.5 m)
+  const cobble = patternMat(kit, 64, (c, px) => {
+    c.fillStyle = '#7f7a72';
+    c.fillRect(0, 0, px, px);
+    const tones = ['#9a958c', '#a39e94', '#928d84', '#aaa59b'];
+    const rows = 4;
+    const h = px / rows;
+    const w = px / 2;
+    for (let r = 0; r < rows; r++) {
+      const off = r % 2 ? w / 2 : 0;
+      for (let k = -1; k < 3; k++) {
+        c.fillStyle = tones[(r * 3 + k + 4) % tones.length];
+        c.fillRect(k * w + off + 1, r * h + 1, w - 2, h - 2);
+      }
+    }
+  }, size, size);
+  kit.part(new THREE.BoxGeometry(size, 0.2, size), cobble, g, 0, -0.1, 0);
+
+  // chodniki z płyt 1 × 0.9 m (wierzch y = 0.02)
+  const sideD = 2.7;
+  const slabs = patternMat(kit, 32, (c, px) => {
+    c.fillStyle = '#9c988f';
+    c.fillRect(0, 0, px, px);
+    c.fillStyle = '#c2beb4';
+    c.fillRect(1, 1, px - 2, px - 2);
+  }, size, sideD / 0.9);
+  for (const s of [-1, 1]) kit.part(new THREE.BoxGeometry(size, 0.22, sideD), slabs, g, 0, -0.09, s * (3.3 + sideD / 2));
+  // obrzeża chodnika od strony placu
+  for (const s of [-1, 1]) kit.box(size, 0.05, 0.12, '#8a867e', 0, 0.0, s * 6.04, g);
+
+  carriageway(kit, g, size, '#4f5258', [12.2, 14.8]);
+  // przejście dla pieszych (zebra) przy prawej krawędzi sceny
+  const zebra = kit.own(new THREE.BoxGeometry(2.6, 0.23, 0.45));
+  for (let i = 0; i < 6; i++) kit.part(zebra, '#f0f0e0', g, 13.5, -0.085, -2.5 + i * 1.0);
+  // studzienki
+  const drain = kit.own(new THREE.BoxGeometry(0.5, 0.23, 0.35));
+  for (const [dx, dz] of [[-9, 2.7], [6, -2.7], [-16, -2.7]] as const) kit.part(drain, '#2a2a2e', g, dx, -0.085, dz);
+
+  // latarnie
+  for (const [lx, lz] of [[-12, -5.75], [12, -5.75], [-17, 5.75], [17, 5.75]] as const) if (free(lx, lz, 0.3)) streetLamp(kit, g, lx, lz);
+  // ławki (tyłem do placu, przodem do jezdni) i kosze
+  if (free(15, -5.6, 0.9)) bench(kit, g, 15, -5.6, 0);
+  if (free(-14.5, 5.6, 0.9)) bench(kit, g, -14.5, 5.6, Math.PI);
+  for (const [bx, bz] of [[-10.6, 5.7], [11, -5.7]] as const) if (free(bx, bz, 0.3)) bin(kit, g, bx, bz);
+}
+
+function streetLamp(kit: Kit, g: THREE.Object3D, x: number, z: number): void {
+  const POST = '#3a4a44';
+  const s = Math.sign(z) || 1; // ramię nad jezdnię
+  kit.part(new THREE.CylinderGeometry(0.12, 0.14, 0.4, 8), POST, g, x, 0.2, z);
+  kit.part(new THREE.CylinderGeometry(0.06, 0.08, 4.6, 8), POST, g, x, 2.5, z);
+  kit.box(0.07, 0.07, 1.0, POST, x, 4.75, z - s * 0.45, g);
+  kit.box(0.28, 0.14, 0.5, '#2a2a2e', x, 4.7, z - s * 0.95, g);
+  kit.box(0.22, 0.04, 0.4, '#f4f0c0', x, 4.62, z - s * 0.95, g);
+}
+
+function bench(kit: Kit, g: THREE.Object3D, x: number, z: number, rotY: number): void {
+  const b = kit.joint(g, x, 0, z);
+  b.rotation.y = rotY;
+  for (let i = 0; i < 3; i++) kit.box(1.6, 0.04, 0.12, '#9c7644', 0, 0.45, -0.13 + i * 0.14, b); // siedzisko
+  kit.box(1.6, 0.25, 0.04, '#9c7644', 0, 0.75, -0.22, b).rotation.x = -0.15; // oparcie
+  for (const sx of [-0.7, 0.7]) {
+    kit.box(0.05, 0.45, 0.4, '#2a2a2e', sx, 0.22, 0, b);
+    kit.box(0.05, 0.4, 0.05, '#2a2a2e', sx, 0.65, -0.2, b);
+  }
+}
+
+function bin(kit: Kit, g: THREE.Object3D, x: number, z: number): void {
+  kit.part(new THREE.CylinderGeometry(0.22, 0.2, 0.75, 10), '#3a5a44', g, x, 0.375, z);
+  kit.part(new THREE.CylinderGeometry(0.24, 0.24, 0.06, 10), '#2a3a30', g, x, 0.78, z);
+}
+
+// ---------- 'field' ----------
+
+/** Plener: trawa (gęstsze kępki), żwirowa alejka wzdłuż X (|z| < 1), krzaki i kwiaty na obrzeżach. */
+function buildField(kit: Kit, g: THREE.Object3D, size: number, free: FreeFn): void {
+  kit.box(size, 0.2, size, '#649e4c', 0, -0.1, 0, g);
+  const gravel = patternMat(kit, 32, (c, px) => {
+    c.fillStyle = '#c2b28e';
+    c.fillRect(0, 0, px, px);
+    const tones = ['#a8987a', '#d4c6a4', '#b4a482'];
+    for (let i = 0; i < 70; i++) {
+      c.fillStyle = tones[i % 3];
+      c.fillRect(Math.floor(hash(i, 12.9) * px), Math.floor(hash(i, 78.2) * px), 2, 2);
+    }
+  }, size / 1.5, 2 / 1.5);
+  kit.part(new THREE.BoxGeometry(size, 0.21, 2), gravel, g, 0, -0.085, 0);
+  // obrzeża alejki
+  for (const s of [-1, 1]) kit.box(size, 0.22, 0.1, '#8a8a80', 0, -0.08, s * 1.04, g);
+
+  tufts(kit, g, size, 300, (_x, z) => Math.abs(z) < 1.4);
+  // ciemniejsze łaty trawy (bez wysokości — tylko kolor)
+  const patch = kit.own(new THREE.CircleGeometry(1, 7));
+  for (let i = 0; i < 14; i++) {
+    const x = (hash(i, 53.1) * 36 - 18) * (size / 40);
+    const z = (hash(i, 17.7) * 30 - 15) * (size / 40);
+    if (Math.abs(z) < 2) continue;
+    const m = kit.part(patch, i % 2 ? '#5a9244' : '#6aa652', g, x, 0.004 + i * 0.0003, z);
+    m.rotation.x = -Math.PI / 2;
+    m.scale.setScalar(1.2 + hash(i, 5.3) * 1.8);
+    m.castShadow = false;
+  }
+
+  // krzaki z kwiatami — tylko na obrzeżach (|x| > 11 lub |z| > 8.5)
+  const clusters: Array<[number, number]> = [
+    [-14, -10], [13.5, 9.5], [-12.5, 11], [15, -11.5], [-16.5, 3.5], [16.5, 2.5], [3, -12.5], [-5, 13], [8, 12.5], [-8, -12.5],
+  ];
+  const k = size / 40;
+  if (k > 1.2) for (const [cx, cz] of [[-24, -18], [22, 20], [-26, 16], [25, -14]] as const) clusters.push([cx, cz]);
+  clusters.forEach(([cx, cz], i) => { if (free(cx, cz, 1.6)) bushCluster(kit, g, cx, cz, i); });
+}
+
+function bushCluster(kit: Kit, g: THREE.Object3D, x: number, z: number, seed: number): void {
+  const bushGeo = kit.own(new THREE.IcosahedronGeometry(0.5, 0));
+  const n = 2 + (seed % 2);
+  for (let i = 0; i < n; i++) {
+    const a = seed * 1.7 + i * 2.2;
+    const r = 0.45 + hash(seed + i, 3.1) * 0.25;
+    const b = kit.part(bushGeo, i % 2 ? '#3f7a34' : '#4a8a3a', g, x + Math.cos(a) * 0.5, r * 0.6, z + Math.sin(a) * 0.5);
+    b.scale.set(r * 2, r * 1.5, r * 2);
+  }
+  const flowerGeo = kit.own(new THREE.BoxGeometry(0.1, 0.1, 0.1));
+  const stemGeo = kit.own(new THREE.BoxGeometry(0.02, 0.22, 0.02));
+  const colors = ['#f2c230', '#f4f4f4', '#d65aa0', '#e8641e'];
+  for (let i = 0; i < 7; i++) {
+    const a = seed * 2.3 + i * 0.9;
+    const d = 0.9 + hash(seed * 7 + i, 9.7) * 0.6;
+    const fx = x + Math.cos(a) * d;
+    const fz = z + Math.sin(a) * d;
+    kit.part(stemGeo, '#3f7a34', g, fx, 0.11, fz);
+    kit.part(flowerGeo, colors[(seed + i) % colors.length], g, fx, 0.24, fz);
+  }
 }

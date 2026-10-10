@@ -2,9 +2,8 @@ import { getDeps } from '../game/deps';
 import { MODE_LABEL, useGame, type GameMode } from '../game/store';
 
 const MODE_DESC: Record<GameMode, string> = {
-  learn: 'Podpowiedzi algorytmu na żywo, bez limitu czasu.',
-  practice: 'Bez podpowiedzi, limit czasu, pełny debrief.',
-  exam: 'Losowi pacjenci, wynik %, bez podpowiedzi.',
+  learn: 'Panel z algorytmem (klawisz H), stoper bez limitu czasu.',
+  practice: 'Bez podpowiedzi, limit czasu scenariusza, pełny debrief.',
 };
 
 export function MenuScreen() {
@@ -27,22 +26,12 @@ export function MenuScreen() {
 
         <h2 className="h-small">Tryb</h2>
         <div className="choice-list">
-          {(['learn', 'practice', 'exam'] as GameMode[]).map((m) => {
-            const disabled = m === 'exam';
-            return (
-              <button
-                key={m}
-                className={`choice ${mode === m ? 'active' : ''}`}
-                disabled={disabled}
-                onClick={() => setMode(m)}
-              >
-                <span className="choice-name">
-                  {MODE_LABEL[m]} {disabled && <span className="badge">wkrótce</span>}
-                </span>
-                <span className="choice-desc">{MODE_DESC[m]}</span>
-              </button>
-            );
-          })}
+          {(['learn', 'practice'] as GameMode[]).map((m) => (
+            <button key={m} className={`choice ${mode === m ? 'active' : ''}`} onClick={() => setMode(m)}>
+              <span className="choice-name">{MODE_LABEL[m]}</span>
+              <span className="choice-desc">{MODE_DESC[m]}</span>
+            </button>
+          ))}
         </div>
 
         <h2 className="h-small">Scenariusz</h2>

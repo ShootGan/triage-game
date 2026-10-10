@@ -35,7 +35,7 @@
 ### Sterowanie
 - Kliknięcie na ziemi → gracz idzie; kliknięcie pacjenta → podejście i otwarcie widoku badania.
 - Przeciąganie myszą obraca kamerę, kółko przybliża.
-- Skróty klawiszowe dla czynności i opasek (szybkość w trybie egzaminu).
+- Skróty klawiszowe: Q–I czynności, 1–4 kategorie triage, H podpowiedź, Esc zamyka panel.
 
 ## 3. Pętla rozgrywki
 
@@ -140,11 +140,12 @@ interface Patient {
 
 ## 6. Tryby
 
-| Tryb | Podpowiedzi | Schemat algorytmu | Ocena |
+| Tryb | Podpowiedzi | Czas | Ocena |
 |---|---|---|---|
-| **Nauka** | Tak | Podświetlany na żywo | Brak presji czasu |
-| **Ćwiczenie** | Nie | Dostępny w debriefie | Pełny debrief |
-| **Egzamin** | Nie | Nie | Wynik %, limit czasu, losowi pacjenci |
+| **Nauka** | Panel „Algorytm" (zwijany, klawisz H) | Stoper, bez limitu | Pełny debrief |
+| **Ćwiczenie** | Nie | Stoper, limit scenariusza | Pełny debrief |
+
+Czas = rzeczywisty stoper od wjazdu na miejsce (czynności nie doliczają sztucznych sekund). Tryb egzaminu — zrezygnowano.
 
 ## 7. Ocena i debrief
 
@@ -157,11 +158,37 @@ interface Patient {
 
 ## 8. Scenariusze
 
-1. **Wypadek autobusu szkolnego** (MVP) — 10–12 osób, w tym 3–4 dzieci; kierowca, opiekunowie, kierowca drugiego auta.
-2. **Wybuch / zawalenie w hali** — urazy wielonarządowe, zasypani.
-3. **Panika na koncercie** — zmiażdżenia, dużo lekko rannych (test komendy „chodzący do mnie").
+1. **Wypadek autobusu szkolnego** (MVP) — 12 osób, w tym ok. 5 dzieci; teren: droga.
+2. **Karambol na drodze ekspresowej** — samochody + ciężarówka, rodzina z niemowlęciem (reguła niemowlęcia w JumpSTART); teren: droga.
+3. **Wybuch gazu w kamienicy** — zawalona fasada, gruzowisko, oparzenia, zmiażdżenia; teren: ulica.
+4. **Panika na koncercie plenerowym** — scena, barierki, zmiażdżenia, dużo chodzących; teren: plener.
+5. **Zawalenie trybuny na festynie szkolnym** — głównie dzieci (pełne pokrycie JumpSTART); teren: plener.
 
-Scenariusz = plik JSON (lista pacjentów + układ sceny + parametry czasu) → w przyszłości edytor bez programowania.
+Scenariusz = plik TS (`src/scenarios/*.ts`, typy w `types.ts`) + test; ogólne reguły poprawności w `validate.ts`. W przyszłości edytor bez programowania.
+
+### 8.1 Losowość pacjentów (projekt)
+
+**Cel:** każda rozgrywka to inna sytuacja, ale zawsze spójna klinicznie i poprawna względem algorytmu.
+
+**Archetyp** = przypadek kliniczny z widełkami, nie konkretny pacjent:
+- grupa wiekowa (niemowlę / dziecko / nastolatek / dorosły / senior), mechanizmy urazu (komunikacyjny, zmiażdżenie, wybuch, upadek, oparzenie…),
+- widełki parametrów (np. oddechy 32–40, CRT 1–2 s, AVPU A), zamierzona kategoria i kryterium rozstrzygające,
+- pule opisów obrażeń i wypowiedzi, dozwolone pozy, ew. masywny krwotok.
+- Źródło: ręcznie ułożeni pacjenci z 5 scenariuszy (~60) → przerobieni na archetypy.
+
+**Scenariusz** = scena + miejsca + reguły:
+- teren, rekwizyty, odprawa (bez podawania dokładnej liczby poszkodowanych),
+- **miejsca** na scenie z kontekstem („przy autobusie", „pod gruzem", „na chodniku") i dozwolonymi pozami,
+- dozwolone mechanizmy urazu, liczba pacjentów (np. 10–14).
+
+**Generator** (deterministyczny, z ziarna):
+1. losuje liczbę pacjentów i rozkład kategorii — **realistyczny**, jak w prawdziwym zdarzeniu masowym (dużo zielonych, mało czarnych), bez poziomów trudności,
+2. dobiera archetypy pasujące do mechanizmów scenariusza, losuje parametry w widełkach, wygląd (płeć, kolor skóry, fryzura, ubranie) i miejsce,
+3. **weryfikuje**: silnik triage musi dać zamierzoną kategorię, `validate.ts` całą scenę — inaczej losuje ponownie.
+
+**Kod zadania** = ziarno losowania, np. `AUTOBUS-4F7K`: widoczny w odprawie i debriefie, można go wpisać w menu → identyczna sytuacja (powtórka, to samo zadanie dla całej grupy).
+
+**Wzorce:** każdy scenariusz zachowuje jeden ręcznie ułożony zestaw pacjentów — do testów i dostępny w grze pod stałym kodem (np. `AUTOBUS-WZOR`).
 
 ## 9. Architektura
 
@@ -184,18 +211,18 @@ Zasada: `engine/` nie zna Three.js ani Reacta — czysta logika, w pełni testow
 ## 10. Etapy
 
 **MVP**
-- [ ] Szkielet projektu (Vite + Three.js + React), pipeline pixel art z prototypu
-- [ ] Generator postaci i póz (przeniesiony z prototypu), scena „autobus"
-- [ ] Silnik START + JumpSTART z testami
-- [ ] Scenariusz „autobus" (10–12 pacjentów)
-- [ ] Panel badania + opaski + zegar
-- [ ] Debrief
+- [x] Szkielet projektu (Vite + Three.js + React), pipeline pixel art z prototypu
+- [x] Generator postaci i póz (przeniesiony z prototypu), scena „autobus"
+- [x] Silnik START + JumpSTART z testami
+- [x] Scenariusz „autobus" (12 pacjentów)
+- [x] Panel badania + opaski + zegar
+- [x] Debrief
+- [ ] 4 kolejne scenariusze (w toku, gałąź `scenariusze`)
 
 **Etap 2**
 - [ ] SALT
 - [ ] Pogarszanie stanu, re-triage
 - [ ] Dźwięk (oddechy, otoczenie, krzyki)
-- [ ] Tryb egzaminu
 
 **Etap 3**
 - [ ] Kolejne scenariusze, edytor scenariuszy

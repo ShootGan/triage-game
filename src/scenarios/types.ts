@@ -1,4 +1,7 @@
 import type { Vitals } from '../engine/triage';
+import type { PropKind } from './propSizes';
+
+export type { PropKind } from './propSizes';
 
 /** Wygląd postaci — parametry generatora proceduralnego (src/world). */
 export interface PatientAppearance {
@@ -38,10 +41,18 @@ export interface ScenarioPatient {
 }
 
 export interface ScenarioProp {
-  kind: 'bus' | 'car' | 'glass';
+  kind: PropKind;
   position: [number, number];
   rotation: number;
 }
+
+/**
+ * Otoczenie:
+ * - 'road'   — trawa + droga wzdłuż osi X (|z| < 3) z krawężnikami (domyślne, jak w scenariuszu autobusu)
+ * - 'street' — ulica w mieście: jezdnia wzdłuż osi X (|z| < 3), chodniki z płyt 3 < |z| < 6, dalej bruk/plac
+ * - 'field'  — plener: trawa bez drogi, utwardzona alejka wzdłuż osi X (|z| < 1)
+ */
+export type TerrainKind = 'road' | 'street' | 'field';
 
 export interface Scenario {
   id: string;
@@ -50,6 +61,8 @@ export interface Scenario {
   briefing: string;
   /** Limit czasu gry w sekundach (czas gry, nie rzeczywisty). */
   timeLimitSec: number;
+  /** Otoczenie (domyślnie 'road'). */
+  terrain?: TerrainKind;
   /** Punkt zbiórki dla chodzących (x, z). */
   collectionPoint: [number, number];
   props: ScenarioProp[];

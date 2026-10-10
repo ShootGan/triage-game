@@ -7,12 +7,11 @@ import type { Scenario, ScenarioPatient } from '../scenarios/types';
 import { getDeps } from './deps';
 
 export type Phase = 'menu' | 'briefing' | 'playing' | 'debrief';
-export type GameMode = 'learn' | 'practice' | 'exam';
+export type GameMode = 'learn' | 'practice';
 
 export const MODE_LABEL: Record<GameMode, string> = {
   learn: 'Nauka',
   practice: 'Ćwiczenie',
-  exam: 'Egzamin',
 };
 
 export interface GameState {
@@ -114,7 +113,6 @@ export const useGame = create<GameState>()((set, get) => {
     ...freshRound,
 
     setMode(mode) {
-      if (mode === 'exam') return; // „wkrótce"
       set({ mode });
     },
 

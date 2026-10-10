@@ -6,11 +6,15 @@ import { PixelPipeline, type PixelPipelineOptions } from './pixelPipeline';
 import { CameraRig } from './camera';
 import { Kit } from '../world/materials';
 import { buildTerrain } from '../world/terrain';
+import { PROP_HALF_SIZE } from '../scenarios/propSizes';
 import { buildCollectionPoint, buildMedBag, buildProp, insideFootprint, propFootprint, type Footprint } from '../world/props';
 import { createHuman, type Human } from '../world/human';
 import { applyPose, placeHuman, walkCycle, type LyingBackOptions, type PoseName } from '../world/poses';
 
-export type GameViewOptions = PixelPipelineOptions;
+export type GameViewOptions = PixelPipelineOptions & {
+  /** Tylko do debugowania (render-demo): rysuje obrysy rekwizytów (PROP_HALF_SIZE) na ziemi. */
+  debugFootprints?: boolean;
+};
 
 const TAG_COLOR: Record<TriageCategory, string> = {
   red: '#d6303a',
@@ -31,6 +35,8 @@ const FOCUS_ELEV = 22;
 const CLICK_SLOP_PX = 5;
 /** Przesunięcie kadru przy badaniu (ułamek połowy szerokości widoku) — miejsce na panel po prawej. */
 const FOCUS_PANEL_SHIFT = 0.4;
+/** Przesunięcie kadru przeglądu w dół (ułamek połowy wysokości widoku) — miejsce na pasek HUD. */
+const OVERVIEW_HUD_SHIFT = 0.12;
 const POOL_COLOR = '#7a1010';
 const POOL_START = 0.7;
 const POOL_MAX = 1.6;
@@ -161,12 +167,22 @@ export class GameView implements IGameView {
     for (const p of [...scenario.patients.map((x) => x.position), ...scenario.props.map((x) => x.position), scenario.collectionPoint]) {
       maxAbs = Math.max(maxAbs, Math.abs(p[0]), Math.abs(p[1]));
     }
-    buildTerrain(this.kit, scene, Math.max(80, Math.ceil((maxAbs + 30) / 10) * 20));
+    // dekoracje terenu omijają pacjentów, rekwizyty i punkt zbiórki
+    const keepOut: Array<[number, number, number]> = [
+      ...scenario.patients.map((p): [number, number, number] => [p.position[0], p.position[1], 1.6]),
+      ...scenario.props.map((p): [number, number, number] => {
+        const f = PROP_HALF_SIZE[p.kind];
+        return [p.position[0], p.position[1], f ? Math.hypot(f[0], f[1]) + 0.5 : 1.5];
+      }),
+      [scenario.collectionPoint[0], scenario.collectionPoint[1], 4],
+    ];
+    buildTerrain(this.kit, scene, Math.max(80, Math.ceil((maxAbs + 30) / 10) * 20), scenario.terrain ?? 'road', keepOut);
     for (const pr of scenario.props) {
       buildProp(this.kit, scene, pr.kind, pr.position[0], pr.position[1], pr.rotation);
       const f = propFootprint(pr.kind, pr.position[0], pr.position[1], pr.rotation);
       if (f) this.footprints.push(f);
     }
+    if (opts.debugFootprints) this.drawFootprints();
 
     // Punkt zbiórki — plandeka mieści wszystkich chodzących w siatce
     const walkers = scenario.patients.filter((p) => p.vitals.canWalk).length;
@@ -200,6 +216,24 @@ export class GameView implements IGameView {
   }
 
   // ---------- Budowa ----------
+
+  /** Debug: żółte prostokąty obrysów (ten sam obrys, którego używa planowanie tras). */
+  private drawFootprints(): void {
+    const mat = this.kit.own(new THREE.LineBasicMaterial({ color: '#f2e030', depthTest: false }));
+    for (const f of this.footprints) {
+      const c = Math.cos(f.rotY);
+      const s = Math.sin(f.rotY);
+      // lokalny (lx, lz) → świat: x = c·lx + s·lz, z = −s·lx + c·lz (rotacja Y jak w Object3D)
+      const pts = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => {
+        const lx = a * f.halfW;
+        const lz = b * f.halfD;
+        return new THREE.Vector3(f.x + c * lx + s * lz, 0.06, f.z - s * lx + c * lz);
+      });
+      const line = new THREE.LineLoop(this.kit.own(new THREE.BufferGeometry().setFromPoints(pts)), mat);
+      line.renderOrder = 10;
+      this.scene.add(line);
+    }
+  }
 
   private computeCentre(): void {
     const ps = this.scenario.patients;
@@ -456,7 +490,13 @@ export class GameView implements IGameView {
     // punkt zbiórki też w kadrze — chodzący nie znikają z przeglądu
     const [cx, cz] = this.scenario.collectionPoint;
     pts.push(new THREE.Vector3(cx, 0, cz), new THREE.Vector3(cx, 1.2, cz));
-    const f = this.rig.frame(pts, this.rig.goal.angle, OVERVIEW_ELEV, 1.3);
+    const f = this.rig.frame(pts, this.rig.goal.angle, OVERVIEW_ELEV, 1.4);
+    // Górny pasek HUD zasłania górę kadru — przesuwamy kadr tak, by scena leżała niżej na ekranie
+    // (cel kamery odsunięty od kamery po ziemi; ~0,6 = sin kąta patrzenia ≈ 38°).
+    const a = this.rig.goal.angle;
+    const d = (f.zoom * OVERVIEW_HUD_SHIFT) / 0.62;
+    f.target.x -= Math.cos(a) * d;
+    f.target.z -= Math.sin(a) * d;
     this.rig.setGoal(f.target, f.zoom, OVERVIEW_ELEV);
   }
 
