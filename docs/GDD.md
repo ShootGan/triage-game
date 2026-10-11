@@ -230,6 +230,11 @@ Zasada: `engine/` nie zna Three.js ani Reacta — czysta logika, w pełni testow
 - [ ] Kolejne scenariusze, edytor scenariuszy
 - [ ] Statystyki postępów, ranking
 
+### Wydania / wersjonowanie
+- Wersje zgodne z [SemVer](https://semver.org/lang/pl/); bieżąca w `package.json`, widoczna w stopce menu.
+- Historia zmian: [`CHANGELOG.md`](../CHANGELOG.md) (Keep a Changelog). Proces wydania opisany w `README.md`
+  (podbicie wersji, przeniesienie wpisów z „Unreleased", tag `vX.Y.Z`; starsze tagi: `v0.1-mvp` = 0.1.0, `v0.2` = 0.2.0).
+
 ## 11. Otwarte pytania
 
 - Kto zweryfikuje merytorycznie algorytmy i przypadki?
