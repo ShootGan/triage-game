@@ -70,8 +70,10 @@ export interface ScenarioProp {
  * - 'highway' — autostrada: jezdnia −5,6 < z < 4,6 (2 pasy + pas awaryjny przy z > 1,9), pas rozdziału z trawą
  *               i podwójną stalową barierą przy z ≈ −7,5, przeciwna jezdnia z < −9,4; za poboczem trawa,
  *               bariera na poboczu (z ≈ 5,1) tylko przy |x| > 11
+ * - 'snow'   — zima: odśnieżony plac/parking przed halą (−8 < z < 6) i droga dojazdowa (6 < z < 12) wzdłuż X,
+ *               dalej śnieg, pryzmy odgarniętego śniegu, ośnieżone drzewa i latarnie
  */
-export type TerrainKind = 'road' | 'street' | 'field' | 'highway';
+export type TerrainKind = 'road' | 'street' | 'field' | 'highway' | 'snow';
 
 export interface Scenario {
   id: string;

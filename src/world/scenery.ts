@@ -7,8 +7,12 @@ const hash = (i: number, a: number): number => Math.sin(i * a) * 0.5 + 0.5;
 
 const LEAVES = ['#3f7a34', '#4a8a3a', '#56963f', '#3a6e30'];
 
-/** Deciduous tree ~4–6 m: trunk and a lumpy low-poly crown. */
-export function tree(kit: Kit, g: THREE.Object3D, x: number, z: number, seed: number): void {
+/** Snow colours shared by winter scenery (terrain 'snow', hall props). */
+export const SNOW = '#f2f6fa';
+export const SNOW_SHADE = '#dfe7ef';
+
+/** Deciduous tree ~4–6 m: trunk and a lumpy low-poly crown. `snow`: bare grey-brown winter crown capped with snow. */
+export function tree(kit: Kit, g: THREE.Object3D, x: number, z: number, seed: number, snow = false): void {
   const h = 1.6 + hash(seed, 3.3) * 0.9;
   kit.box(0.3, h, 0.3, '#6a4a30', x, h / 2, z, g);
   const crown = kit.own(new THREE.IcosahedronGeometry(1, 0));
@@ -16,18 +20,32 @@ export function tree(kit: Kit, g: THREE.Object3D, x: number, z: number, seed: nu
   for (let i = 0; i < n; i++) {
     const a = seed * 1.9 + i * 2.1;
     const r = 1.0 + hash(seed + i, 7.7) * 0.6;
-    const m = kit.part(crown, LEAVES[(seed + i) % LEAVES.length], g, x + Math.cos(a) * 0.6, h + 0.9 + i * 0.35, z + Math.sin(a) * 0.6);
+    const cx = x + Math.cos(a) * 0.6;
+    const cy = h + 0.9 + i * 0.35;
+    const cz = z + Math.sin(a) * 0.6;
+    const m = kit.part(crown, snow ? (i % 2 ? '#7a6a5e' : '#8a7a6c') : LEAVES[(seed + i) % LEAVES.length], g, cx, cy, cz);
     m.scale.set(r, r * 0.85, r);
     m.rotation.y = a;
+    if (snow) {
+      // flattened cap sitting on the upper half of the lump (offset up, so no shared faces)
+      const cap = kit.part(crown, SNOW, g, cx, cy + r * 0.38, cz);
+      cap.scale.set(r * 0.8, r * 0.45, r * 0.8);
+      cap.rotation.y = a + 0.4;
+    }
   }
 }
 
-/** Conifer ~5 m: three stacked cones. */
-export function pine(kit: Kit, g: THREE.Object3D, x: number, z: number, seed: number): void {
+/** Conifer ~5 m: three stacked cones. `snow`: the upper half of each tier is covered with snow. */
+export function pine(kit: Kit, g: THREE.Object3D, x: number, z: number, seed: number, snow = false): void {
   const s = 0.85 + hash(seed, 5.1) * 0.35;
   kit.box(0.24, 1.0 * s, 0.24, '#5a3e28', x, 0.5 * s, z, g);
   for (let i = 0; i < 3; i++) {
-    kit.part(new THREE.ConeGeometry((1.5 - i * 0.4) * s, 1.8 * s, 7), i % 2 ? '#2f5e30' : '#2a5429', g, x, (1.4 + i * 1.1) * s, z);
+    const r = (1.5 - i * 0.4) * s;
+    const h = 1.8 * s;
+    const y = (1.4 + i * 1.1) * s;
+    kit.part(new THREE.ConeGeometry(r, h, 7), i % 2 ? '#2f5e30' : '#2a5429', g, x, y, z);
+    // half-size cone with the same slope, its apex 6 cm above the tier's: a parallel shell over the top half
+    if (snow) kit.part(new THREE.ConeGeometry(r * 0.5, h * 0.5, 7), SNOW, g, x, y + h * 0.25 + 0.06, z);
   }
 }
 

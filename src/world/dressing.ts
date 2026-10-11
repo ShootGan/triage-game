@@ -140,7 +140,8 @@ export function buildDust(kit: Kit, parent: THREE.Object3D, x: number, z: number
   const g = propGroup(parent, x, z, rotY);
   const smoke = variant === 'smoke';
   const mat = kit.own(new THREE.MeshToonMaterial({
-    color: smoke ? '#4a4a52' : '#c9c0b0',
+    // 'snow' — powdery snow cloud over a collapse in winter
+    color: smoke ? '#4a4a52' : variant === 'snow' ? '#eef3f8' : '#c9c0b0',
     gradientMap: kit.gradientMap,
     transparent: true,
     opacity: smoke ? 0.6 : 0.32,

@@ -30,6 +30,7 @@ const PREFIX: Record<string, string> = {
   concert: 'KONCERT',
   festival: 'FESTYN',
   buses: 'ZDERZENIE',
+  hall: 'HALA',
 };
 
 /** Deterministyczne „losowe" kody do testu właściwości. */

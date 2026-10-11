@@ -25,11 +25,14 @@ export type PropKind =
   | 'stall'      // festival stall with awning 2.4 × 1.4 m (variant 'balloons' | 'food')
   | 'litter'     // cups, bottles, lost items — flat, no footprint
   | 'belongings' // scattered backpacks, jackets, books — flat, no footprint
-  | 'dust'       // dust cloud (variant 'smoke' — dark rising column) — no footprint
+  | 'dust'       // dust cloud (variant 'smoke' — dark rising column, 'snow' — white powder) — no footprint
   | 'cones'      // row of 4 traffic cones along local z (~3 m), closing a lane — no footprint
   | 'extrication' // firefighters cutting a car open (placed on the car's position/rotation) — no footprint
   | 'tenement'    // intact neighbouring tenement 12 × 8 m (variant: palette, floors, damaged side)
-  | 'firefighter'; // single PSP firefighter (variant 'kneel' | 'point' | 'stand')
+  | 'firefighter' // single PSP firefighter (variant 'kneel' | 'point' | 'stand')
+  | 'hall'        // exhibition hall 28 × 10 m (~6.5 m) with a snow-collapsed roof section; open side faces +z
+  | 'roofpanel'   // fallen, bent roof sandwich panel with snow on it, ~2.6 × 1.6 m
+  | 'girder';     // bent fragment of a steel roof truss lying on the ground, ~3.6 × 0.6 m
 
 export const PROP_HALF_SIZE: Record<PropKind, [number, number] | null> = {
   bus: [5.2, 1.5],
@@ -58,6 +61,9 @@ export const PROP_HALF_SIZE: Record<PropKind, [number, number] | null> = {
   extrication: null,
   tenement: [6, 4],
   firefighter: [0.4, 0.4],
+  hall: [14, 5],
+  roofpanel: [1.4, 1.0],
+  girder: [1.8, 0.35],
 };
 
 /** Driver's seat of a car (front left: local x −0.1, z −0.4), facing the car's front. */
