@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Highway terrain for the pile-up scenario: two lanes plus a hard shoulder, a grassed median with
+  a double steel guardrail, the opposite carriageway, roadside guardrails, a kilometre post and an A2 sign.
+- Vehicle variants: sedan, hatchback, SUV and van, crashed versions (crumpled front, cracked
+  windscreen, blinking hazard lights), an overturned car and a jackknifed truck.
+- ZRM ambulance modelled on current Polish ambulances (high-roof van, red/blue livery, roof chevrons,
+  mirrored "AMBULANS" on the hood, alternating blue lights) — for now only in the pile-up scenario.
+- Crash details: spilled cargo, skid marks, fuel spill and warning triangles.
+- "Pojazdy" scene on the render demo page for reviewing models.
+
+### Changed
+
+- Pile-up scenario renamed to "Karambol na autostradzie"; the briefing no longer mentions fog.
+
+### Fixed
+
+- Clinical contradictions from the medical review: an apnoeic patient described as breathing,
+  early burn shock explained by an associated internal injury, a forearm fracture used to explain
+  inability to walk, and a remark that contradicted the patient's pose.
+- Flickering (z-fighting) on vehicle models caused by coplanar faces.
+
 ## [0.3.0] - 2026-10-11
 
 ### Added
