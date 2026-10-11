@@ -16,11 +16,17 @@ export const ACTION_LABEL: Record<ExamActionId, string> = {
   bleeding: 'Opaska uciskowa (krwotok)',
 };
 
+/** Pulse button/result label: radial for adults (START), peripheral for children, brachial for infants. */
+export function pulseLabel(appearsChild: boolean, ageYears: number): string {
+  if (!appearsChild) return 'Tętno promieniowe';
+  return ageYears < 1 ? 'Tętno obwodowe (ramienne)' : 'Tętno obwodowe';
+}
+
 /** Koszt czynności w sekundach czasu gry (pełne wykonanie). */
 export const ACTION_SECONDS: Record<ExamActionId, number> = {
   breathing: 10,
   airway: 5,
-  'rescue-breaths': 10,
+  'rescue-breaths': 15,
   pulse: 5,
   crt: 3,
   commands: 5,
@@ -123,8 +129,8 @@ function avpuResult(v: Vitals): Outcome {
       return { text: 'AVPU: V — reaguje na głos' };
     case 'P':
       return v.painResponseAppropriate
-        ? { text: 'AVPU: P — reaguje na ból (adekwatnie: lokalizuje)' }
-        : { text: 'AVPU: P — reaguje na ból nieadekwatnie (ułożenie wyprostne)' };
+        ? { text: 'AVPU: P — reaguje na ból adekwatnie (lokalizuje / odsuwa bodziec)' }
+        : { text: 'AVPU: P — reakcja na ból nieadekwatna (jęk, ruchy bezcelowe, ułożenie zgięciowe lub wyprostne)' };
     case 'U':
       return { text: 'AVPU: U — nie reaguje' };
   }
@@ -147,12 +153,21 @@ function outcome(p: ScenarioPatient, s: PatientExamState, action: ExamActionId):
       return airwayResult(p, s);
     case 'rescue-breaths':
       return rescueBreathsResult(p, s);
-    case 'pulse':
+    case 'pulse': {
+      // Pulse is checked on an uninjured limb — a bleeding limb could hide a pulse (Romig).
+      const site = p.majorBleeding ? ' (na kończynie bez urazu)' : '';
       return {
-        text: `${p.appearsChild ? 'Tętno obwodowe' : 'Tętno promieniowe'}: ${v.peripheralPulse ? 'wyczuwalne' : 'niewyczuwalne'}`,
+        text: `${pulseLabel(p.appearsChild, p.ageYears)}${site}: ${v.peripheralPulse ? 'wyczuwalne' : 'niewyczuwalne'}`,
       };
-    case 'crt':
-      return { text: `Nawrót kapilarny: ${num(v.crtSeconds)} s` };
+    }
+    case 'crt': {
+      const b = v.breathing;
+      const dead = !b.spontaneous && !b.afterAirway && !b.afterRescueBreaths && !v.peripheralPulse;
+      if (dead) return { text: 'Nawrót kapilarny: brak — nieoznaczalny' };
+      // Ages 9–12 may be triaged with START too, where CRT does count.
+      const note = p.appearsChild && p.ageYears < 9 ? ' (JumpSTART nie używa CRT — rozstrzyga tętno obwodowe)' : '';
+      return { text: `Nawrót kapilarny: ${num(v.crtSeconds)} s${note}` };
+    }
     case 'commands':
       return commandsResult(p);
     case 'avpu':

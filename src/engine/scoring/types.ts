@@ -5,6 +5,8 @@ import type { DecisionStep, Protocol, TriageCategory } from '../triage';
  * - `correct`   — właściwy kolor i wymagane kroki algorytmu wykonane przed oznaczeniem;
  * - `procedure` — kolor właściwy, ale przed oznaczeniem pominięto krok algorytmu, który mógł
  *                 zmienić kategorię (np. CZARNY bez udrożnienia dróg oddechowych) — liczony jako błąd;
+ *                 also a correct colour without the assessment that decides it, or with major
+ *                 bleeding left uncontrolled;
  * - `over` / `under` — kolor zawyżony / zaniżony;
  * - `untagged`  — brak opaski.
  */
@@ -24,8 +26,12 @@ export interface PatientDebrief {
   expected: TriageCategory;
   given: TriageCategory | null;
   verdict: Verdict;
+  /** BLACK given to a patient with a chance of survival. Optional for compatibility with mock scores. */
+  critical?: boolean;
   /** Poprawna ścieżka algorytmu (z silnika triage). */
   steps: DecisionStep[];
+  /** Ages 9–12: the other algorithm's result, also accepted (only when its colour differs). */
+  alternative?: { protocol: Protocol; expected: TriageCategory; steps: DecisionStep[] };
   /** Czynności wykonane przez gracza (w kolejności). */
   actionsDone: ExamActionId[];
   /**
@@ -35,6 +41,8 @@ export interface PatientDebrief {
   actionsBeforeTag?: number | null;
   /** Pominięte czynności ratujące życie, np. „Nie zatamowano masywnego krwotoku". */
   missedLifesaving: string[];
+  /** Teaching notes that are not errors (e.g. pregnancy, infant injury criteria). */
+  notes?: string[];
   /** Krótkie wyjaśnienie błędu po polsku (puste, gdy poprawnie). */
   explanation: string;
 }
@@ -44,6 +52,8 @@ export interface GameScore {
   correct: number;
   /** Kolor poprawny, niepełna procedura (liczone jako błąd). */
   procedure: number;
+  /** Critical errors: BLACK for a patient with a chance of survival (also counted in `under`). */
+  critical?: number;
   over: number;
   under: number;
   untagged: number;

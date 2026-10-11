@@ -1,5 +1,18 @@
 import type { DecisionStep, TriageCategory, TriageResult, Vitals } from './types';
 
+/**
+ * "Significant external injury" in a child who can't walk because of age (L. Romig, JumpSTART):
+ * any of these → YELLOW, none → GREEN.
+ */
+export const INFANT_SIGNIFICANT_INJURIES = [
+  'głębokie rany penetrujące',
+  'ciężkie krwawienie',
+  'rozległe oparzenia',
+  'amputacje',
+  'wzdęty, tkliwy brzuch',
+  'mnogie zasinienia',
+] as const;
+
 /** JumpSTART — dzieci (ok. 1–8 lat lub „wygląda na dziecko"). */
 export function triageJumpStart(v: Vitals): TriageResult {
   const steps: DecisionStep[] = [];

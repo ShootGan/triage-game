@@ -54,7 +54,7 @@ describe('stałe', () => {
       expect(ACTION_SECONDS[id]).toBeGreaterThan(0);
     }
     expect(ACTION_LABEL.breathing).toBe('Oceń oddech');
-    expect(ACTION_SECONDS).toMatchObject({ breathing: 10, airway: 5, 'rescue-breaths': 10, pulse: 5, crt: 3, commands: 5, avpu: 5, bleeding: 10 });
+    expect(ACTION_SECONDS).toMatchObject({ breathing: 10, airway: 5, 'rescue-breaths': 15, pulse: 5, crt: 3, commands: 5, avpu: 5, bleeding: 10 });
   });
 
   it('stan początkowy', () => {
@@ -144,7 +144,7 @@ describe('5 oddechów ratowniczych', () => {
 
   it('dziecko z tętnem: oddech wraca', () => {
     const { state, result } = run(child({ afterRescueBreaths: true, rate: 12 }), ['airway', 'rescue-breaths']);
-    expect(result).toEqual({ action: 'rescue-breaths', text: 'Po 5 oddechach ratowniczych pojawił się oddech własny, 12/min', seconds: 10 });
+    expect(result).toEqual({ action: 'rescue-breaths', text: 'Po 5 oddechach ratowniczych pojawił się oddech własny, 12/min', seconds: 15 });
     expect(state.rescueBreathsGiven).toBe(true);
   });
 
@@ -157,7 +157,7 @@ describe('5 oddechów ratowniczych', () => {
   it('dorosły: wynik ujawniony, z adnotacją, że to nie START (pełny koszt czasu)', () => {
     const { state, result } = run(apnoeic(), ['airway', 'rescue-breaths']);
     expect(result.text).toBe('Brak oddechu po 5 oddechach ratowniczych (oddechy ratownicze nie są elementem algorytmu START)');
-    expect(result.seconds).toBe(10);
+    expect(result.seconds).toBe(15);
     expect(state.rescueBreathsGiven).toBe(true);
   });
 
@@ -188,7 +188,7 @@ describe('tętno, CRT', () => {
   it('pacjent w bezdechu — wyniki zgodne z parametrami', () => {
     const p = apnoeic({}, { peripheralPulse: false, crtSeconds: 6 });
     expect(run(p, ['pulse']).result.text).toBe('Tętno promieniowe: niewyczuwalne');
-    expect(run(p, ['crt']).result.text).toBe('Nawrót kapilarny: 6 s');
+    expect(run(p, ['crt']).result.text).toBe('Nawrót kapilarny: brak — nieoznaczalny');
     expect(run(p, ['commands']).result.text).toBe('Nie reaguje na głos ani na polecenia');
     expect(run(p, ['avpu']).result.text).toBe('AVPU: U — nie reaguje');
   });
@@ -218,9 +218,9 @@ describe('AVPU', () => {
   it.each([
     [{ avpu: 'A' } as VitalsOver, 'AVPU: A — przytomny'],
     [{ avpu: 'V' } as VitalsOver, 'AVPU: V — reaguje na głos'],
-    [{ avpu: 'P', painResponseAppropriate: true } as VitalsOver, 'AVPU: P — reaguje na ból (adekwatnie: lokalizuje)'],
-    [{ avpu: 'P', painResponseAppropriate: false } as VitalsOver, 'AVPU: P — reaguje na ból nieadekwatnie (ułożenie wyprostne)'],
-    [{ avpu: 'P' } as VitalsOver, 'AVPU: P — reaguje na ból nieadekwatnie (ułożenie wyprostne)'],
+    [{ avpu: 'P', painResponseAppropriate: true } as VitalsOver, 'AVPU: P — reaguje na ból adekwatnie (lokalizuje / odsuwa bodziec)'],
+    [{ avpu: 'P', painResponseAppropriate: false } as VitalsOver, 'AVPU: P — reakcja na ból nieadekwatna (jęk, ruchy bezcelowe, ułożenie zgięciowe lub wyprostne)'],
+    [{ avpu: 'P' } as VitalsOver, 'AVPU: P — reakcja na ból nieadekwatna (jęk, ruchy bezcelowe, ułożenie zgięciowe lub wyprostne)'],
     [{ avpu: 'U' } as VitalsOver, 'AVPU: U — nie reaguje'],
   ])('%o → %s', (v, text) => {
     expect(run(patient(v), ['avpu']).result).toEqual({ action: 'avpu', text, seconds: 5 });

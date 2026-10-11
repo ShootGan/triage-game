@@ -18,7 +18,7 @@ const VERDICT_LABEL: Record<Verdict, string> = {
 /** Pełne znaczenie werdyktu (legenda, podpowiedź na plakietce). */
 const VERDICT_HINT: Record<Verdict, string> = {
   correct: 'kolor i kroki algorytmu przed opaską',
-  procedure: 'kolor poprawny, niepełna procedura (błąd)',
+  procedure: 'kolor poprawny, ale bez wymaganej oceny lub czynności (błąd)',
   over: 'kolor zawyżony',
   under: 'kolor zaniżony',
   untagged: 'brak opaski',
@@ -89,6 +89,7 @@ export function DebriefScreen() {
           <div className="stats">
             <Stat label="Poprawne" value={`${score.correct} / ${score.total}`} cls="ok" />
             <Stat label="Kolor OK, niepełna procedura" value={score.procedure ?? 0} cls="procedure" />
+            <Stat label="Błędy krytyczne (CZARNY u żywego)" value={score.critical ?? 0} cls="under" />
             <Stat label="Zawyżone (overtriage)" value={score.over} cls="over" />
             <Stat label="Zaniżone (undertriage)" value={score.under} cls="under" />
             <Stat label="Nieoznaczone" value={score.untagged} />
@@ -117,6 +118,15 @@ export function DebriefScreen() {
             </span>
           ))}
         </div>
+
+        {score.patients.some((p) => p.protocol === 'JumpSTART' || p.alternative) && (
+          <p className="debrief-note muted">
+            JumpSTART: badania (Vassallo i wsp., Emerg Med J 2022; Stefani i wsp., Prehosp Disaster Med 2022) pokazują, że
+            algorytm często zaniża kategorię u ciężko rannych dzieci. Po segregacji wstępnej dzieci wymagają szybkiej
+            segregacji wtórnej. Dzieci 9–12 lat: źródła różnią się granicą wieku (JumpSTART do ok. 8 lat albo „wygląda na
+            dziecko”), więc zaliczamy kolor zarówno wg JumpSTART, jak i START.
+          </p>
+        )}
 
         <div className="debrief-list">
           <div className="debrief-row debrief-th">
@@ -165,6 +175,11 @@ function PatientRow({ p }: { p: PatientDebrief }) {
           <span className={`verdict v-${p.verdict}`} title={VERDICT_HINT[p.verdict]}>
             {VERDICT_LABEL[p.verdict]}
           </span>
+          {p.critical && (
+            <span className="verdict v-under critical" title="CZARNY u poszkodowanego z szansą przeżycia">
+              KRYTYCZNY
+            </span>
+          )}
         </span>
         <span className="toggle">{open ? '▲' : '▼'}</span>
       </div>
@@ -174,6 +189,15 @@ function PatientRow({ p }: { p: PatientDebrief }) {
           {p.missedLifesaving.map((m, i) => (
             <p key={i} className="missed">
               ⚠ {m}
+            </p>
+          ))}
+        </div>
+      )}
+      {open && (p.notes?.length ?? 0) > 0 && (
+        <div className="pd-notes">
+          {p.notes!.map((n, i) => (
+            <p key={i} className="teaching-note">
+              ℹ {n}
             </p>
           ))}
         </div>
@@ -195,6 +219,26 @@ function PatientRow({ p }: { p: PatientDebrief }) {
                 </li>
               ))}
             </ol>
+            {p.alternative && (
+              <>
+                <div className="h-small">
+                  Też zaliczane: {p.alternative.protocol} (dziecko 9–12 lat) → <Chip cat={p.alternative.expected} />
+                </div>
+                <ol className="steps">
+                  {p.alternative.steps.map((s, i) => (
+                    <li key={i}>
+                      <span className="q">{s.question}</span> → <span className="a">{s.answer}</span>
+                      {s.result && (
+                        <>
+                          {' '}
+                          ⇒ <Chip cat={s.result} />
+                        </>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              </>
+            )}
           </div>
           <div>
             <div className="h-small">Twoje czynności</div>
@@ -204,7 +248,7 @@ function PatientRow({ p }: { p: PatientDebrief }) {
               <ol className="steps">
                 {p.actionsDone.map((a, i) => (
                   <li key={i} className={tagAt !== null && i >= tagAt ? 'after-tag' : undefined}>
-                    {ACTION_LABEL[a]}
+                    {a === 'pulse' && p.protocol === 'JumpSTART' ? 'Tętno obwodowe' : ACTION_LABEL[a]}
                     {tagAt !== null && i >= tagAt && ' · po opasce'}
                   </li>
                 ))}

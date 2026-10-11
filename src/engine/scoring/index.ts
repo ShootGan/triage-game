@@ -3,6 +3,7 @@ import { initialExamState, performAction } from '../exam';
 import type { ExamActionId, PatientExamState } from '../exam/types';
 import {
   CATEGORY_LABEL,
+  INFANT_SIGNIFICANT_INJURIES,
   triage,
   type DecisionStep,
   type Protocol,
@@ -62,6 +63,26 @@ function actionsForStep(step: DecisionStep, protocol: Protocol, v: Vitals): Exam
     case 'infant-injury':
       return [];
   }
+}
+
+/**
+ * Actions without which a correct colour is just a guess: every step the algorithm passed through,
+ * in order. Exception — a START perfusion step that ends the algorithm: one decisive finding
+ * (absent pulse or CRT > 2 s) is enough.
+ */
+function assessmentActions(r: TriageResult, v: Vitals, done: ExamActionId[]): ExamActionId[] {
+  const out: ExamActionId[] = [];
+  for (const step of r.steps) {
+    let need = actionsForStep(step, r.protocol, v);
+    if (step.id === 'perfusion' && r.protocol === 'START' && step.result) {
+      const decisive: ExamActionId[] = [];
+      if (!v.peripheralPulse) decisive.push('pulse');
+      if (v.crtSeconds > 2) decisive.push('crt');
+      need = decisive.some(a => done.includes(a)) ? [] : decisive.slice(0, 1);
+    }
+    for (const a of need) if (!out.includes(a)) out.push(a);
+  }
+  return out;
 }
 
 /** Opis rozstrzygającego ustalenia, np. „Oddechy 34/min (> 30) → CZERWONY". */
@@ -189,8 +210,39 @@ function procedureGaps(
   return gaps;
 }
 
+/**
+ * All gaps before the tag: apnoea-branch steps (with their own sentences), uncontrolled major
+ * bleeding, then any assessment step that decides the colour but was skipped.
+ */
+function allGaps(
+  p: ScenarioPatient,
+  r: TriageResult,
+  given: TriageCategory,
+  atTag: PatientExamState,
+  actionsBefore: ExamActionId[],
+): ProcedureGap[] {
+  const gaps = procedureGaps(p, r, given, atTag, actionsBefore);
+  if (p.majorBleeding && r.category !== 'black' && !atTag.bleedingControlled) {
+    gaps.push({
+      action: 'bleeding',
+      sentence:
+        'Oznaczono bez zatamowania masywnego krwotoku — wg START/JumpSTART tamowanie krwotoku to czynność ratująca życie, wykonywana w trakcie oceny, przed nadaniem kategorii.',
+    });
+  }
+  const covered = new Set(gaps.map(g => g.action));
+  // Apnoea branch: breaths given before opening the airway have no effect, so they don't count.
+  const effective = actionsBefore.filter(a => a !== 'rescue-breaths' || atTag.rescueBreathsGiven);
+  for (const a of assessmentActions(r, p.vitals, effective)) {
+    if (!covered.has(a) && !effective.includes(a)) gaps.push({ action: a, sentence: '' });
+  }
+  return gaps;
+}
+
 function procedureExplanation(gaps: ProcedureGap[]): string {
   const [first, ...rest] = gaps;
+  if (!first.sentence) {
+    return `Kolor zgodny z algorytmem, ale przed oznaczeniem nie wykonano: ${gaps.map(g => ACTION_NOUN[g.action]).join(', ')}. Trafienie bez oceny nie jest zaliczane.`;
+  }
   const parts = [first.sentence];
   if (rest.length) parts.push(`Przed oznaczeniem nie wykonano też: ${rest.map(g => ACTION_NOUN[g.action]).join(', ')}.`);
   parts.push('Kolor zgodny z algorytmem, ale ustalony bez wymaganego kroku.');
@@ -235,7 +287,11 @@ export function debriefPatient(
   tagLogIndex?: number,
 ): PatientDebrief {
   const ex = exam ?? initialExamState();
-  const r = triage(p.vitals, p.appearsChild);
+  const primary = triage(p.vitals, p.appearsChild);
+  // Ages 9–12: schools differ on the JumpSTART age limit, so a colour from either algorithm counts.
+  const alt = isBorderlineAge(p) ? triage(p.vitals, !p.appearsChild) : undefined;
+  const alternative = alt && alt.category !== primary.category ? alt : undefined;
+  const r = alternative && given === alternative.category ? alternative : primary;
   const actionsDone = ex.log.map(l => l.action);
   const tagIdx = given === null ? ex.log.length : Math.min(tagLogIndex ?? ex.log.length, ex.log.length);
   const atTag = examStateAt(p, ex, tagIdx);
@@ -243,8 +299,9 @@ export function debriefPatient(
 
   let verdict = verdictFor(r.category, given);
   let explanation = '';
+  const critical = given === 'black' && r.category !== 'black';
   if (verdict === 'correct' && given !== null) {
-    const gaps = procedureGaps(p, r, given, atTag, actionsBefore);
+    const gaps = allGaps(p, r, given, atTag, actionsBefore);
     if (gaps.length) {
       verdict = 'procedure';
       explanation = procedureExplanation(gaps);
@@ -260,7 +317,13 @@ export function debriefPatient(
     const needed = [...new Set(r.steps.flatMap(s => actionsForStep(s, r.protocol, p.vitals)))];
     const missing = needed.filter(a => !actionsBefore.includes(a));
     if (missing.length) parts.push(`Nie wykonano: ${missing.map(a => ACTION_NOUN[a]).join(', ')}.`);
+    if (alternative) {
+      parts.push(`Wg ${alternative.protocol}: ${CATEGORY_LABEL[alternative.category]} — dla dziecka 9–12 lat zaliczany jest kolor z każdego z algorytmów.`);
+    }
     explanation = parts.join(' ');
+  }
+  if (critical) {
+    explanation = `BŁĄD KRYTYCZNY: CZARNY u poszkodowanego z szansą przeżycia (wg ${r.protocol} ${CATEGORY_LABEL[r.category]}). ${explanation}`;
   }
 
   return {
@@ -270,12 +333,41 @@ export function debriefPatient(
     expected: r.category,
     given,
     verdict,
+    critical,
     steps: r.steps,
+    alternative: alternative && {
+      protocol: (r === alternative ? primary : alternative).protocol,
+      expected: (r === alternative ? primary : alternative).category,
+      steps: (r === alternative ? primary : alternative).steps,
+    },
     actionsDone,
     actionsBeforeTag: given === null ? null : tagIdx,
     missedLifesaving: missedLifesaving(p, ex, atTag, given),
+    notes: teachingNotes(p, r),
     explanation,
   };
+}
+
+/** Child who may be triaged with either algorithm (JumpSTART age limit differs between sources). */
+export function isBorderlineAge(p: ScenarioPatient): boolean {
+  return p.ageYears >= 9 && p.ageYears <= 12;
+}
+
+/** Teaching notes that are not errors (pregnancy, infant criteria). */
+function teachingNotes(p: ScenarioPatient, r: TriageResult): string[] {
+  const out: string[] = [];
+  if (r.steps.some(s => s.id === 'infant-injury')) {
+    out.push(`Istotne obrażenia zewnętrzne u niemowlęcia wg JumpSTART: ${INFANT_SIGNIFICANT_INJURIES.join(', ')}.`);
+  }
+  if (p.appearance.pregnant && r.category !== 'black') {
+    out.push(
+      'Ciąża nie zmienia kategorii w segregacji wstępnej. Ciężarna z bólem brzucha, skurczami, brakiem ruchów płodu lub krwawieniem z dróg rodnych wymaga jednak pilnej segregacji wtórnej i oceny położniczej (ryzyko oddzielenia łożyska po urazie).',
+    );
+    if (r.category === 'red' && p.pose === 'back') {
+      out.push('Leżąca na plecach ciężarna (widoczna ciąża) — ułóż na lewym boku lub unieś prawe biodro: macica uciska żyłę główną dolną i pogłębia wstrząs.');
+    }
+  }
+  return out;
 }
 
 /**
@@ -298,6 +390,7 @@ export function scoreGame(
     total,
     correct,
     procedure: count('procedure'),
+    critical: debriefs.filter(d => d.critical).length,
     over: count('over'),
     under: count('under'),
     untagged: count('untagged'),

@@ -1,5 +1,5 @@
 import type { ExamActionId, PatientExamState } from '../engine/exam/types';
-import { protocolFor } from '../engine/triage';
+import { INFANT_SIGNIFICANT_INJURIES, protocolFor } from '../engine/triage';
 import type { ScenarioPatient } from '../scenarios/types';
 
 interface Criterion {
@@ -27,7 +27,11 @@ const JUMPSTART: Criterion[] = [
   { text: 'Oddechy < 15 lub > 45/min albo nieregularne → CZERWONY', needs: ['breathing'] },
   { text: 'Brak tętna obwodowego → CZERWONY', needs: ['pulse'] },
   { text: 'AVPU: „P" z nieadekwatną reakcją lub „U" → CZERWONY', needs: ['avpu'] },
-  { text: 'W przeciwnym razie → ŻÓŁTY (niemowlę bez istotnych urazów → ZIELONY)', needs: [] },
+  { text: 'W przeciwnym razie → ŻÓŁTY', needs: [] },
+  {
+    text: `Niemowlę (nie chodzi z powodu wieku): istotne obrażenia → ŻÓŁTY, brak → ZIELONY. Istotne: ${INFANT_SIGNIFICANT_INJURIES.join(', ')}`,
+    needs: [],
+  },
 ];
 
 function CriteriaList({ list, done }: { list: Criterion[]; done: Set<ExamActionId> }) {
@@ -57,8 +61,9 @@ export function AlgorithmHint({ patient, exam }: { patient: ScenarioPatient | nu
       <div className="hint">
         <div className="h-small">START · dorośli</div>
         <CriteriaList list={START} done={none} />
-        <div className="h-small">JumpSTART · dzieci (ok. 1–8 lat)</div>
+        <div className="h-small">JumpSTART · wygląda na dziecko (zwykle do ok. 8 lat)</div>
         <CriteriaList list={JUMPSTART} done={none} />
+        <p className="muted">Dziecko 9–12 lat: zaliczany jest kolor wg JumpSTART albo START.</p>
       </div>
     );
   }
@@ -71,6 +76,9 @@ export function AlgorithmHint({ patient, exam }: { patient: ScenarioPatient | nu
         <span className="muted"> · {patient.appearsChild ? 'wygląda na dziecko' : 'dorosły'}</span>
       </div>
       <CriteriaList list={protocol === 'JumpSTART' ? JUMPSTART : START} done={done} />
+      {patient.ageYears >= 9 && patient.ageYears <= 12 && (
+        <p className="muted">Wiek 9–12 lat: zaliczany jest kolor wg JumpSTART albo START.</p>
+      )}
       {patient.majorBleeding && !exam?.bleedingControlled && (
         <p className="hint-warn">Widoczny masywny krwotok — czynność ratująca życie.</p>
       )}

@@ -1,9 +1,9 @@
-import { triageJumpStart } from './jumpstart';
+import { INFANT_SIGNIFICANT_INJURIES, triageJumpStart } from './jumpstart';
 import { triageStart } from './start';
 import type { Protocol, TriageResult, Vitals } from './types';
 
 export * from './types';
-export { triageStart, triageJumpStart };
+export { triageStart, triageJumpStart, INFANT_SIGNIFICANT_INJURIES };
 
 /** Który algorytm stosujemy: JumpSTART, gdy poszkodowany wygląda na dziecko. */
 export function protocolFor(appearsChild: boolean): Protocol {

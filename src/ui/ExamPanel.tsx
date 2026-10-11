@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { pulseLabel } from '../engine/exam';
 import { CATEGORY_LABEL } from '../engine/triage';
 import { ACTION_ORDER, CATEGORY_COLOR, CATEGORY_ORDER } from '../game/constants';
 import { getDeps } from '../game/deps';
@@ -95,7 +96,9 @@ export function ExamPanel() {
           {ACTION_ORDER.map((a) => (
             <button key={a.id} className="btn action" onClick={() => doAction(a.id)}>
               <span className="key">{a.key}</span>
-              <span className="action-label">{ACTION_LABEL[a.id]}</span>
+              <span className="action-label">
+                {a.id === 'pulse' ? pulseLabel(patient.appearsChild, patient.ageYears) : ACTION_LABEL[a.id]}
+              </span>
             </button>
           ))}
           {special && patient.appearance.pregnant && (
@@ -148,7 +151,7 @@ export function ExamPanel() {
             </ul>
           </section>
         )}
-        {patient.remark && <blockquote className="remark">{quoteRemark(patient.remark)}</blockquote>}
+        {patient.remark && <Remark text={patient.remark} />}
       </div>
 
       <footer className="exam-tags">
@@ -173,8 +176,12 @@ export function ExamPanel() {
   );
 }
 
-/** Dodaje cudzysłów „…", chyba że tekst scenariusza już zawiera cytat. */
-function quoteRemark(r: string): string {
-  const t = r.trim();
-  return /[„"“”]/.test(t) ? t : `„${t}"`;
+/**
+ * A remark with a quote is speech; without one it's the narrator describing the patient, shown
+ * in italics instead of being put in quotes. Straight closing quotes become Polish „…”.
+ */
+function Remark({ text }: { text: string }) {
+  const t = text.trim();
+  if (!/[„"“”]/.test(t)) return <blockquote className="remark remark-narration">{t}</blockquote>;
+  return <blockquote className="remark">{t.replace(/(„[^"”]*)"/g, '$1”')}</blockquote>;
 }

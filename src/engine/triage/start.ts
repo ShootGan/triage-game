@@ -29,7 +29,7 @@ export function triageStart(v: Vitals): TriageResult {
   steps.push({
     id: 'perfusion',
     question: 'Brak tętna promieniowego lub nawrót kapilarny > 2 s?',
-    answer: `tętno ${v.peripheralPulse ? 'wyczuwalne' : 'niewyczuwalne'}, CRT ${v.crtSeconds} s — ${poorPerfusion ? 'tak' : 'nie'}`,
+    answer: `tętno ${v.peripheralPulse ? 'wyczuwalne' : 'niewyczuwalne'}, CRT ${String(v.crtSeconds).replace('.', ',')} s — ${poorPerfusion ? 'tak' : 'nie'}`,
   });
   if (poorPerfusion) return done('red');
 

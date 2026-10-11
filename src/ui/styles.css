@@ -248,7 +248,9 @@ a { color: var(--accent); }
 .exam-scroll::-webkit-scrollbar { width: 8px; }
 .exam-scroll::-webkit-scrollbar-thumb { background: var(--panel); }
 .injuries { margin: 0; padding-left: 20px; color: #f0b3a8; }
-.remark { margin: 10px 0 0; padding: 6px 10px; border-left: 4px solid var(--accent); background: var(--panel-2); font-style: italic; color: var(--text); }
+.remark { margin: 10px 0 0; padding: 6px 10px; border-left: 4px solid var(--accent); background: var(--panel-2); color: var(--text); }
+/* Narrator's description (no quote) vs. the patient's own words. */
+.remark-narration { font-style: italic; border-left-color: var(--muted); }
 .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; }
 .btn.action { justify-content: flex-start; font-size: 18px; padding: 4px 6px; text-align: left; line-height: 1; min-height: 38px; }
 .action-label { flex: 1; }
@@ -369,6 +371,9 @@ a { color: var(--accent); }
 .pd-notes { padding: 0 10px 6px; }
 .pd-notes p { margin: 2px 0; }
 .missed { color: #ff8a8a; }
+.teaching-note { color: var(--accent); }
+.verdict.critical { margin-left: 6px; background: #ff6b6b; color: var(--ink); border-color: #ff6b6b; }
+.debrief-note { margin: 10px 0 0; font-size: 17px; line-height: 1.2; }
 .pd-detail { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; padding: 0 10px 10px; border-top: 2px dashed var(--panel); }
 .steps { margin: 0; padding-left: 24px; font-size: 18px; }
 .steps li { margin: 3px 0; }

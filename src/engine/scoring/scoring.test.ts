@@ -120,8 +120,10 @@ describe('debriefPatient — wyjaśnienia', () => {
     const p = apnoeic('a', { afterAirway: true, rate: 10 });
     const d = debriefPatient(p, 'black', exam(p, ['breathing']));
     expect(d.verdict).toBe('under');
+    expect(d.critical).toBe(true);
     expect(d.explanation).toBe(
-      'Bezdech, oddech wraca po udrożnieniu dróg oddechowych → CZERWONY. Oznaczono jako CZARNY — zaniżenie. Nie wykonano: udrożnienia dróg oddechowych.',
+      'BŁĄD KRYTYCZNY: CZARNY u poszkodowanego z szansą przeżycia (wg START CZERWONY). ' +
+        'Bezdech, oddech wraca po udrożnieniu dróg oddechowych → CZERWONY. Oznaczono jako CZARNY — zaniżenie. Nie wykonano: udrożnienia dróg oddechowych.',
     );
     expect(d.missedLifesaving).toEqual(['Nie udrożniono dróg oddechowych u pacjenta bez oddechu']);
   });
@@ -177,7 +179,8 @@ describe('debriefPatient — wyjaśnienia', () => {
       const d = debriefPatient(p, 'black', exam(p, ['breathing', 'airway', 'pulse']));
       expect(d.verdict).toBe('under');
       expect(d.explanation).toBe(
-        'Bezdech po udrożnieniu, tętno obecne, oddech wraca po 5 oddechach ratowniczych → CZERWONY. Oznaczono jako CZARNY — zaniżenie. Nie wykonano: 5 oddechów ratowniczych.',
+        'BŁĄD KRYTYCZNY: CZARNY u poszkodowanego z szansą przeżycia (wg JumpSTART CZERWONY). ' +
+          'Bezdech po udrożnieniu, tętno obecne, oddech wraca po 5 oddechach ratowniczych → CZERWONY. Oznaczono jako CZARNY — zaniżenie. Nie wykonano: 5 oddechów ratowniczych.',
       );
       expect(d.missedLifesaving).toEqual(['Nie podano 5 oddechów ratowniczych dziecku z zachowanym tętnem przed oznaczeniem jako CZARNY']);
     });
@@ -268,9 +271,28 @@ describe('procedura przed oznaczeniem (werdykt „procedure")', () => {
       expect(debriefPatient(p, 'red', exam(p, ['airway'])).verdict).toBe('correct');
     });
 
-    it('pacjent oddychający — brak reguły procedury (np. czerwony bez oceny CRT)', () => {
+    it('trafiony kolor bez oceny rozstrzygającej → procedura (np. czerwony bez CRT)', () => {
       const p = patient('c', { crtSeconds: 3 });
-      expect(debriefPatient(p, 'red', exam(p, ['breathing'])).verdict).toBe('correct');
+      const d = debriefPatient(p, 'red', exam(p, ['breathing']));
+      expect(d.verdict).toBe('procedure');
+      expect(d.explanation).toBe(
+        'Kolor zgodny z algorytmem, ale przed oznaczeniem nie wykonano: oceny nawrotu kapilarnego. Trafienie bez oceny nie jest zaliczane.',
+      );
+      // START perfusion: one decisive finding is enough — CRT > 2 s without a pulse check.
+      expect(debriefPatient(p, 'red', exam(p, ['breathing', 'crt'])).verdict).toBe('correct');
+    });
+
+    it('żółty wymaga pełnej oceny: oddech, tętno, CRT, polecenia', () => {
+      const p = patient('y');
+      expect(debriefPatient(p, 'yellow', exam(p, ['breathing', 'pulse', 'crt', 'commands'])).verdict).toBe('correct');
+      const d = debriefPatient(p, 'yellow', exam(p, ['breathing']));
+      expect(d.verdict).toBe('procedure');
+      expect(d.explanation).toMatch(/nie wykonano: badania tętna, oceny nawrotu kapilarnego, sprawdzenia, czy wykonuje proste polecenia\./);
+    });
+
+    it('chodzący zielony nie wymaga żadnej czynności', () => {
+      const p = patient('g', { canWalk: true });
+      expect(debriefPatient(p, 'green', undefined).verdict).toBe('correct');
     });
 
     it('zły kolor nadal over/under', () => {
@@ -353,18 +375,20 @@ describe('procedura przed oznaczeniem (werdykt „procedure")', () => {
     });
   });
 
-  describe('masywny krwotok — tylko uwaga, nie werdykt', () => {
+  describe('masywny krwotok przed opaską', () => {
     const p = patient('k', { peripheralPulse: false, crtSeconds: 4 }, { majorBleeding: true });
 
-    it('czerwony bez tamowania → poprawnie + uwaga', () => {
+    it('czerwony bez tamowania → procedura + uwaga', () => {
       const d = debriefPatient(p, 'red', exam(p, ['pulse']));
-      expect(d.verdict).toBe('correct');
+      expect(d.verdict).toBe('procedure');
+      expect(d.explanation).toMatch(/^Oznaczono bez zatamowania masywnego krwotoku/);
       expect(d.missedLifesaving).toEqual(['Nie zatamowano masywnego krwotoku']);
+      expect(debriefPatient(p, 'red', exam(p, ['bleeding', 'breathing', 'pulse'])).verdict).toBe('correct');
     });
 
-    it('zatamowany dopiero po oznaczeniu → uwaga o kolejności', () => {
+    it('zatamowany dopiero po oznaczeniu → procedura + uwaga o kolejności', () => {
       const d = debriefPatient(p, 'red', exam(p, ['pulse', 'bleeding']), 1);
-      expect(d.verdict).toBe('correct');
+      expect(d.verdict).toBe('procedure');
       expect(d.missedLifesaving).toEqual([
         'Krwotok zatamowano dopiero po oznaczeniu — tamowanie masywnego krwotoku wykonuje się w trakcie oceny, przed nadaniem kategorii',
       ]);
@@ -403,6 +427,51 @@ describe('procedura przed oznaczeniem (werdykt „procedure")', () => {
   });
 });
 
+describe('dziecko 9–12 lat — zaliczany kolor wg JumpSTART i START', () => {
+  // AVPU P with an inappropriate response: JumpSTART → RED; doesn't obey commands → RED in START too.
+  // CRT 3 s with a pulse: JumpSTART ignores CRT (→ YELLOW), START → RED.
+  const kid = (ageYears: number) => ({ ...patient('k', { crtSeconds: 3 }), appearsChild: true, ageYears });
+  const full = (p: ScenarioPatient) => exam(p, ['breathing', 'pulse', 'crt', 'commands', 'avpu']);
+
+  it('10 lat: ŻÓŁTY (JumpSTART) i CZERWONY (START) — oba poprawne', () => {
+    const p = kid(10);
+    const y = debriefPatient(p, 'yellow', full(p));
+    expect(y).toMatchObject({ verdict: 'correct', protocol: 'JumpSTART', expected: 'yellow' });
+    expect(y.alternative).toMatchObject({ protocol: 'START', expected: 'red' });
+    const r = debriefPatient(p, 'red', full(p));
+    expect(r).toMatchObject({ verdict: 'correct', protocol: 'START', expected: 'red' });
+    expect(r.alternative).toMatchObject({ protocol: 'JumpSTART', expected: 'yellow' });
+  });
+
+  it('10 lat: zły kolor wg obu — wyjaśnienie wspomina drugi algorytm', () => {
+    const p = kid(10);
+    const d = debriefPatient(p, 'green', full(p));
+    expect(d.verdict).toBe('under');
+    expect(d.explanation).toMatch(/Wg START: CZERWONY — dla dziecka 9–12 lat zaliczany jest kolor z każdego z algorytmów\.$/);
+  });
+
+  it('8 lat: tylko JumpSTART', () => {
+    const p = kid(8);
+    expect(debriefPatient(p, 'red', full(p)).verdict).toBe('over');
+    expect(debriefPatient(p, 'yellow', full(p)).alternative).toBeUndefined();
+  });
+});
+
+describe('uwagi dydaktyczne', () => {
+  it('niemowlę — lista istotnych obrażeń wg JumpSTART', () => {
+    const inf = { ...patient('i', { nonAmbulatoryByAge: true, avpu: 'A' }), appearsChild: true, ageYears: 0.75 };
+    expect(debriefPatient(inf, 'green', undefined).notes?.[0]).toMatch(/^Istotne obrażenia zewnętrzne u niemowlęcia wg JumpSTART: głębokie rany penetrujące/);
+  });
+
+  it('ciężarna: segregacja wtórna; we wstrząsie na plecach — lewy bok', () => {
+    const base = patient('c', { peripheralPulse: false, crtSeconds: 4 });
+    const p = { ...base, appearance: { ...base.appearance, sex: 'f' as const, pregnant: true } };
+    const notes = debriefPatient(p, 'red', undefined).notes ?? [];
+    expect(notes[0]).toMatch(/^Ciąża nie zmienia kategorii w segregacji wstępnej/);
+    expect(notes[1]).toMatch(/ułóż na lewym boku/);
+  });
+});
+
 describe('scoreGame', () => {
   const ps = [
     patient('g', { canWalk: true }),
@@ -418,7 +487,8 @@ describe('scoreGame', () => {
   });
 
   it('zaokrąglenie trafności do liczby całkowitej', () => {
-    const s = scoreGame(ps.slice(0, 3), { g: 'green', y: 'yellow', r: 'green' }, {}, 60);
+    const exams = { y: exam(ps[1], ['breathing', 'pulse', 'crt', 'commands']) };
+    const s = scoreGame(ps.slice(0, 3), { g: 'green', y: 'yellow', r: 'green' }, exams, 60);
     expect(s.accuracyPct).toBe(67);
     expect(s.avgSecPerPatient).toBe(20);
   });

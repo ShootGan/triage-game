@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Children aged 9–12: a colour is accepted from either JumpSTART or START (sources disagree on the
+  age limit); the debrief shows both paths.
+- "Critical error" badge and summary tile for BLACK given to a patient with a chance of survival.
+- Debrief teaching notes: Romig's list of significant external injuries for infants, urgent
+  secondary triage for pregnant patients with warning signs, left-side positioning in shock.
+- Debrief note that JumpSTART tends to under-triage seriously injured children (Vassallo 2022,
+  Stefani 2022).
+
+### Changed
+
+- "Incomplete procedure" now also covers a correct colour given without the assessment that
+  decides it, and a tag placed before controlling a major bleed — both count as errors.
+- 5 rescue breaths take 15 s (was 10 s).
+- Pulse button reads "Tętno obwodowe" for children (brachial for infants); the pulse is checked
+  on an uninjured limb when a limb bleeds.
+- AVPU "P" results describe the full range of appropriate / inappropriate responses.
+- CRT in a dead patient reads "brak — nieoznaczalny"; in young children it notes that JumpSTART
+  does not use CRT.
+- Narrator remarks are shown in italics instead of quotes; Polish closing quotes.
+- Hint describes JumpSTART as "looks like a child (usually up to ~8 years)" and lists the
+  infant injury criteria.
+
+### Fixed
+
+- Decimal comma in the START perfusion step of the debrief path.
+
 ## [0.3.0] - 2026-10-11
 
 ### Added
