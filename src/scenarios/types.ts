@@ -51,6 +51,8 @@ export interface ScenarioProp {
   /**
    * Wariant modelu. Auto: 'sedan' | 'hatch' | 'suv' | 'van', z dopiskiem '-crash' (zgnieciony przód) lub 'roof'
    * (na dachu); domyślnie losowany z pozycji. Ciężarówka: 'jackknife' (złożona w scyzoryk).
+   * Bus: 'crash' (crumpled front, cracked windscreen, hazard lights). Barrier: 'down' (knocked over).
+   * Stall: 'balloons' | 'food'. Dust: 'smoke'.
    */
   variant?: string;
 }

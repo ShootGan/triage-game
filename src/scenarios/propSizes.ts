@@ -18,7 +18,15 @@ export type PropKind =
   | 'cargo'      // rozsypany ładunek (kartony, palety) — niski, bez obrysu
   | 'skid'       // ślady hamowania na asfalcie — bez obrysu
   | 'spill'      // plama paliwa/płynów — bez obrysu
-  | 'triangle';  // trójkąt ostrzegawczy — bez obrysu
+  | 'triangle'   // trójkąt ostrzegawczy — bez obrysu
+  | 'firetruck'  // fire engine (PSP) 8 × 2.5 m
+  | 'police'     // police car 3.8 × 1.9 m
+  | 'speaker'    // concert speaker tower (truss + line array) on a 1.2 × 1.2 m base
+  | 'stall'      // festival stall with awning 2.4 × 1.4 m (variant 'balloons' | 'food')
+  | 'litter'     // cups, bottles, lost items — flat, no footprint
+  | 'belongings' // scattered backpacks, jackets, books — flat, no footprint
+  | 'dust'       // dust cloud (variant 'smoke' — dark rising column) — no footprint
+  | 'cones';     // row of 4 traffic cones along local z (~3 m), closing a lane — no footprint
 
 export const PROP_HALF_SIZE: Record<PropKind, [number, number] | null> = {
   bus: [5.2, 1.5],
@@ -36,6 +44,14 @@ export const PROP_HALF_SIZE: Record<PropKind, [number, number] | null> = {
   skid: null,
   spill: null,
   triangle: null,
+  firetruck: [4.1, 1.3],
+  police: [1.9, 0.95],
+  speaker: [0.6, 0.6],
+  stall: [1.2, 0.7],
+  litter: null,
+  belongings: null,
+  dust: null,
+  cones: null,
 };
 
 /** Czy punkt (x, z) leży w obrysie rekwizytu (z marginesem). */

@@ -36,8 +36,9 @@ export const pileupScenario: Scenario = {
     { kind: 'skid', position: [-15, -1.6], rotation: 0.1 },
     { kind: 'spill', position: [-8.8, -2.6], rotation: 0.4 },
     { kind: 'cargo', position: [-12.2, -3.4], rotation: 0.3 },
-    { kind: 'triangle', position: [-19, -3.5], rotation: Math.PI / 2 },
-    { kind: 'triangle', position: [-18.5, 0.2], rotation: Math.PI / 2 },
+    // cones closing both lanes before the crash
+    { kind: 'cones', position: [-19, -3.6], rotation: 0 },
+    { kind: 'cones', position: [-18.4, -0.2], rotation: 0 },
     // pierwszy ZRM na pasie awaryjnym, przed punktem zbiórki
     { kind: 'ambulance', position: [-12, 3.25], rotation: 0 },
   ],

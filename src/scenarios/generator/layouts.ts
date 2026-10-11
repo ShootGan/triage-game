@@ -459,7 +459,7 @@ const buses: ScenarioLayout = {
     S(9.6, -7.2, -2.4, 'na trawie', false),
     S(-8.6, -2.4, 2.6, 'za autokarem', true),
     S(0, 8.4, 3.1, 'na trawie', false),
-    S(10.6, -0.6, -1.8, 'przy autobusie szkolnym', true),
+    S(10.6, 0.5, -1.8, 'przy autobusie szkolnym', true),
     // dodatkowe
     S(-11, -2.5, 1, 'za autokarem', true),
     S(-9.5, -6.5, 0.6, 'na trawie', false),
@@ -471,7 +471,7 @@ const buses: ScenarioLayout = {
     S(0, 2.2, -1.2, 'na jezdni', true),
     S(-3.5, 2.7, 2.2, 'przy autokarze', true),
     S(6, 0.5, -1.4, 'przy autobusie szkolnym', true),
-    S(8.2, -1, 1.9, 'przy autobusie szkolnym', true),
+    S(8.2, 0.4, 1.9, 'przy autobusie szkolnym', true),
     S(11.5, -4.5, -1.6, 'za autobusem szkolnym', true),
     S(4.5, -6, 0.2, 'za autobusem szkolnym', true),
     S(-11, 0.5, 1.4, 'przy autokarze', true),

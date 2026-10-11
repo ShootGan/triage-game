@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { Kit } from './materials';
 import type { TerrainKind } from '../scenarios/types';
+import { cropField, delineator, house, pine, roadSign, tree, utilityPole, wires } from './scenery';
 
 export type { TerrainKind } from '../scenarios/types';
 
@@ -22,7 +23,7 @@ export function buildTerrain(kit: Kit, parent: THREE.Object3D, size = 40, kind: 
   parent.add(g);
   const free = (x: number, z: number, r: number): boolean => keepOut.every(([kx, kz, kr]) => Math.hypot(x - kx, z - kz) > kr + r);
   switch (kind) {
-    case 'road': buildRoad(kit, g, size); break;
+    case 'road': buildRoad(kit, g, size, free); break;
     case 'street': buildStreet(kit, g, size, free); break;
     case 'field': buildField(kit, g, size, free); break;
     case 'highway': buildHighway(kit, g, size, free); break;
@@ -81,11 +82,62 @@ function tufts(kit: Kit, g: THREE.Object3D, size: number, per40: number, skip: (
 
 // ---------- 'road' ----------
 
-/** Trawa, droga wzdłuż osi X (|z| < 3), krawężniki, pasy, kępki trawy. */
-function buildRoad(kit: Kit, g: THREE.Object3D, size: number): void {
+/** Rural road half-widths: asphalt, white edge line, gravel shoulder. */
+const ROAD = { asphalt: 3.5, edgeLine: 3.25, shoulder: 4.3 } as const;
+
+/**
+ * Polish rural road along X: two 3.5 m lanes (|z| < 3.5), white edge lines, flush gravel shoulders
+ * (no kerbs, so patients lie flat), dashed centre line. Scenery outside the patient zone:
+ * delineator posts, tree rows, utility poles with wires, road signs, a house and a crop field.
+ */
+function buildRoad(kit: Kit, g: THREE.Object3D, size: number, free: FreeFn): void {
+  const half = size / 2;
   kit.box(size, 0.2, size, '#5f9a4a', 0, -0.1, 0, g);
-  carriageway(kit, g, size, '#55585f');
-  tufts(kit, g, size, 160, (_x, z) => Math.abs(z) < 3.6);
+  kit.box(size, 0.22, ROAD.asphalt * 2, '#55585f', 0, -0.09, 0, g);
+  for (const s of [-1, 1]) {
+    kit.box(size, 0.21, ROAD.shoulder - ROAD.asphalt, '#a89c84', 0, -0.095, s * (ROAD.asphalt + ROAD.shoulder) / 2, g).castShadow = false;
+    kit.box(size, 0.225, 0.12, '#f0f0e0', 0, -0.0875, s * ROAD.edgeLine, g).castShadow = false;
+  }
+  const laneGeo = kit.own(new THREE.BoxGeometry(2, 0.23, 0.12));
+  for (let x = -half + 2; x < half - 1; x += 6) kit.part(laneGeo, '#f0f0e0', g, x, -0.08, 0).castShadow = false;
+  tufts(kit, g, size, 160, (_x, z) => Math.abs(z) < ROAD.shoulder + 0.3);
+
+  // The overview camera frames the patients tightly, so scenery sits right at the edge of the
+  // patient zone (|z| ≈ 9–12) and between patients wherever `free` allows — never on top of them.
+  for (let x = -half + 4; x < half - 2; x += 10) {
+    for (const z of [-4.8, 4.8]) if (free(x, z, 0.8)) delineator(kit, g, x, z);
+  }
+  // tree rows on both sides, about a third conifers
+  for (const side of [-1, 1]) {
+    for (let i = 0, x = -half + 3; x < half - 3; i++, x += 4 + hash(i, 4.7) * 2.5) {
+      const z = side * (9.3 + hash(i * side + 50, 2.9) * 3);
+      if (!free(x, z, 2.2)) continue;
+      if (hash(i, 8.3) < 0.33) pine(kit, g, x, z, i);
+      else tree(kit, g, x, z, i);
+    }
+  }
+  // bushes on the verges between patients
+  for (let i = 0; i < 28; i++) {
+    const x = (hash(i, 61.3) * 2 - 1) * 16;
+    const z = (hash(i, 23.9) > 0.5 ? 1 : -1) * (5.5 + hash(i, 14.1) * 4);
+    if (free(x, z, 1.8)) bushCluster(kit, g, x, z, i);
+  }
+  // utility line along the far side
+  let prev: number | null = null;
+  for (let x = -half + 6; x < half - 4; x += 15) {
+    const z = -11.5;
+    if (free(x, z, 1)) {
+      utilityPole(kit, g, x, z);
+      if (prev !== null) wires(kit, g, prev, x, z);
+      prev = x;
+    } else prev = null;
+  }
+  if (free(-16, 5, 1)) roadSign(kit, g, -16, 5, 'speed70');
+  if (free(16, -5, 1)) roadSign(kit, g, 16, -5, 'children');
+  if (half > 24) {
+    house(kit, g, 20, 21);
+    cropField(kit, g, -half + 2, half - 2, -half + 2, -17);
+  }
 }
 
 // ---------- 'highway' ----------

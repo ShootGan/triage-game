@@ -660,6 +660,12 @@ export class GameView implements IGameView {
     return out;
   }
 
+  /** Debug (render-demo): point the camera at a spot on the ground, with zoom = visible half-height in metres. */
+  lookAt(x: number, z: number, zoom: number, elev = 30): void {
+    this.subject.set(x, 0, z); // applyFraming re-targets on the subject every frame
+    this.rig.setGoal(this.subject, zoom, elev);
+  }
+
   focusPatient(id: string | null, onArrive?: () => void): void {
     const e = id !== null ? this.patients.get(id) : undefined;
     this.arriveCb = null;

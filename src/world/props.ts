@@ -1,5 +1,8 @@
 import * as THREE from 'three';
 import type { Kit } from './materials';
+import { buildBelongings, buildDust, buildLitter, buildSpeaker, buildStall } from './dressing';
+import { GLASS, GLASS_CRACKED, HAZARD, SIGNAL_BLUE, beam, blinkLight, canvasMat, propGroup, rbox, rng, sideText } from './propUtils';
+import { buildFiretruck } from './vehicles';
 import { PROP_HALF_SIZE, type PropKind } from '../scenarios/propSizes';
 
 export type { PropKind } from '../scenarios/propSizes';
@@ -30,11 +33,15 @@ export function insideFootprint(f: Footprint, x: number, z: number, margin = 0):
   return Math.abs(lx) < f.halfW + margin && Math.abs(lz) < f.halfD + margin;
 }
 
-/** Autobus szkolny (przewrócony lekko na bok — pochylenie jak w prototypie). */
-export function buildBus(kit: Kit, parent: THREE.Object3D, x: number, z: number, rotY: number, color = '#f2c230'): THREE.Group {
+/**
+ * Autobus szkolny (przewrócony lekko na bok — pochylenie jak w prototypie). Front at +x.
+ * Variant 'crash': crumpled front, cracked windscreen and front side windows, hazard lights.
+ */
+export function buildBus(kit: Kit, parent: THREE.Object3D, x: number, z: number, rotY: number, color = '#f2c230', variant?: string): THREE.Group {
   const bus = new THREE.Group();
   parent.add(bus);
-  kit.box(10, 2.6, 2.6, color, 0, 1.8, 0, bus);
+  const crash = variant === 'crash';
+  kit.box(crash ? 9.4 : 10, 2.6, 2.6, color, crash ? -0.3 : 0, 1.8, 0, bus);
   // r186: CapsuleGeometry(radius, height, capSegments, radialSegments) — `height` = długość części środkowej, jak `length` w r160
   const roof = kit.part(new THREE.CapsuleGeometry(1.3, 7.4, 6, 12), color, bus, 0, 2.9, 0);
   if (color !== '#f2c230') kit.box(10.04, 0.3, 2.64, '#2f5fb0', 0, 1.15, 0, bus); // pas boczny autokaru
@@ -42,29 +49,24 @@ export function buildBus(kit: Kit, parent: THREE.Object3D, x: number, z: number,
   roof.scale.set(0.35, 1, 1);
   kit.box(10.05, 0.35, 2.65, '#2a2a2e', 0, 0.62, 0, bus);
   kit.box(10.06, 0.12, 2.66, '#2a2a2e', 0, 1.55, 0, bus);
-  for (let i = 0; i < 7; i++) kit.box(1.0, 0.9, 2.66, '#3d5470', -4 + i * 1.25, 2.3, 0, bus);
-  kit.box(0.1, 1.2, 2.2, '#3d5470', 5.0, 2.2, 0, bus);
+  for (let i = 0; i < 7; i++) kit.box(1.0, 0.9, 2.66, crash && i >= 5 ? GLASS_CRACKED : GLASS, -4 + i * 1.25, 2.3, 0, bus);
+  kit.box(0.1, 1.2, 2.2, crash ? GLASS_CRACKED : GLASS, 5.0, 2.2, 0, bus);
   const wheel = kit.own(new THREE.CylinderGeometry(0.55, 0.55, 0.35, 14));
   for (const wx of [-3.4, 3.4]) for (const wz of [-1.3, 1.3]) kit.part(wheel, '#22232a', bus, wx, 0.55, wz).rotation.x = Math.PI / 2;
+  if (crash) {
+    // Front pushed in: dark crumple zone, bent body panels and a hanging bumper.
+    kit.box(0.7, 2.2, 2.5, '#2a2a2e', 4.75, 1.5, 0, bus);
+    rbox(kit, 0.9, 1.1, 0.12, color, 4.6, 1.6, 1.28, bus, 0, 0.35, 0.2);
+    rbox(kit, 0.8, 0.9, 0.12, color, 4.7, 2.2, -1.28, bus, 0, -0.3, -0.15);
+    rbox(kit, 0.2, 0.3, 2.4, '#2a2a2e', 5.05, 0.45, 0.15, bus, 0.25, 0.2, 0);
+    for (const lx of [5.1, -5.06]) for (const lz of [-1.1, 1.1]) blinkLight(kit, bus, 0.06, 0.16, 0.22, HAZARD, lx, 1.0, lz, 'hazard');
+  }
   bus.position.set(x, 0.15, z);
   bus.rotation.set(0, rotY, 0.12);
   return bus;
 }
 
 const CAR_COLORS = ['#b03a3a', '#c8c8cc', '#2f4f8a', '#1e1e24', '#3f7a4a', '#d8d2c0', '#8a5a2a'];
-
-const GLASS = '#3d5470';
-const GLASS_CRACKED = '#8ea6ba';
-const HAZARD = '#ffa020';
-
-/** Lampka migająca (światła awaryjne / sygnały) — nieoświetlany jaskrawy kolor; GameView przełącza `visible`. */
-function blinkLight(kit: Kit, parent: THREE.Object3D, w: number, h: number, d: number, color: string, x: number, y: number, z: number, group: string): THREE.Mesh {
-  const m = new THREE.Mesh(kit.own(new THREE.BoxGeometry(w, h, d)), kit.own(new THREE.MeshBasicMaterial({ color })));
-  m.position.set(x, y, z);
-  m.userData.blink = group;
-  parent.add(m);
-  return m;
-}
 
 type CarShape = 'sedan' | 'hatch' | 'suv' | 'van';
 const CAR_SHAPES: CarShape[] = ['sedan', 'hatch', 'suv', 'sedan', 'hatch'];
@@ -137,16 +139,42 @@ export function buildCar(kit: Kit, parent: THREE.Object3D, x: number, z: number,
   return outer;
 }
 
-/** Tekstura z canvasa (rysowana raz na karetkę) jako materiał toon. */
-function canvasMat(kit: Kit, w: number, h: number, draw: (c: CanvasRenderingContext2D) => void): THREE.Material {
-  const cv = document.createElement('canvas');
-  cv.width = w;
-  cv.height = h;
-  const c = cv.getContext('2d');
-  if (c) draw(c);
-  const t = kit.own(new THREE.CanvasTexture(cv));
-  t.colorSpace = THREE.SRGBColorSpace;
-  return kit.own(new THREE.MeshToonMaterial({ map: t, gradientMap: kit.gradientMap }));
+const POLICE_BLUE = '#1f50c8';
+const POLICE_LIME = '#c6e41a';
+
+/** White-and-blue checker strip along the doors (current Polish police livery). */
+function checkerMat(kit: Kit): THREE.Material {
+  return canvasMat(kit, 96, 4, (c) => {
+    c.fillStyle = '#f4f4f4';
+    c.fillRect(0, 0, 96, 4);
+    c.fillStyle = POLICE_BLUE;
+    for (let i = 0; i < 48; i++) c.fillRect(i * 2, (i % 2) * 2, 2, 2);
+  });
+}
+
+/**
+ * Police patrol car in the current Polish livery: blue crossover, fluorescent yellow-green sills
+ * and roof edges, white-blue checker strip, white "POLICJA" on the doors, blue light bar.
+ */
+export function buildPolice(kit: Kit, parent: THREE.Object3D, x: number, z: number, rotY: number): THREE.Group {
+  const g = buildCar(kit, parent, x, z, rotY, POLICE_BLUE, 'suv');
+  // suv body: 3.7 × 1.75 m, y 0.42..1.32; cabin y 1.32..1.97, x −1.6..0.7
+  kit.box(3.74, 0.24, 1.79, POLICE_LIME, 0, 0.56, 0, g);
+  sideText(kit, g, checkerMat(kit), 3.6, 0.08, 0, 1.25, 0.9);
+  const label = canvasMat(kit, 160, 32, (c) => {
+    c.fillStyle = POLICE_BLUE;
+    c.fillRect(0, 0, 160, 32);
+    c.fillStyle = '#f4f4f4';
+    c.font = 'bold 26px sans-serif';
+    c.textAlign = 'center';
+    c.fillText('POLICJA', 80, 26);
+  });
+  sideText(kit, g, label, 1.25, 0.25, 0.3, 0.95, 0.9);
+  for (const lz of [-0.76, 0.76]) kit.box(2.2, 0.04, 0.1, POLICE_LIME, -0.45, 1.99, lz, g); // roof edges
+  // light bar across the roof: dark base, blue ends flashing in turn
+  kit.box(0.26, 0.1, 1.36, '#3a3d44', -0.2, 2.08, 0, g);
+  for (const [i, lz] of [-0.46, 0.46].entries()) blinkLight(kit, g, 0.24, 0.12, 0.4, SIGNAL_BLUE, -0.2, 2.17, lz, i ? 'blueA' : 'blueB');
+  return g;
 }
 
 const AMB_YELLOW = '#f2dd1a';
@@ -363,43 +391,6 @@ export function buildGlass(kit: Kit, parent: THREE.Object3D, x: number, z: numbe
 }
 
 // ---------- Pomocnicze ----------
-
-/** Deterministyczny generator pseudolosowy (ten sam wygląd przy każdym uruchomieniu). */
-function rng(seed: number): () => number {
-  let s = seed % 2147483647;
-  if (s <= 0) s += 2147483646;
-  return () => {
-    s = (s * 16807) % 2147483647;
-    return (s - 1) / 2147483646;
-  };
-}
-
-/** Grupa rekwizytu ustawiona w świecie. */
-function propGroup(parent: THREE.Object3D, x: number, z: number, rotY: number): THREE.Group {
-  const g = new THREE.Group();
-  g.position.set(x, 0, z);
-  g.rotation.y = rotY;
-  parent.add(g);
-  return g;
-}
-
-/** Prostopadłościan z obrotem (rx, ry, rz). */
-function rbox(
-  kit: Kit, w: number, h: number, d: number, c: string, x: number, y: number, z: number, p: THREE.Object3D,
-  rx = 0, ry = 0, rz = 0,
-): THREE.Mesh {
-  const m = kit.box(w, h, d, c, x, y, z, p);
-  m.rotation.set(rx, ry, rz);
-  return m;
-}
-
-/** Belka/pręt (przekrój t × t) między dwoma punktami (lokalnie). */
-function beam(kit: Kit, t: number, c: string, a: THREE.Vector3Like, b: THREE.Vector3Like, p: THREE.Object3D): THREE.Mesh {
-  const d = new THREE.Vector3(b.x - a.x, b.y - a.y, b.z - a.z);
-  const m = kit.box(t, d.length(), t, c, (a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2, p);
-  m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize());
-  return m;
-}
 
 /**
  * Rozrzut gruzu: bryły betonu i cegły na kopcu o promieniu `r` i wysokości `h`
@@ -664,9 +655,17 @@ export function buildStage(kit: Kit, parent: THREE.Object3D, x: number, z: numbe
 
 // ---------- Barierka ----------
 
-/** Segment barierek koncertowych 4 × 0.6 m (dwa przęsła po 2 m), wys. 1.1 m, stopy w poprzek. */
-export function buildBarrier(kit: Kit, parent: THREE.Object3D, x: number, z: number, rotY: number): THREE.Group {
-  const g = propGroup(parent, x, z, rotY);
+/**
+ * Segment barierek koncertowych 4 × 0.6 m (dwa przęsła po 2 m), wys. 1.1 m, stopy w poprzek.
+ * Variant 'down': pushed over by the crowd, lying flat towards +z.
+ */
+export function buildBarrier(kit: Kit, parent: THREE.Object3D, x: number, z: number, rotY: number, variant?: string): THREE.Group {
+  const outer = propGroup(parent, x, z, rotY);
+  const g = kit.joint(outer, 0, 0, 0);
+  if (variant === 'down') {
+    g.rotation.x = Math.PI / 2 - 0.08;
+    g.position.set(0, 0.08, -0.45);
+  }
   const MET = '#b8bcc4';
   const rail = kit.own(new THREE.BoxGeometry(1.95, 0.05, 0.05));
   const post = kit.own(new THREE.BoxGeometry(0.05, 1.08, 0.05));
@@ -681,7 +680,7 @@ export function buildBarrier(kit: Kit, parent: THREE.Object3D, x: number, z: num
     }
     for (let i = 1; i < 13; i++) kit.part(bar, MET, g, cx - 0.95 + i * 0.146, 0.625, 0);
   }
-  return g;
+  return outer;
 }
 
 // ---------- Zawalona trybuna ----------
@@ -775,7 +774,7 @@ export function buildTent(kit: Kit, parent: THREE.Object3D, x: number, z: number
 
 export function buildProp(kit: Kit, parent: THREE.Object3D, kind: PropKind, x: number, z: number, rotY: number, color?: string, variant?: string): THREE.Group {
   switch (kind) {
-    case 'bus': return buildBus(kit, parent, x, z, rotY, color);
+    case 'bus': return buildBus(kit, parent, x, z, rotY, color, variant);
     case 'car': return buildCar(kit, parent, x, z, rotY, color, variant);
     case 'glass': return buildGlass(kit, parent, x, z, rotY);
     case 'truck': return buildTruck(kit, parent, x, z, rotY, variant);
@@ -787,9 +786,17 @@ export function buildProp(kit: Kit, parent: THREE.Object3D, kind: PropKind, x: n
     case 'rubble': return buildRubble(kit, parent, x, z, rotY);
     case 'building': return buildBuilding(kit, parent, x, z, rotY);
     case 'stage': return buildStage(kit, parent, x, z, rotY);
-    case 'barrier': return buildBarrier(kit, parent, x, z, rotY);
+    case 'barrier': return buildBarrier(kit, parent, x, z, rotY, variant);
     case 'bleachers': return buildBleachers(kit, parent, x, z, rotY);
     case 'tent': return buildTent(kit, parent, x, z, rotY);
+    case 'firetruck': return buildFiretruck(kit, parent, x, z, rotY);
+    case 'police': return buildPolice(kit, parent, x, z, rotY);
+    case 'speaker': return buildSpeaker(kit, parent, x, z, rotY);
+    case 'stall': return buildStall(kit, parent, x, z, rotY, variant);
+    case 'litter': return buildLitter(kit, parent, x, z, rotY);
+    case 'belongings': return buildBelongings(kit, parent, x, z, rotY);
+    case 'dust': return buildDust(kit, parent, x, z, rotY, variant);
+    case 'cones': return buildCones(kit, parent, x, z, rotY);
   }
 }
 
@@ -810,12 +817,7 @@ export function buildCollectionPoint(kit: Kit, parent: THREE.Object3D, x: number
     kit.box(0.08, 0.025, size, '#1f6a2c', s * (size / 2 - 0.04), 0.014, 0, g).castShadow = false;
   }
   // pachołki
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
-    const c = kit.joint(g, sx * (size / 2 + 0.25), 0, sz * (size / 2 + 0.25));
-    kit.box(0.3, 0.03, 0.3, '#e8641e', 0, 0.015, 0, c);
-    kit.part(new THREE.ConeGeometry(0.12, 0.45, 10), '#e8641e', c, 0, 0.25, 0);
-    kit.part(new THREE.CylinderGeometry(0.075, 0.095, 0.08, 10), '#f4f4f4', c, 0, 0.26, 0);
-  }
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) buildCone(kit, g, sx * (size / 2 + 0.25), sz * (size / 2 + 0.25));
   // tablica na słupku (przy przedniej krawędzi)
   const post = kit.joint(g, -size / 2 + 0.3, 0, size / 2 + 0.35);
   kit.box(0.06, 1.7, 0.06, '#9a9a9a', 0, 0.85, 0, post);
@@ -831,6 +833,23 @@ export function buildCollectionPoint(kit: Kit, parent: THREE.Object3D, x: number
     if (side < 0) face.rotation.y = Math.PI;
     post.add(face);
   }
+  return g;
+}
+
+/** Traffic cone (orange with a white reflective band) standing on a square base. */
+function buildCone(kit: Kit, parent: THREE.Object3D, x: number, z: number, scale = 1): THREE.Group {
+  const c = kit.joint(parent, x, 0, z);
+  c.scale.setScalar(scale);
+  kit.box(0.3, 0.03, 0.3, '#e8641e', 0, 0.015, 0, c);
+  kit.part(new THREE.ConeGeometry(0.12, 0.45, 10), '#e8641e', c, 0, 0.25, 0);
+  kit.part(new THREE.CylinderGeometry(0.075, 0.095, 0.08, 10), '#f4f4f4', c, 0, 0.26, 0);
+  return c;
+}
+
+/** Row of 4 road cones, 1 m apart along local z, slightly larger than the collection-point ones. */
+export function buildCones(kit: Kit, parent: THREE.Object3D, x: number, z: number, rotY: number): THREE.Group {
+  const g = propGroup(parent, x, z, rotY);
+  for (let i = 0; i < 4; i++) buildCone(kit, g, (i % 2) * 0.15, -1.5 + i, 1.4);
   return g;
 }
 

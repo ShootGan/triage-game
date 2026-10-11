@@ -26,14 +26,25 @@ export const busesScenario: Scenario = {
   collectionPoint: [-9, 7.5],
   props: [
     // autokar szkoły rodzenia — na jezdni, lekko skośnie; przód przy x ≈ 0
-    { kind: 'bus', position: [-5, 0.6], rotation: 0.2, color: '#e8e8ee' },
-    // autobus szkolny — odbity, zepchnięty częściowo na trawę (z < -3)
-    { kind: 'bus', position: [5.6, -3.4], rotation: 0.3 },
+    { kind: 'bus', position: [-5, 0.6], rotation: 0.2, color: '#e8e8ee', variant: 'crash' },
+    // School bus came along its own lane towards −x and hit the coach head-on, offset (front at x ≈ 0.4)
+    { kind: 'bus', position: [5.6, -2.2], rotation: Math.PI, variant: 'crash' },
     { kind: 'glass', position: [1.2, 0.9], rotation: 0 },
     { kind: 'glass', position: [-1, -2.6], rotation: 0.8 },
     { kind: 'glass', position: [3.2, 1.6], rotation: 1.9 },
     { kind: 'glass', position: [-3.5, 2.9], rotation: 2.6 },
     { kind: 'glass', position: [0.2, 2.6], rotation: 0.4 },
+    { kind: 'spill', position: [0.4, -1.2], rotation: 0.5 },
+    // braking marks behind each bus, along its line of travel
+    { kind: 'skid', position: [-11, 1.9], rotation: 0.2 },
+    { kind: 'skid', position: [15, -2.2], rotation: 0 },
+    { kind: 'belongings', position: [-3.3, 3.3], rotation: 0 },
+    // services beyond the patient slots (|x| ≤ 11.5): fire engine parked diagonally across the road
+    // as a blocker, ambulance on the far side; cones close the road at both ends
+    { kind: 'firetruck', position: [-15.2, 0], rotation: Math.PI / 2 - 0.5 },
+    { kind: 'ambulance', position: [14.5, 1.2], rotation: Math.PI },
+    { kind: 'cones', position: [-18, 0.5], rotation: 0 },
+    { kind: 'cones', position: [18.5, -0.5], rotation: 0 },
   ],
   patients: [
     // ── ZIELONI ──────────────────────────────────────────────
@@ -496,7 +507,7 @@ export const busesScenario: Scenario = {
       remark: 'Leży przy autobusie szkolnym, nie reaguje na wołanie.',
       appearance: { sex: 'f', child: true, skin: '#c68642', hair: '#1b1b1b', hairStyle: 'long', shirt: CLASS_SHIRT, pants: '#2874a6', sleeves: 'short' },
       pose: 'back',
-      position: [10.6, -0.6],
+      position: [10.6, 0.5],
       rotation: -1.8,
     },
   ],

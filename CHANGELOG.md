@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- New 3D models: PSP fire engine, police car (current livery), crashed school bus, concert speaker
+  tower, festival stalls (balloons / waffles), litter, scattered belongings, dust and smoke,
+  knocked-over barrier, rows of traffic cones.
+- Rural road scenery: wider two-lane road with edge lines and gravel shoulders (no kerbs), tree
+  rows, bushes, delineator posts, power line, road signs, a house and a crop field.
+- "Bus collision" scene: head-on crash with both fronts crumpled, skid marks, spill, belongings,
+  fire engine blocking the road, ambulance and cones.
+- Render demo: "Nowe modele" scene with a zoom button per model.
+
 - Children aged 9–12: a colour is accepted from either JumpSTART or START (sources disagree on the
   age limit); the debrief shows both paths.
 - "Critical error" badge and summary tile for BLACK given to a patient with a chance of survival.

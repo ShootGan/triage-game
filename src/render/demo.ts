@@ -131,6 +131,38 @@ const vehiclesScenario: Scenario = {
   ],
 };
 
+/** New models: emergency vehicles, crashed bus, event equipment and scattered details. Patients double as zoom targets. */
+const modelsScenario: Scenario = {
+  id: 'demo-models',
+  title: 'Demo modeli',
+  briefing: 'Nowe modele.',
+  timeLimitSec: 600,
+  collectionPoint: [16, 9],
+  props: [
+    { kind: 'firetruck', position: [-10, -4], rotation: 0 },
+    { kind: 'police', position: [-2, -4], rotation: 0 },
+    { kind: 'bus', position: [7, -4], rotation: 0, variant: 'crash' },
+    { kind: 'speaker', position: [15, -4], rotation: 0 },
+    { kind: 'stall', position: [-12, 5], rotation: 0, variant: 'balloons' },
+    { kind: 'stall', position: [-7, 5], rotation: 0, variant: 'food' },
+    { kind: 'litter', position: [-1, 5], rotation: 0 },
+    { kind: 'belongings', position: [5, 5], rotation: 0 },
+    { kind: 'barrier', position: [10, 5], rotation: 0, variant: 'down' },
+    { kind: 'dust', position: [-16, -12], rotation: 0 },
+    { kind: 'dust', position: [4, -13], rotation: 0, variant: 'smoke' },
+  ],
+  patients: [
+    pt({ id: 'psp', ageYears: 40, vitals: vitals({ canWalk: true }), appearance: look('#3fa34d'), pose: 'standing', position: [-10, -1.8], rotation: 0 }),
+    pt({ id: 'policja', ageYears: 40, vitals: vitals({ canWalk: true }), appearance: look('#3b5dc9'), pose: 'standing', position: [-2, -2.2], rotation: 0 }),
+    pt({ id: 'autobus', ageYears: 9, vitals: vitals(), appearance: look('#f2a23c', { child: true }), pose: 'back', position: [12.6, -2.6], rotation: 0 }),
+    pt({ id: 'glosnik', ageYears: 22, vitals: vitals({ canWalk: true }), appearance: look('#7a3b8a', { sex: 'f', hairStyle: 'long' }), pose: 'standing', position: [16.5, -2.5], rotation: 0 }),
+    pt({ id: 'stragany', ageYears: 30, vitals: vitals({ canWalk: true }), appearance: look('#e0d050'), pose: 'standing', position: [-9.5, 7], rotation: 0 }),
+    pt({ id: 'smieci', ageYears: 19, vitals: vitals(), appearance: look('#3b9dc9', { sex: 'f', hairStyle: 'ponytail' }), pose: 'back', position: [1.8, 7.5], rotation: 0 }),
+    pt({ id: 'bariera', ageYears: 25, vitals: vitals(), appearance: look('#c04a4a'), pose: 'front', position: [10, 7.5], rotation: 0 }),
+    pt({ id: 'dym', ageYears: 50, vitals: vitals({ canWalk: true }), appearance: look('#d0d0d0'), pose: 'standing', position: [-8, -9.5], rotation: 0 }),
+  ],
+};
+
 const canvas = document.getElementById('c') as HTMLCanvasElement;
 const markerLayer = document.getElementById('markers') as HTMLDivElement;
 const bar = document.getElementById('bar') as HTMLDivElement;
@@ -139,7 +171,8 @@ const log = document.getElementById('log') as HTMLDivElement;
 // stan demo — z parametrów URL (?terrain=street&scene=props&fp=1), żeby łatwo linkować widoki
 const params = new URLSearchParams(location.search);
 let terrain: TerrainKind = (['road', 'street', 'field', 'highway'] as const).find((t) => t === params.get('terrain')) ?? 'road';
-let sceneKind: 'crash' | 'props' | 'vehicles' = params.get('scene') === 'props' ? 'props' : params.get('scene') === 'vehicles' ? 'vehicles' : 'crash';
+type SceneKind = 'crash' | 'props' | 'vehicles' | 'models';
+let sceneKind: SceneKind = (['props', 'vehicles', 'models'] as const).find((k) => k === params.get('scene')) ?? 'crash';
 let showFootprints = params.get('fp') !== '0';
 
 let view: GameView;
@@ -151,6 +184,8 @@ function mount(): void {
   view?.dispose();
   scenario = sceneKind === 'vehicles'
     ? vehiclesScenario
+    : sceneKind === 'models'
+    ? modelsScenario
     : { ...(sceneKind === 'props' ? propsScenario : crashScenario), terrain };
   view = new GameView(canvas, scenario, { debugFootprints: showFootprints });
   markerLayer.replaceChildren();
@@ -199,9 +234,18 @@ function renderBar(): void {
   button('Wypadek', () => { sceneKind = 'crash'; mount(); }, sceneKind === 'crash');
   button('Rekwizyty', () => { sceneKind = 'props'; mount(); }, sceneKind === 'props');
   button('Pojazdy', () => { sceneKind = 'vehicles'; mount(); }, sceneKind === 'vehicles');
+  button('Nowe modele', () => { sceneKind = 'models'; mount(); }, sceneKind === 'models');
   button('Obrysy', () => { showFootprints = !showFootprints; mount(); }, showFootprints);
   button('Przegląd', () => { selected = null; view.focusPatient(null); });
-  for (const p of scenario.patients) button(p.id, () => { selected = p.id; view.focusPatient(p.id); });
+  if (sceneKind === 'models') {
+    // one button per model: frame it from a closer, steeper camera
+    for (const pr of scenario.props) {
+      const big = ['firetruck', 'bus', 'dust'].includes(pr.kind);
+      button(`🔍 ${pr.kind}${pr.variant ? `/${pr.variant}` : ''}`, () => view.lookAt(pr.position[0], pr.position[1], big ? 5 : 3, 35));
+    }
+  } else {
+    for (const p of scenario.patients) button(p.id, () => { selected = p.id; view.focusPatient(p.id); });
+  }
   button('Chodzący do mnie', () => view.sendWalkersToCollectionPoint());
   if (sceneKind === 'crash') {
     button('Zatamuj krwotok', () => view.setBleedingControlled('p1'));
