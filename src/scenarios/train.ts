@@ -39,10 +39,10 @@ export const trainScenario: Scenario = {
     { kind: 'belongings', position: [-1, 3.4], rotation: 0.7 },
     { kind: 'belongings', position: [6.5, 3.6], rotation: 2.1 },
     // services on the dirt road
-    { kind: 'firetruck', position: [-2, 10.9], rotation: 0 },
-    { kind: 'ambulance', position: [7, 11], rotation: 0 },
-    { kind: 'police', position: [15, 10.8], rotation: 0.1 },
-    { kind: 'cones', position: [18.5, 10.9], rotation: 0 },
+    { kind: 'firetruck', position: [-18, 10.9], rotation: 0 },
+    { kind: 'ambulance', position: [16.5, 11], rotation: Math.PI },
+    { kind: 'police', position: [23, 10.8], rotation: 0.1 },
+    { kind: 'cones', position: [26.5, 10.9], rotation: 0 },
   ],
   patients: [
     // ── ZIELONI ──────────────────────────────────────────────
