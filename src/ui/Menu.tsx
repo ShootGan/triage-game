@@ -138,6 +138,9 @@ export function MenuScreen() {
           Start ▶
         </button>
         {isStub && <p className="stub-note">TRYB STUB — atrapy modułów (src/ui/dev)</p>}
+        <p className="app-version" title="Wersja aplikacji">
+          v{__APP_VERSION__}
+        </p>
       </div>
     </div>
   );

@@ -49,6 +49,13 @@
 .debrief-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .debrief-code { margin: 12px 0 0; }
 
+/* Wersja aplikacji — stopka panelu menu (wersje to tylko cyfry i kropki → czcionka tytułowa) */
+.app-version {
+  margin: 12px 0 0; text-align: right;
+  font-family: var(--font-title); font-size: 8px; letter-spacing: 1px;
+  color: var(--muted); opacity: 0.7; user-select: text;
+}
+
 @media (max-width: 420px) {
   .code-value { font-size: 13px; }
   .code-form .btn { flex: 1 1 auto; }
