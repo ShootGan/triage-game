@@ -48,10 +48,7 @@ export function MenuScreen() {
   return (
     <div className="screen menu">
       <div className="panel menu-panel">
-        <h1 className="title">
-          Triage
-          <span className="subtitle">ćwiczenia segregacji</span>
-        </h1>
+        <h1 className="title">Triage</h1>
         <p className="muted">START · JumpSTART — zdarzenie masowe</p>
 
         <h2 className="h-small">Tryb</h2>
