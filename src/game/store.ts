@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { ExamActionId, PatientExamState } from '../engine/exam/types';
-import type { GameScore } from '../engine/scoring/types';
+import type { GameScore, TagEvent } from '../engine/scoring/types';
 import type { TriageCategory } from '../engine/triage';
 import type { IGameView } from '../render/types';
 import type { Scenario, ScenarioPatient } from '../scenarios/types';
@@ -41,6 +41,8 @@ export interface GameState {
   /** Ostatni pacjent, do którego gracz podszedł (koszt dojścia liczony przy zmianie). */
   lastVisitedId: string | null;
   tags: Record<string, TriageCategory | undefined>;
+  /** Ostatnie oznaczenie każdego pacjenta z pozycją w dzienniku badania (czy kroki poprzedzały opaskę). */
+  tagEvents: Record<string, TagEvent | undefined>;
   exams: Record<string, PatientExamState | undefined>;
   walkersCalled: boolean;
   walkersGroupTagged: boolean;
@@ -94,6 +96,7 @@ const freshRound = {
   approachingId: null,
   lastVisitedId: null,
   tags: {},
+  tagEvents: {},
   exams: {},
   walkersCalled: false,
   walkersGroupTagged: false,
@@ -230,7 +233,10 @@ export const useGame = create<GameState>()((set, get) => {
     tagPatient(id, cat) {
       const s = get();
       if (s.phase !== 'playing' || !findPatient(s, id)) return;
-      set({ tags: { ...s.tags, [id]: cat } });
+      set({
+        tags: { ...s.tags, [id]: cat },
+        tagEvents: { ...s.tagEvents, [id]: { category: cat, logIndex: s.exams[id]?.log.length ?? 0 } },
+      });
       view?.setTag(id, cat);
       // kategoria nadana — zamykamy panel badania i wracamy do przeglądu
       if (s.selectedId === id) get().selectPatient(null);
@@ -247,14 +253,16 @@ export const useGame = create<GameState>()((set, get) => {
       const s = get();
       if (s.phase !== 'playing' || !s.walkersCalled || s.walkersGroupTagged || !s.scenario) return;
       const tags = { ...s.tags };
+      const tagEvents = { ...s.tagEvents };
       for (const p of s.scenario.patients) {
         // Nie nadpisujemy opasek założonych już ręcznie przez gracza.
         if (p.vitals.canWalk && !tags[p.id]) {
           tags[p.id] = 'green';
+          tagEvents[p.id] = { category: 'green', logIndex: s.exams[p.id]?.log.length ?? 0 };
           view?.setTag(p.id, 'green');
         }
       }
-      set({ tags, walkersGroupTagged: true });
+      set({ tags, tagEvents, walkersGroupTagged: true });
     },
 
     endTriage() {
@@ -263,7 +271,7 @@ export const useGame = create<GameState>()((set, get) => {
       stopClock();
       const now = Math.round(elapsedNow());
       const elapsed = timeLimitEnforced(s.mode) ? Math.min(now, s.scenario.timeLimitSec) : now;
-      const score = getDeps().scoreGame(s.scenario.patients, s.tags, s.exams, elapsed);
+      const score = getDeps().scoreGame(s.scenario.patients, s.tags, s.exams, elapsed, s.tagEvents);
       view?.focusPatient(null);
       set({ score, selectedId: null, approachingId: null, phase: 'debrief' });
     },

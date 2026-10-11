@@ -218,6 +218,191 @@ describe('missedLifesaving', () => {
   });
 });
 
+describe('procedura przed oznaczeniem (werdykt „procedure")', () => {
+  const childApnoeic = (id: string, b: Partial<Vitals['breathing']> = {}, rest: VitalsOver = {}) => ({
+    ...apnoeic(id, b, rest),
+    appearsChild: true,
+    ageYears: 6,
+  });
+  /** Liczba czynności przed opaską = długość dziennika po `before`. */
+  const tagAfter = (before: ExamActionId[]) => before.length;
+
+  describe('START', () => {
+    const dead = apnoeic('a', {}, { peripheralPulse: false, crtSeconds: 6 });
+
+    it('czarny po udrożnieniu → poprawnie', () => {
+      const d = debriefPatient(dead, 'black', exam(dead, ['breathing', 'airway']));
+      expect(d.verdict).toBe('correct');
+      expect(d.explanation).toBe('');
+      expect(d.actionsBeforeTag).toBe(2);
+    });
+
+    it('czarny bez udrożnienia → procedura', () => {
+      const d = debriefPatient(dead, 'black', exam(dead, ['breathing']));
+      expect(d.verdict).toBe('procedure');
+      expect(d.explanation).toBe(
+        'Oznaczono jako CZARNY bez udrożnienia dróg oddechowych — wg START pacjent, u którego po udrożnieniu wraca oddech, byłby CZERWONY. Kolor zgodny z algorytmem, ale ustalony bez wymaganego kroku.',
+      );
+      expect(d.missedLifesaving).toEqual(['Nie udrożniono dróg oddechowych u pacjenta bez oddechu']);
+    });
+
+    it('udrożnienie dopiero po opasce się nie liczy', () => {
+      const ex = exam(dead, ['breathing', 'airway']);
+      const d = debriefPatient(dead, 'black', ex, 1);
+      expect(d.verdict).toBe('procedure');
+      expect(d.actionsDone).toEqual(['breathing', 'airway']);
+      expect(d.actionsBeforeTag).toBe(1);
+      expect(d.missedLifesaving).toEqual(['Nie udrożniono dróg oddechowych u pacjenta bez oddechu']);
+    });
+
+    it('ponowne oznaczenie po udrożnieniu → liczy się ostatnia opaska', () => {
+      const ex = exam(dead, ['breathing', 'airway']);
+      expect(debriefPatient(dead, 'black', ex, ex.log.length).verdict).toBe('correct');
+    });
+
+    it('bezdech, oddech po udrożnieniu, czerwony bez udrożnienia → procedura', () => {
+      const p = apnoeic('b', { afterAirway: true, rate: 10 });
+      const d = debriefPatient(p, 'red', exam(p, ['breathing']));
+      expect(d.verdict).toBe('procedure');
+      expect(d.explanation).toMatch(/^Oznaczono jako CZERWONY bez udrożnienia dróg oddechowych — wg START/);
+      expect(debriefPatient(p, 'red', exam(p, ['airway'])).verdict).toBe('correct');
+    });
+
+    it('pacjent oddychający — brak reguły procedury (np. czerwony bez oceny CRT)', () => {
+      const p = patient('c', { crtSeconds: 3 });
+      expect(debriefPatient(p, 'red', exam(p, ['breathing'])).verdict).toBe('correct');
+    });
+
+    it('zły kolor nadal over/under', () => {
+      expect(debriefPatient(dead, 'red', exam(dead, [])).verdict).toBe('over');
+      const p = apnoeic('d', { afterAirway: true, rate: 10 });
+      expect(debriefPatient(p, 'black', exam(p, [])).verdict).toBe('under');
+    });
+  });
+
+  describe('JumpSTART', () => {
+    const noBreathsWithPulse = childApnoeic('a', { afterRescueBreaths: false });
+    const noPulse = childApnoeic('b', {}, { peripheralPulse: false, crtSeconds: 6 });
+    const BREATHS_SENTENCE =
+      'Oznaczono jako CZARNY bez 5 oddechów ratowniczych u dziecka z zachowanym tętnem — wg JumpSTART dziecko po skutecznych oddechach ratowniczych byłoby CZERWONE.';
+
+    it('pełna procedura (udrożnienie → tętno → 5 oddechów) → poprawnie', () => {
+      const d = debriefPatient(noBreathsWithPulse, 'black', exam(noBreathsWithPulse, ['airway', 'pulse', 'rescue-breaths']));
+      expect(d.verdict).toBe('correct');
+      expect(d.missedLifesaving).toEqual([]);
+    });
+
+    it('bez 5 oddechów ratowniczych → procedura (zgłoszony błąd)', () => {
+      const p = noBreathsWithPulse;
+      const d = debriefPatient(p, 'black', exam(p, ['breathing', 'airway', 'pulse']));
+      expect(d.verdict).toBe('procedure');
+      expect(d.explanation).toBe(`${BREATHS_SENTENCE} Kolor zgodny z algorytmem, ale ustalony bez wymaganego kroku.`);
+      expect(d.missedLifesaving).toEqual(['Nie podano 5 oddechów ratowniczych dziecku z zachowanym tętnem przed oznaczeniem jako CZARNY']);
+    });
+
+    it('bez badania tętna → procedura', () => {
+      const p = noBreathsWithPulse;
+      const d = debriefPatient(p, 'black', exam(p, ['airway', 'rescue-breaths']));
+      expect(d.verdict).toBe('procedure');
+      expect(d.explanation).toMatch(/^Oznaczono jako CZARNY bez badania tętna obwodowego — wg JumpSTART/);
+    });
+
+    it('bez tętna obwodowego: udrożnienie + tętno wystarczą; bez tętna → procedura', () => {
+      expect(debriefPatient(noPulse, 'black', exam(noPulse, ['airway', 'pulse'])).verdict).toBe('correct');
+      const d = debriefPatient(noPulse, 'black', exam(noPulse, ['airway']));
+      expect(d.verdict).toBe('procedure');
+      expect(d.explanation).toMatch(/bez badania tętna obwodowego/);
+      expect(d.explanation).not.toMatch(/oddechów ratowniczych u dziecka/);
+    });
+
+    it('bez udrożnienia → procedura; wymienia wszystkie pominięte kroki', () => {
+      const p = noBreathsWithPulse;
+      const d = debriefPatient(p, 'black', exam(p, ['breathing']));
+      expect(d.verdict).toBe('procedure');
+      expect(d.explanation).toBe(
+        'Oznaczono jako CZARNY bez udrożnienia dróg oddechowych — wg JumpSTART dziecko, u którego po udrożnieniu wraca oddech, byłoby CZERWONE. ' +
+          'Przed oznaczeniem nie wykonano też: badania tętna, 5 oddechów ratowniczych. Kolor zgodny z algorytmem, ale ustalony bez wymaganego kroku.',
+      );
+      expect(d.missedLifesaving).toEqual([
+        'Nie udrożniono dróg oddechowych u pacjenta bez oddechu',
+        'Nie podano 5 oddechów ratowniczych dziecku z zachowanym tętnem przed oznaczeniem jako CZARNY',
+      ]);
+    });
+
+    it('5 oddechów ratowniczych dopiero po opasce → procedura; ponowne oznaczenie → poprawnie', () => {
+      const p = noBreathsWithPulse;
+      const ex = exam(p, ['airway', 'pulse', 'rescue-breaths']);
+      expect(debriefPatient(p, 'black', ex, tagAfter(['airway', 'pulse'])).verdict).toBe('procedure');
+      expect(debriefPatient(p, 'black', ex, tagAfter(['airway', 'pulse', 'rescue-breaths'])).verdict).toBe('correct');
+    });
+
+    it('oddechy ratownicze „przed udrożnieniem" nie liczą się (czynność bez efektu)', () => {
+      const p = noBreathsWithPulse;
+      const d = debriefPatient(p, 'black', exam(p, ['rescue-breaths', 'airway', 'pulse']));
+      expect(d.verdict).toBe('procedure');
+      expect(d.explanation.startsWith(BREATHS_SENTENCE)).toBe(true);
+    });
+
+    it('dziecko oddycha po oddechach ratowniczych: czerwony bez oddechów → procedura; czarny → zaniżenie', () => {
+      const p = childApnoeic('c', { afterRescueBreaths: true, rate: 12 });
+      expect(debriefPatient(p, 'red', exam(p, ['airway', 'pulse', 'rescue-breaths'])).verdict).toBe('correct');
+      const d = debriefPatient(p, 'red', exam(p, ['airway', 'pulse']));
+      expect(d.verdict).toBe('procedure');
+      expect(d.explanation).toMatch(/^Oznaczono jako CZERWONY bez 5 oddechów ratowniczych — wg JumpSTART/);
+      expect(debriefPatient(p, 'black', exam(p, ['airway', 'pulse'])).verdict).toBe('under');
+    });
+  });
+
+  describe('masywny krwotok — tylko uwaga, nie werdykt', () => {
+    const p = patient('k', { peripheralPulse: false, crtSeconds: 4 }, { majorBleeding: true });
+
+    it('czerwony bez tamowania → poprawnie + uwaga', () => {
+      const d = debriefPatient(p, 'red', exam(p, ['pulse']));
+      expect(d.verdict).toBe('correct');
+      expect(d.missedLifesaving).toEqual(['Nie zatamowano masywnego krwotoku']);
+    });
+
+    it('zatamowany dopiero po oznaczeniu → uwaga o kolejności', () => {
+      const d = debriefPatient(p, 'red', exam(p, ['pulse', 'bleeding']), 1);
+      expect(d.verdict).toBe('correct');
+      expect(d.missedLifesaving).toEqual([
+        'Krwotok zatamowano dopiero po oznaczeniu — tamowanie masywnego krwotoku wykonuje się w trakcie oceny, przed nadaniem kategorii',
+      ]);
+    });
+  });
+
+  describe('scoreGame z momentami oznaczeń', () => {
+    const ps = [apnoeic('s', {}, { peripheralPulse: false }), childApnoeic('j', { afterRescueBreaths: false }), patient('y')];
+    const exams = {
+      s: exam(ps[0], ['airway']),
+      j: exam(ps[1], ['airway', 'pulse', 'rescue-breaths']),
+      y: exam(ps[2], ['breathing', 'pulse', 'crt', 'commands']),
+    };
+    const tags = { s: 'black', j: 'black', y: 'yellow' } as const;
+
+    it('procedura liczona jako błąd w trafności', () => {
+      const s = scoreGame(ps, tags, exams, 60, {
+        s: { category: 'black', logIndex: 0 },
+        j: { category: 'black', logIndex: 2 },
+        y: { category: 'yellow', logIndex: 4 },
+      });
+      expect(s).toMatchObject({ total: 3, correct: 1, procedure: 2, over: 0, under: 0, untagged: 0, accuracyPct: 33 });
+      expect(s.patients.map(p => p.verdict)).toEqual(['procedure', 'procedure', 'correct']);
+    });
+
+    it('bez tagEvents → opaska po wszystkich czynnościach (zgodność wstecz)', () => {
+      const s = scoreGame(ps, tags, exams, 60);
+      expect(s).toMatchObject({ correct: 3, procedure: 0, accuracyPct: 100 });
+    });
+
+    it('nieoznaczony pacjent nie dostaje werdyktu procedury', () => {
+      const s = scoreGame(ps, {}, exams, 60);
+      expect(s).toMatchObject({ procedure: 0, untagged: 3 });
+      expect(s.patients[0].actionsBeforeTag).toBeNull();
+    });
+  });
+});
+
 describe('scoreGame', () => {
   const ps = [
     patient('g', { canWalk: true }),
@@ -228,7 +413,7 @@ describe('scoreGame', () => {
 
   it('zlicza werdykty, trafność, czas na pacjenta', () => {
     const s = scoreGame(ps, { g: 'green', y: 'red', r: 'yellow' }, { b: undefined }, 90);
-    expect(s).toMatchObject({ total: 4, correct: 1, over: 1, under: 1, untagged: 1, accuracyPct: 25, elapsedSec: 90, avgSecPerPatient: 30 });
+    expect(s).toMatchObject({ total: 4, correct: 1, procedure: 0, over: 1, under: 1, untagged: 1, accuracyPct: 25, elapsedSec: 90, avgSecPerPatient: 30 });
     expect(s.patients.map(p => p.verdict)).toEqual(['correct', 'over', 'under', 'untagged']);
   });
 

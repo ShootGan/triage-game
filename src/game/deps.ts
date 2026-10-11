@@ -1,5 +1,5 @@
 import type { ExamActionId, ExamResult, PatientExamState } from '../engine/exam/types';
-import type { GameScore } from '../engine/scoring/types';
+import type { GameScore, TagEvent } from '../engine/scoring/types';
 import type { TriageCategory } from '../engine/triage';
 import type { GameViewFactory } from '../render/types';
 import type { Scenario, ScenarioPatient } from '../scenarios/types';
@@ -41,6 +41,8 @@ export interface GameDeps {
     tags: Record<string, TriageCategory | undefined>,
     exams: Record<string, PatientExamState | undefined>,
     elapsedSec: number,
+    /** Moment ostatniego oznaczenia (indeks w dzienniku badania) — do oceny procedury przed opaską. */
+    tagEvents?: Record<string, TagEvent | undefined>,
   ) => GameScore;
   /** Oznaczenie trybu stub (pokazywane w UI). */
   isStub?: boolean;
