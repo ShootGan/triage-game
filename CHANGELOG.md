@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Train derailment and hall collapse are the largest scenes: 26 template casualties (random codes
+  24–30) on a wider area; scenarios can now declare their own patient area (`bounds`).
 - Hall collapse (winter): cold skin makes capillary refill read prolonged for everyone, so only
   the radial pulse counts as a perfusion check there; the debrief explains why.
 

@@ -21,6 +21,16 @@ const EXPECTED: Record<string, TriageCategory> = {
   h14: 'red',
   h15: 'black',
   h16: 'black',
+  h17: 'green',
+  h18: 'green',
+  h19: 'green',
+  h20: 'yellow',
+  h21: 'yellow',
+  h22: 'red',
+  h23: 'red',
+  h24: 'red',
+  h25: 'red',
+  h26: 'black',
 };
 
 const patients = hallScenario.patients;
@@ -39,8 +49,8 @@ describe('scenariusz: zawalenie dachu hali wystawowej', () => {
     expect(scenarioIssues(hallScenario)).toEqual([]);
   });
 
-  it('16 pacjentów, unikalne identyfikatory zgodne z EXPECTED', () => {
-    expect(patients).toHaveLength(16);
+  it('26 pacjentów, unikalne identyfikatory zgodne z EXPECTED', () => {
+    expect(patients).toHaveLength(26);
     expect(patients.map((p) => p.id).sort()).toEqual(Object.keys(EXPECTED).sort());
   });
 
@@ -62,23 +72,23 @@ describe('scenariusz: zawalenie dachu hali wystawowej', () => {
   it('rozkład kategorii', () => {
     const count = (c: TriageCategory) => Object.values(EXPECTED).filter((x) => x === c).length;
     expect({ green: count('green'), yellow: count('yellow'), red: count('red'), black: count('black') }).toEqual({
-      green: 4,
-      yellow: 5,
-      red: 5,
-      black: 2,
+      green: 7,
+      yellow: 7,
+      red: 9,
+      black: 3,
     });
   });
 
   it('chodzący zieloni (w tym dziecko) — zmarznięci, ale zimno nie zmienia kategorii', () => {
     const walkers = patients.filter((p) => p.vitals.canWalk);
-    expect(walkers.map((p) => p.id).sort()).toEqual(['h01', 'h02', 'h03', 'h04']);
+    expect(walkers.map((p) => p.id).sort()).toEqual(['h01', 'h02', 'h03', 'h04', 'h17', 'h18', 'h19']);
     expect(walkers.some((p) => p.appearsChild)).toBe(true);
     expect(walkers.some((p) => p.injuries.join(' ').match(/zimn|drż|trzęs/))).toBe(true);
   });
 
   describe('dzieci', () => {
-    it('3 dzieci (JumpSTART), rodziny na targach', () => {
-      expect(patients.filter((p) => p.appearsChild).map((p) => p.id).sort()).toEqual(['h03', 'h07', 'h13']);
+    it('5 dzieci (JumpSTART), rodziny na targach', () => {
+      expect(patients.filter((p) => p.appearsChild).map((p) => p.id).sort()).toEqual(['h03', 'h07', 'h13', 'h19', 'h25']);
     });
 
     it('10-latek: ŻÓŁTY w obu algorytmach (wiek 9–12 — akceptowany każdy)', () => {
