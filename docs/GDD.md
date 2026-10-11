@@ -238,8 +238,8 @@ Zasada: `engine/` nie zna Three.js ani Reacta — czysta logika, w pełni testow
 - [ ] **Miejsce na scenie zależne od stanu/mechanizmu**: sloty z kontekstem („w aucie", „wyrzucony przez szybę",
   „pobocze — chodzący"), archetypy dopasowane do kontekstu; drobniejsze pozy (duszność — na siedząco,
   nieprzytomny oddychający — pozycja boczna).
-- [ ] Decyzje merytoryczne z przeglądu (lokalny `docs/medical-review.md`): wariant PL vs oryginał JumpSTART,
-  niemowlęta, opisy przy ciężarnych, easter egg.
+- [x] Decyzje merytoryczne z przeglądu (`docs/medical-review.md`, sekcja 0): oryginał JumpSTART (bez wariantu PL),
+  9–12 lat — oba algorytmy, niemowlęta wg listy Romig, uwagi przy ciężarnych, easter egg zostaje.
 
 ### Wydania / wersjonowanie
 - Wersje zgodne z [SemVer](https://semver.org/lang/pl/); bieżąca w `package.json`, widoczna w stopce menu.
