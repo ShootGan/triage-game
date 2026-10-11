@@ -567,10 +567,14 @@ export class GameView implements IGameView {
     const pts = this.overviewPoints();
     const { fw, fh } = this.freeFrac();
     const base = this.rig.goal.angle;
+    // Buildings face local +z: the camera must stay on the facade side, or roofs hide the patients in front.
+    const facades = this.scenario.props.filter((p) => p.kind === 'building' || p.kind === 'tenement').map((p) => p.rotation);
+    const facadeSide = (a: number) => facades.every((r) => Math.cos(a) * Math.sin(r) + Math.sin(a) * Math.cos(r) > 0.3);
     let best = base;
     let bestZoom = this.rig.frame(pts, base, OVERVIEW_ELEV, 1.4, fw, fh).zoom;
     for (let k = 1; k < 16; k++) {
       const a = base + (k * Math.PI) / 8;
+      if (!facadeSide(a)) continue;
       const z = this.rig.frame(pts, a, OVERVIEW_ELEV, 1.4, fw, fh).zoom;
       if (z < bestZoom * 0.97) { best = a; bestZoom = z; }
     }

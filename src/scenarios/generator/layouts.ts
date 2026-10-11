@@ -289,7 +289,7 @@ const tenement: ScenarioLayout = {
     S(-3, 2.5, 0.2, 'przy gruzowisku', true),
     S(4.5, -1, 2.2, 'przy samochodzie', true),
     S(-10, 0.5, 0.9, 'na jezdni', true),
-    S(4.5, -4.6, -0.5, 'pod kamienicą', true),
+    S(4.5, -3.6, -0.5, 'pod kamienicą', true),
     S(-5, -1.2, 2.6, 'przy gruzowisku', true),
     S(-1, 1.2, -0.4, 'na jezdni', true),
     S(-1, 3.2, -3.1, 'na chodniku', false),

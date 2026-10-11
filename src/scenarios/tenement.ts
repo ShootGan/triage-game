@@ -22,12 +22,16 @@ export const tenementScenario: Scenario = {
   collectionPoint: [7, 7.5],
   props: [
     { kind: 'building', position: [-3, -8.5], rotation: 0 },
+    // street frontage: neighbours wall to wall with the collapsed house, windows blown out on the near side
+    { kind: 'tenement', position: [-15, -8.5], rotation: 0, variant: 'salmon-4-dmgR' },
+    { kind: 'tenement', position: [9, -8.5], rotation: 0, variant: 'grey-dmgL' },
+    { kind: 'tenement', position: [-27, -8.5], rotation: 0, variant: 'green' },
+    { kind: 'tenement', position: [21, -8.5], rotation: 0, variant: 'ochre-4' },
     { kind: 'rubble', position: [-7, -3.2], rotation: 0.3 },
     { kind: 'rubble', position: [-3, -2.8], rotation: 1.1 },
     { kind: 'rubble', position: [0.8, -3.4], rotation: 2.0 },
     { kind: 'rubble', position: [-5.5, 1], rotation: 0 },
     { kind: 'car', position: [7, -2], rotation: 0 },
-    { kind: 'car', position: [8.5, 2.2], rotation: 0.25 },
     { kind: 'glass', position: [2.5, -0.5], rotation: 0 },
     { kind: 'glass', position: [-1.5, 1.5], rotation: 1.4 },
     { kind: 'glass', position: [4.5, 1.5], rotation: 2.6 },
@@ -308,7 +312,7 @@ export const tenementScenario: Scenario = {
       injuries: ['zasypana gruzem do pasa — wydobyta przez świadków', 'zniekształcenie klatki piersiowej, sinica twarzy'],
       appearance: { sex: 'f', child: false, skin: '#f0d5be', hair: '#e5e5e5', hairStyle: 'short', shirt: '#6c3483', pants: '#3b3b3b', sleeves: 'long' },
       pose: 'back',
-      position: [4.5, -4.6],
+      position: [4.5, -3.6],
       rotation: -0.5,
     },
     {
