@@ -1,4 +1,5 @@
-// ATRAPA (tylko tryb ?stub) — uproszczona ocena oparta na prawdziwym silniku triage.
+// ATRAPA (tylko tryb ?stub) — uproszczona ocena oparta na prawdziwym silniku triage
+// (tylko kolor; bez werdyktu 'procedure' i bez momentu oznaczenia).
 import type { PatientExamState } from '../../engine/exam/types';
 import type { GameScore, PatientDebrief, Verdict } from '../../engine/scoring/types';
 import { CATEGORY_LABEL, triage, type TriageCategory } from '../../engine/triage';
@@ -41,6 +42,7 @@ export function scoreGame(
   return {
     total: list.length,
     correct: count('correct'),
+    procedure: count('procedure'),
     over: count('over'),
     under: count('under'),
     untagged: count('untagged'),

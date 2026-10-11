@@ -1,7 +1,21 @@
 import type { ExamActionId } from '../exam/types';
 import type { DecisionStep, Protocol, TriageCategory } from '../triage';
 
-export type Verdict = 'correct' | 'over' | 'under' | 'untagged';
+/**
+ * - `correct`   — właściwy kolor i wymagane kroki algorytmu wykonane przed oznaczeniem;
+ * - `procedure` — kolor właściwy, ale przed oznaczeniem pominięto krok algorytmu, który mógł
+ *                 zmienić kategorię (np. CZARNY bez udrożnienia dróg oddechowych) — liczony jako błąd;
+ * - `over` / `under` — kolor zawyżony / zaniżony;
+ * - `untagged`  — brak opaski.
+ */
+export type Verdict = 'correct' | 'procedure' | 'over' | 'under' | 'untagged';
+
+/** Moment nadania (ostatniej) opaski względem czynności z dziennika badania. */
+export interface TagEvent {
+  category: TriageCategory;
+  /** Liczba wpisów w `PatientExamState.log` w chwili oznaczenia — czynności o indeksie < logIndex poprzedzały opaskę. */
+  logIndex: number;
+}
 
 export interface PatientDebrief {
   patientId: string;
@@ -14,6 +28,11 @@ export interface PatientDebrief {
   steps: DecisionStep[];
   /** Czynności wykonane przez gracza (w kolejności). */
   actionsDone: ExamActionId[];
+  /**
+   * Ile czynności z `actionsDone` wykonano przed (ostatnim) oznaczeniem; null, gdy pacjenta nie oznaczono.
+   * Opcjonalne dla zgodności z atrapami ocen.
+   */
+  actionsBeforeTag?: number | null;
   /** Pominięte czynności ratujące życie, np. „Nie zatamowano masywnego krwotoku". */
   missedLifesaving: string[];
   /** Krótkie wyjaśnienie błędu po polsku (puste, gdy poprawnie). */
@@ -23,6 +42,8 @@ export interface PatientDebrief {
 export interface GameScore {
   total: number;
   correct: number;
+  /** Kolor poprawny, niepełna procedura (liczone jako błąd). */
+  procedure: number;
   over: number;
   under: number;
   untagged: number;

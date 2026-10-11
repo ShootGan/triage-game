@@ -9,10 +9,22 @@ import './code.css';
 
 const VERDICT_LABEL: Record<Verdict, string> = {
   correct: 'POPRAWNIE',
+  procedure: 'PROCEDURA',
   over: 'ZAWYŻONO',
   under: 'ZANIŻONO',
   untagged: 'NIEOZNACZONY',
 };
+
+/** Pełne znaczenie werdyktu (legenda, podpowiedź na plakietce). */
+const VERDICT_HINT: Record<Verdict, string> = {
+  correct: 'kolor i kroki algorytmu przed opaską',
+  procedure: 'kolor poprawny, niepełna procedura (błąd)',
+  over: 'kolor zawyżony',
+  under: 'kolor zaniżony',
+  untagged: 'brak opaski',
+};
+
+const VERDICT_ORDER: Verdict[] = ['correct', 'procedure', 'over', 'under', 'untagged'];
 
 function Chip({ cat }: { cat: TriageCategory | null }) {
   if (!cat) return <span className="chip-lg chip-pending">—</span>;
@@ -76,6 +88,7 @@ export function DebriefScreen() {
           </div>
           <div className="stats">
             <Stat label="Poprawne" value={`${score.correct} / ${score.total}`} cls="ok" />
+            <Stat label="Kolor OK, niepełna procedura" value={score.procedure ?? 0} cls="procedure" />
             <Stat label="Zawyżone (overtriage)" value={score.over} cls="over" />
             <Stat label="Zaniżone (undertriage)" value={score.under} cls="under" />
             <Stat label="Nieoznaczone" value={score.untagged} />
@@ -95,6 +108,14 @@ export function DebriefScreen() {
               ))}
             </div>
           </div>
+        </div>
+
+        <div className="verdict-legend">
+          {VERDICT_ORDER.map((v) => (
+            <span key={v} className="legend-item">
+              <span className={`verdict v-${v}`}>{VERDICT_LABEL[v]}</span> {VERDICT_HINT[v]}
+            </span>
+          ))}
         </div>
 
         <div className="debrief-list">
@@ -126,6 +147,7 @@ function Stat({ label, value, cls }: { label: string; value: string | number; cl
 function PatientRow({ p }: { p: PatientDebrief }) {
   const [open, setOpen] = useState(p.verdict !== 'correct');
   const { ACTION_LABEL } = getDeps();
+  const tagAt = p.actionsBeforeTag ?? null;
 
   return (
     <div className={`debrief-item verdict-${p.verdict}`}>
@@ -140,13 +162,15 @@ function PatientRow({ p }: { p: PatientDebrief }) {
           <Chip cat={p.expected} />
         </span>
         <span>
-          <span className={`verdict v-${p.verdict}`}>{VERDICT_LABEL[p.verdict]}</span>
+          <span className={`verdict v-${p.verdict}`} title={VERDICT_HINT[p.verdict]}>
+            {VERDICT_LABEL[p.verdict]}
+          </span>
         </span>
         <span className="toggle">{open ? '▲' : '▼'}</span>
       </div>
       {(p.explanation || p.missedLifesaving.length > 0) && (
         <div className="pd-notes">
-          {p.explanation && <p>{p.explanation}</p>}
+          {p.explanation && <p className={p.verdict === 'procedure' ? 'procedure-note' : undefined}>{p.explanation}</p>}
           {p.missedLifesaving.map((m, i) => (
             <p key={i} className="missed">
               ⚠ {m}
@@ -179,9 +203,23 @@ function PatientRow({ p }: { p: PatientDebrief }) {
             ) : (
               <ol className="steps">
                 {p.actionsDone.map((a, i) => (
-                  <li key={i}>{ACTION_LABEL[a]}</li>
+                  <li key={i} className={tagAt !== null && i >= tagAt ? 'after-tag' : undefined}>
+                    {ACTION_LABEL[a]}
+                    {tagAt !== null && i >= tagAt && ' · po opasce'}
+                  </li>
                 ))}
               </ol>
+            )}
+            {tagAt !== null && p.given && p.actionsDone.length > 0 && (
+              <p className="tag-moment muted">
+                Opaska {CATEGORY_LABEL[p.given]} założona{' '}
+                {tagAt === 0
+                  ? 'przed jakąkolwiek czynnością'
+                  : tagAt >= p.actionsDone.length
+                    ? 'po wszystkich czynnościach'
+                    : `po ${tagAt}. czynności (późniejsze nie liczą się do procedury)`}
+                .
+              </p>
             )}
           </div>
         </div>
