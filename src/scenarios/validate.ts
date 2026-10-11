@@ -57,7 +57,8 @@ export function scenarioIssues(s: Scenario): string[] {
     const v = p.vitals;
     const id = p.id;
     if (p.appearance.child !== p.appearsChild) out.push(`${id}: appearance.child ≠ appearsChild`);
-    if (v.obeysCommands && v.avpu !== 'A') out.push(`${id}: wykonuje polecenia, ale AVPU ≠ A`);
+    // A drowsy patient who opens eyes to voice (V) can still follow simple commands; P/U cannot.
+    if (v.obeysCommands && (v.avpu === 'P' || v.avpu === 'U')) out.push(`${id}: wykonuje polecenia, ale AVPU = ${v.avpu}`);
     if (v.canWalk && !['sitting', 'standing'].includes(p.pose)) out.push(`${id}: chodzący powinien siedzieć/stać`);
     if (v.canWalk && (!v.breathing.spontaneous || !v.obeysCommands)) out.push(`${id}: chodzący musi oddychać i wykonywać polecenia`);
     if (!v.breathing.spontaneous) {

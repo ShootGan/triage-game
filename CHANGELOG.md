@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - "Critical error" badge and summary tile for BLACK given to a patient with a chance of survival.
 - Debrief teaching notes: Romig's list of significant external injuries for infants, urgent
   secondary triage for pregnant patients with warning signs, left-side positioning in shock.
+- New generator patient: drowsy adult with a head injury (AVPU "V") who obeys commands — YELLOW
+  in START. Some existing random codes may now produce a slightly different patient set.
 - Debrief note that JumpSTART tends to under-triage seriously injured children (Vassallo 2022,
   Stefani 2022).
 
@@ -41,7 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Decimal comma in the START perfusion step of the debrief path.
 - "ok. 32 lat" (genitive after "około") in scenario labels.
-- Scenario validation rejects a child under 9 with a pulse and CRT > 2 s.
+- Scenario validation rejects a child under 9 with a pulse and CRT > 2 s, and allows a patient
+  with AVPU "V" to obey commands (only P/U are rejected).
 
 ## [0.3.0] - 2026-10-11
 

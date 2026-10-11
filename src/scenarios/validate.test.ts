@@ -13,13 +13,19 @@ describe('walidator scenariuszy', () => {
       ...busScenario,
       patients: [
         { ...p, id: 'x1', position: [0, 0] as [number, number] },
-        { ...p, id: 'x1', position: [0.5, 0] as [number, number], vitals: { ...p.vitals, obeysCommands: true, avpu: 'V' as const } },
+        { ...p, id: 'x1', position: [0.5, 0] as [number, number], vitals: { ...p.vitals, obeysCommands: true, avpu: 'P' as const } },
       ],
     };
     const issues = scenarioIssues(broken);
     expect(issues.some((i) => i.includes('powtórzony id'))).toBe(true);
     expect(issues.some((i) => i.includes('za blisko'))).toBe(true);
-    expect(issues.some((i) => i.includes('AVPU ≠ A'))).toBe(true);
+    expect(issues.some((i) => i.includes('AVPU = P'))).toBe(true);
+  });
+
+  it('AVPU „V" może wykonywać polecenia', () => {
+    const p = busScenario.patients[0];
+    const ok = { ...busScenario, patients: [{ ...p, vitals: { ...p.vitals, obeysCommands: true, avpu: 'V' as const } }] };
+    expect(scenarioIssues(ok).some((i) => i.includes('AVPU'))).toBe(false);
   });
 
   it('dziecko < 9 lat z tętnem i CRT > 2 s — sprzeczne z JumpSTART', () => {

@@ -592,6 +592,21 @@ export const ARCHETYPES: readonly Archetype[] = [
     weight: 0.6,
   },
   {
+    // Teaching case: AVPU "V" yet obeys commands — START asks about commands, not AVPU, so YELLOW.
+    id: 'y-glowa-V',
+    category: 'yellow',
+    criterion: 'START: senny (AVPU „V"), ale wykonuje proste polecenia; parametry prawidłowe',
+    source: [],
+    ages: ADULTLIKE,
+    mechanisms: ['upadek', 'zmiazdzenie', 'komunikacyjny', 'wybuch', 'tlum'],
+    vitals: { ...STABLE(), avpu: 'V' },
+    injuries: [['guz okolicy czołowej', 'krwiak okolicy potylicznej', 'rana tłuczona skóry głowy, niewielkie krwawienie']],
+    extraInjuries: ['otarcia twarzy'],
+    remarks: ['Leży z zamkniętymi oczami, cicho pojękuje.'],
+    poses: ['back'],
+    weight: 0.5,
+  },
+  {
     id: 'y-dziecko-stopa',
     category: 'yellow',
     criterion: 'JumpSTART: nie chodzi; parametry prawidłowe',

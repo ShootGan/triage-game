@@ -17,7 +17,7 @@ Oznaczenia pewności: **[pewne]** — zgodne ze źródłem pierwotnym/wtórnym, 
 - **Punktacja (S3, S4):** trafiony kolor bez oceny rozstrzygającej albo bez zatamowania masywnego krwotoku daje werdykt „niepełna procedura” i nie liczy się do trafności. **S5:** wyróżniony „błąd krytyczny”.
 - **C12:** żart zostaje.
 
-**Wdrożone:** S1, S2 (wcześniej), S3–S7, A3, A4, A2 (strażnik w walidatorze + dopisek przy CRT u dziecka < 9 lat), E1–E6, C1, C2, C6, C8 (wcześniej), C3 i C4 (uwagi dydaktyczne w debriefie), C5, C7, C9, C11, C13. Bez zmian: A1, A5, C10, C12.
+**Wdrożone:** S1, S2 (wcześniej), S3–S7, A3, A4, A2 (strażnik w walidatorze + dopisek przy CRT u dziecka < 9 lat), E1–E6, C1, C2, C6, C8 (wcześniej), C3 i C4 (uwagi dydaktyczne w debriefie), C5, C7, C9, C11, C13. C10 (polecenia przy AVPU „V” dozwolone, nowy archetyp `y-glowa-V`). Bez zmian: A1, A5, C12.
 
 **Nowsze źródła (2021–2026) — skuteczność JumpSTART:** algorytm nie był zmieniany. Nowe prace oceniają jego trafność:
 - Vassallo J i wsp. *Comparative analysis of major incident triage tools in children: a UK population-based analysis.* Emerg Med J 2022;39(10):779–785. JumpSTART do 8 lat, czułość dla czynności ratujących życie 45%, zaniżanie 55%. https://pmc.ncbi.nlm.nih.gov/articles/PMC9510399/
