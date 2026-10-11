@@ -96,7 +96,8 @@ const HW = {
   shoulder: 1.9,    // linia ciągła pasa awaryjnego
   edgeOut: 4.6,     // zewnętrzna krawędź pasa awaryjnego
   barrierMid: -7.5, // bariera w pasie rozdziału
-  oppIn: -9.4,      // krawędź przeciwnej jezdni
+  oppIn: -9.4,      // krawędź przeciwnej jezdni (od pasa rozdziału)
+  oppOut: -19.6,    // zewnętrzna krawędź przeciwnej jezdni (lustro głównej: 2 pasy + pas awaryjny)
   barrierOut: 5.1,  // bariera na poboczu (tylko na obrzeżach sceny)
 };
 
@@ -112,8 +113,7 @@ function buildHighway(kit: Kit, g: THREE.Object3D, size: number, free: FreeFn): 
   // jezdnia główna i przeciwna (wierzch y = 0.02)
   const mainD = HW.edgeOut - HW.edgeIn;
   kit.box(size, 0.22, mainD, ASPH, 0, -0.09, (HW.edgeIn + HW.edgeOut) / 2, g);
-  const oppD = size / 2 + HW.oppIn; // od krawędzi terenu (z = −size/2) do HW.oppIn
-  if (oppD > 0) kit.box(size, 0.22, oppD, ASPH, 0, -0.09, (HW.oppIn - size / 2) / 2, g);
+  kit.box(size, 0.22, HW.oppIn - HW.oppOut, ASPH, 0, -0.09, (HW.oppIn + HW.oppOut) / 2, g);
 
   // oznakowanie poziome
   const solid = (z: number) => kit.box(size, 0.23, 0.15, LINE, 0, -0.085, z, g);
@@ -123,9 +123,13 @@ function buildHighway(kit: Kit, g: THREE.Object3D, size: number, free: FreeFn): 
   const dash = kit.own(new THREE.BoxGeometry(4, 0.23, 0.15));
   const half = size / 2;
   for (let x = -half + 2; x < half - 2; x += 12) kit.part(dash, LINE, g, x, -0.085, HW.lane);
-  // przeciwna jezdnia: krawędź + linia przerywana
+  // przeciwna jezdnia (lustro głównej): krawędź od pasa rozdziału, linia przerywana, pas awaryjny, krawędź zewnętrzna
   solid(HW.oppIn - 0.3);
   for (let x = -half + 8; x < half - 2; x += 12) kit.part(dash, LINE, g, x, -0.085, HW.oppIn - 3.8);
+  solid(HW.oppIn - 7.3);
+  solid(HW.oppOut + 0.2);
+  // bariera za poboczem przeciwnej jezdni
+  guardrail(kit, g, -half, half, HW.oppOut - 0.5, false);
 
   // podwójna bariera w pasie rozdziału (prowadnice z obu stron słupków)
   guardrail(kit, g, -half, half, HW.barrierMid, true);
@@ -141,7 +145,7 @@ function buildHighway(kit: Kit, g: THREE.Object3D, size: number, free: FreeFn): 
 
   // kępki trawy poza jezdniami (pas rozdziału też)
   tufts(kit, g, size, 170, (_x, z) =>
-    (z > HW.edgeIn - 0.2 && z < HW.edgeOut + 0.3) || z < HW.oppIn + 0.2 || Math.abs(z - HW.barrierMid) < 0.4);
+    (z > HW.edgeIn - 0.2 && z < HW.edgeOut + 0.3) || (z < HW.oppIn + 0.2 && z > HW.oppOut - 0.8) || Math.abs(z - HW.barrierMid) < 0.4);
   // słupek kilometrowy i znak autostrady
   if (free(13.5, 5.6, 0.4)) kmPost(kit, g, 13.5, 5.6);
   if (free(-15, 7.5, 1.2)) motorwaySign(kit, g, -15, 7.5);
@@ -170,7 +174,7 @@ function motorwaySign(kit: Kit, g: THREE.Object3D, x: number, z: number): void {
   const board = new THREE.Mesh(kit.own(new THREE.PlaneGeometry(2.4, 1.0)), kit.textMaterial(['AUTOSTRADA', 'A2  km 312'], '#1f4fa8', '#f4f4f4'));
   board.position.set(x, 2.3, z + 0.01); // lico w stronę kamery (+z)
   g.add(board);
-  const back = new THREE.Mesh(kit.own(new THREE.PlaneGeometry(2.4, 1.0)), kit.toon('#8a8f94'));
+  const back = new THREE.Mesh(kit.own(new THREE.PlaneGeometry(2.4, 1.0)), kit.textMaterial(['AUTOSTRADA', 'A2  km 312'], '#1f4fa8', '#f4f4f4'));
   back.position.set(x, 2.3, z - 0.01);
   back.rotation.y = Math.PI;
   g.add(back);
