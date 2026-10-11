@@ -1,7 +1,7 @@
 import type { Scenario } from './types';
 
 /**
- * Karambol na drodze ekspresowej we mgle.
+ * Karambol na autostradzie.
  * Kategorie NIE są tu wpisane — liczy je silnik triage z `vitals`.
  * Zamierzony rozkład (źródło prawdy: pileup.test.ts): 4 ZIELONE, 3 ŻÓŁTE, 5 CZERWONYCH, 1 CZARNY.
  * Przypadki dydaktyczne: niemowlę ZIELONE wg reguły niemowlęcej JumpSTART (a03),
@@ -9,16 +9,16 @@ import type { Scenario } from './types';
  */
 export const pileupScenario: Scenario = {
   id: 'pileup',
-  title: 'Karambol na drodze ekspresowej',
+  title: 'Karambol na autostradzie',
   briefing: [
     'SWD PRM — zadysponowanie, kod 1.',
-    'Zdarzenie masowe: karambol na drodze ekspresowej w gęstej mgle — ciężarówka i kilka samochodów osobowych, kierunek na Warszawę, ok. 3 km za węzłem.',
-    'Zgłaszający: wielu poszkodowanych, w tym dzieci; część osób chodzi po jezdni. Widoczność poniżej 50 m — zagrożenie kolejnymi najechaniami.',
+    'Zdarzenie masowe: karambol na autostradzie A2 — ciężarówka i kilka samochodów osobowych, jezdnia w kierunku Warszawy, ok. 3 km za węzłem.',
+    'Zgłaszający: wielu poszkodowanych, w tym dzieci; część osób chodzi po jezdni. Zagrożenie kolejnymi najechaniami.',
     'PSP zabezpiecza miejsce zdarzenia (wyciek paliwa z ciężarówki), Policja zamyka jezdnię, kolejne ZRM i LPR w drodze.',
     'Jesteś pierwszym zespołem na miejscu — przeprowadź segregację wstępną (START / JumpSTART). Punkt zbiórki dla chodzących na poboczu, na trawie.',
   ].join('\n'),
   timeLimitSec: 660,
-  terrain: 'road',
+  terrain: 'highway',
   collectionPoint: [-8, 7],
   props: [
     { kind: 'truck', position: [-6.5, -0.8], rotation: 0.2 },

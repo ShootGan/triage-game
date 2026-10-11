@@ -55,8 +55,11 @@ export interface ScenarioProp {
  * - 'road'   — trawa + droga wzdłuż osi X (|z| < 3) z krawężnikami (domyślne, jak w scenariuszu autobusu)
  * - 'street' — ulica w mieście: jezdnia wzdłuż osi X (|z| < 3), chodniki z płyt 3 < |z| < 6, dalej bruk/plac
  * - 'field'  — plener: trawa bez drogi, utwardzona alejka wzdłuż osi X (|z| < 1)
+ * - 'highway' — autostrada: jezdnia −5,6 < z < 4,6 (2 pasy + pas awaryjny przy z > 1,9), pas rozdziału z trawą
+ *               i podwójną stalową barierą przy z ≈ −7,5, przeciwna jezdnia z < −9,4; za poboczem trawa,
+ *               bariera na poboczu (z ≈ 5,1) tylko przy |x| > 11
  */
-export type TerrainKind = 'road' | 'street' | 'field';
+export type TerrainKind = 'road' | 'street' | 'field' | 'highway';
 
 export interface Scenario {
   id: string;

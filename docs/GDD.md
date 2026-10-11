@@ -230,6 +230,17 @@ Zasada: `engine/` nie zna Three.js ani Reacta — czysta logika, w pełni testow
 - [ ] Kolejne scenariusze, edytor scenariuszy
 - [ ] Statystyki postępów, ranking
 
+**TODO / pomysły na później**
+- [ ] **Osobny scenariusz: poszkodowani uwięzieni w pojazdach + PSP.** Pacjent siedzi w aucie; badanie przez okno/drzwi
+  z ograniczonym dostępem (część czynności niedostępna: „brak dostępu — pacjent zakleszczony"); segregacja ustala
+  kolejność wydobywania; gracz wskazuje PSP/KDR, kogo wydobyć najpierw; strażacy (postacie NPC) wydobywają
+  po czasie → pacjent leży przy aucie i można go zbadać w pełni. Ocena w debriefie: kolejność wydobycia.
+- [ ] **Miejsce na scenie zależne od stanu/mechanizmu**: sloty z kontekstem („w aucie", „wyrzucony przez szybę",
+  „pobocze — chodzący"), archetypy dopasowane do kontekstu; drobniejsze pozy (duszność — na siedząco,
+  nieprzytomny oddychający — pozycja boczna).
+- [ ] Decyzje merytoryczne z przeglądu (lokalny `docs/medical-review.md`): wariant PL vs oryginał JumpSTART,
+  niemowlęta, opisy przy ciężarnych, easter egg.
+
 ### Wydania / wersjonowanie
 - Wersje zgodne z [SemVer](https://semver.org/lang/pl/); bieżąca w `package.json`, widoczna w stopce menu.
 - Historia zmian: [`CHANGELOG.md`](../CHANGELOG.md) (Keep a Changelog). Proces wydania opisany w `README.md`

@@ -25,6 +25,7 @@ export function buildTerrain(kit: Kit, parent: THREE.Object3D, size = 40, kind: 
     case 'road': buildRoad(kit, g, size); break;
     case 'street': buildStreet(kit, g, size, free); break;
     case 'field': buildField(kit, g, size, free); break;
+    case 'highway': buildHighway(kit, g, size, free); break;
   }
   return g;
 }
@@ -85,6 +86,94 @@ function buildRoad(kit: Kit, g: THREE.Object3D, size: number): void {
   kit.box(size, 0.2, size, '#5f9a4a', 0, -0.1, 0, g);
   carriageway(kit, g, size, '#55585f');
   tufts(kit, g, size, 160, (_x, z) => Math.abs(z) < 3.6);
+}
+
+// ---------- 'highway' ----------
+
+const HW = {
+  edgeIn: -5.6,     // krawędź jezdni od pasa rozdziału
+  lane: -1.8,       // linia przerywana między pasami
+  shoulder: 1.9,    // linia ciągła pasa awaryjnego
+  edgeOut: 4.6,     // zewnętrzna krawędź pasa awaryjnego
+  barrierMid: -7.5, // bariera w pasie rozdziału
+  oppIn: -9.4,      // krawędź przeciwnej jezdni
+  barrierOut: 5.1,  // bariera na poboczu (tylko na obrzeżach sceny)
+};
+
+/**
+ * Autostrada: jezdnia z 2 pasami i pasem awaryjnym, pas rozdziału z trawą i podwójną stalową barierą,
+ * przeciwna jezdnia, za poboczem trawa ze słupkiem kilometrowym i znakiem. Bariera na poboczu zerwana na środku
+ * (tam auto wypadło do rowu i tamtędy chodzący idą na punkt zbiórki).
+ */
+function buildHighway(kit: Kit, g: THREE.Object3D, size: number, free: FreeFn): void {
+  const ASPH = '#53565c';
+  const LINE = '#f0f0e0';
+  kit.box(size, 0.2, size, '#5f9a4a', 0, -0.1, 0, g);
+  // jezdnia główna i przeciwna (wierzch y = 0.02)
+  const mainD = HW.edgeOut - HW.edgeIn;
+  kit.box(size, 0.22, mainD, ASPH, 0, -0.09, (HW.edgeIn + HW.edgeOut) / 2, g);
+  const oppD = size / 2 + HW.oppIn; // od krawędzi terenu (z = −size/2) do HW.oppIn
+  if (oppD > 0) kit.box(size, 0.22, oppD, ASPH, 0, -0.09, (HW.oppIn - size / 2) / 2, g);
+
+  // oznakowanie poziome
+  const solid = (z: number) => kit.box(size, 0.23, 0.15, LINE, 0, -0.085, z, g);
+  solid(HW.edgeIn + 0.3);
+  solid(HW.shoulder);
+  solid(HW.edgeOut - 0.2);
+  const dash = kit.own(new THREE.BoxGeometry(4, 0.23, 0.15));
+  const half = size / 2;
+  for (let x = -half + 2; x < half - 2; x += 12) kit.part(dash, LINE, g, x, -0.085, HW.lane);
+  // przeciwna jezdnia: krawędź + linia przerywana
+  solid(HW.oppIn - 0.3);
+  for (let x = -half + 8; x < half - 2; x += 12) kit.part(dash, LINE, g, x, -0.085, HW.oppIn - 3.8);
+
+  // podwójna bariera w pasie rozdziału (prowadnice z obu stron słupków)
+  guardrail(kit, g, -half, half, HW.barrierMid, true);
+  // bariera na poboczu — tylko na obrzeżach; na środku zerwana (wygięty fragment przy rowie)
+  guardrail(kit, g, -half, -11, HW.barrierOut, false);
+  guardrail(kit, g, 12, half, HW.barrierOut, false);
+  if (free(-9.5, 5.6, 1.5)) {
+    const bent = kit.joint(g, -9.5, 0, 5.6);
+    bent.rotation.y = 0.5;
+    bent.rotation.z = 0.25;
+    kit.box(3, 0.3, 0.06, '#aeb3b8', 0, 0.35, 0, bent);
+  }
+
+  // kępki trawy poza jezdniami (pas rozdziału też)
+  tufts(kit, g, size, 170, (_x, z) =>
+    (z > HW.edgeIn - 0.2 && z < HW.edgeOut + 0.3) || z < HW.oppIn + 0.2 || Math.abs(z - HW.barrierMid) < 0.4);
+  // słupek kilometrowy i znak autostrady
+  if (free(13.5, 5.6, 0.4)) kmPost(kit, g, 13.5, 5.6);
+  if (free(-15, 7.5, 1.2)) motorwaySign(kit, g, -15, 7.5);
+}
+
+/** Stalowa bariera energochłonna (prowadnica na słupkach co 2 m), opcjonalnie dwustronna. */
+function guardrail(kit: Kit, g: THREE.Object3D, x0: number, x1: number, z: number, both: boolean): void {
+  const STEEL = '#aeb3b8';
+  const len = x1 - x0;
+  if (len <= 0) return;
+  const post = kit.own(new THREE.BoxGeometry(0.1, 0.75, 0.1));
+  for (let x = x0 + 1; x < x1; x += 2) kit.part(post, '#7d8288', g, x, 0.375, z);
+  for (const s of both ? [-1, 1] : [1]) {
+    kit.box(len, 0.3, 0.06, STEEL, (x0 + x1) / 2, 0.55, z + s * 0.09, g);
+    kit.box(len, 0.06, 0.08, '#c8ccd0', (x0 + x1) / 2, 0.68, z + s * 0.09, g); // górna krawędź (połysk)
+  }
+}
+
+function kmPost(kit: Kit, g: THREE.Object3D, x: number, z: number): void {
+  kit.box(0.12, 1.1, 0.12, '#f4f4f4', x, 0.55, z, g);
+  kit.box(0.13, 0.25, 0.13, '#2a2a2e', x, 0.95, z, g);
+}
+
+function motorwaySign(kit: Kit, g: THREE.Object3D, x: number, z: number): void {
+  for (const dx of [-0.9, 0.9]) kit.box(0.08, 2.4, 0.08, '#7d8288', x + dx, 1.2, z, g);
+  const board = new THREE.Mesh(kit.own(new THREE.PlaneGeometry(2.4, 1.0)), kit.textMaterial(['AUTOSTRADA', 'A2  km 312'], '#1f4fa8', '#f4f4f4'));
+  board.position.set(x, 2.3, z + 0.01); // lico w stronę kamery (+z)
+  g.add(board);
+  const back = new THREE.Mesh(kit.own(new THREE.PlaneGeometry(2.4, 1.0)), kit.toon('#8a8f94'));
+  back.position.set(x, 2.3, z - 0.01);
+  back.rotation.y = Math.PI;
+  g.add(back);
 }
 
 // ---------- 'street' ----------

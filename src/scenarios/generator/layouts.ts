@@ -201,8 +201,8 @@ const pileup: ScenarioLayout = {
   briefing: (i) =>
     lines(
       'SWD PRM — zadysponowanie, kod 1.',
-      'Zdarzenie masowe: karambol na drodze ekspresowej w gęstej mgle — ciężarówka i kilka samochodów osobowych, kierunek na Warszawę, ok. 3 km za węzłem.',
-      `Zgłaszający: wielu poszkodowanych${i.children + i.infants > 0 ? ', w tym dzieci' : ''}; część osób chodzi po jezdni. Widoczność poniżej 50 m — zagrożenie kolejnymi najechaniami.`,
+      'Zdarzenie masowe: karambol na autostradzie A2 — ciężarówka i kilka samochodów osobowych, jezdnia w kierunku Warszawy, ok. 3 km za węzłem.',
+      `Zgłaszający: wielu poszkodowanych${i.children + i.infants > 0 ? ', w tym dzieci' : ''}; część osób chodzi po jezdni. Zagrożenie kolejnymi najechaniami.`,
       'PSP zabezpiecza miejsce zdarzenia (wyciek paliwa z ciężarówki), Policja zamyka jezdnię, kolejne ZRM i LPR w drodze.',
       'Jesteś pierwszym zespołem na miejscu — przeprowadź segregację wstępną (START / JumpSTART). Punkt zbiórki dla chodzących na poboczu, na trawie.',
     ),

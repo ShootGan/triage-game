@@ -31,7 +31,7 @@ const decisiveStep = (id: string) => {
   return triage(p.vitals, p.appearsChild).steps.at(-1)?.id;
 };
 
-describe('scenariusz: karambol na drodze ekspresowej', () => {
+describe('scenariusz: karambol na autostradzie', () => {
   it('ogólne reguły poprawności (validate.ts)', () => {
     expect(scenarioIssues(pileupScenario)).toEqual([]);
   });
@@ -42,9 +42,12 @@ describe('scenariusz: karambol na drodze ekspresowej', () => {
     expect(patients.map(p => p.id).sort()).toEqual(Object.keys(EXPECTED).sort());
   });
 
-  it('teren drogowy, punkt zbiórki na trawie z dala od jezdni', () => {
-    expect(pileupScenario.terrain).toBe('road');
-    expect(Math.abs(pileupScenario.collectionPoint[1])).toBeGreaterThanOrEqual(5);
+  it('autostrada, punkt zbiórki na trawie za poboczem; nikt na barierze w pasie rozdziału', () => {
+    expect(pileupScenario.terrain).toBe('highway');
+    // pobocze kończy się przy z = 4,6 — punkt zbiórki na trawie dalej
+    expect(pileupScenario.collectionPoint[1]).toBeGreaterThanOrEqual(5.5);
+    // bariera w pasie rozdziału przy z ≈ −7,5
+    for (const p of patients) expect(Math.abs(p.position[1] + 7.5), p.id).toBeGreaterThan(0.6);
     const kinds = pileupScenario.props.map(p => p.kind);
     expect(kinds.filter(k => k === 'truck')).toHaveLength(1);
     expect(kinds.filter(k => k === 'car').length).toBeGreaterThanOrEqual(4);
