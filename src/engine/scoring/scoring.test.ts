@@ -282,12 +282,13 @@ describe('procedura przed oznaczeniem (werdykt „procedure")', () => {
       expect(debriefPatient(p, 'red', exam(p, ['breathing', 'crt'])).verdict).toBe('correct');
     });
 
-    it('żółty wymaga pełnej oceny: oddech, tętno, CRT, polecenia', () => {
+    it('żółty wymaga oceny: oddech, perfuzja (tętno ALBO CRT — zamiennie), polecenia', () => {
       const p = patient('y');
-      expect(debriefPatient(p, 'yellow', exam(p, ['breathing', 'pulse', 'crt', 'commands'])).verdict).toBe('correct');
+      expect(debriefPatient(p, 'yellow', exam(p, ['breathing', 'pulse', 'commands'])).verdict).toBe('correct');
+      expect(debriefPatient(p, 'yellow', exam(p, ['breathing', 'crt', 'commands'])).verdict).toBe('correct');
       const d = debriefPatient(p, 'yellow', exam(p, ['breathing']));
       expect(d.verdict).toBe('procedure');
-      expect(d.explanation).toMatch(/nie wykonano: badania tętna, oceny nawrotu kapilarnego, sprawdzenia, czy wykonuje proste polecenia\./);
+      expect(d.explanation).toMatch(/nie wykonano: badania tętna, sprawdzenia, czy wykonuje proste polecenia\./);
     });
 
     it('chodzący zielony nie wymaga żadnej czynności', () => {

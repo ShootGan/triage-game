@@ -67,18 +67,19 @@ function actionsForStep(step: DecisionStep, protocol: Protocol, v: Vitals): Exam
 
 /**
  * Actions without which a correct colour is just a guess: every step the algorithm passed through,
- * in order. Exception — a START perfusion step that ends the algorithm: one decisive finding
- * (absent pulse or CRT > 2 s) is enough.
+ * in order. START perfusion: radial pulse and CRT are alternatives — when perfusion is adequate either
+ * one is enough; when the step ends the algorithm, one decisive finding (absent pulse or CRT > 2 s) is.
+ * Returns the first missing action of each unmet requirement.
  */
 function assessmentActions(r: TriageResult, v: Vitals, done: ExamActionId[]): ExamActionId[] {
   const out: ExamActionId[] = [];
   for (const step of r.steps) {
     let need = actionsForStep(step, r.protocol, v);
-    if (step.id === 'perfusion' && r.protocol === 'START' && step.result) {
-      const decisive: ExamActionId[] = [];
-      if (!v.peripheralPulse) decisive.push('pulse');
-      if (v.crtSeconds > 2) decisive.push('crt');
-      need = decisive.some(a => done.includes(a)) ? [] : decisive.slice(0, 1);
+    if (step.id === 'perfusion' && r.protocol === 'START') {
+      const options: ExamActionId[] = step.result
+        ? [...(!v.peripheralPulse ? ['pulse' as const] : []), ...(v.crtSeconds > 2 ? ['crt' as const] : [])]
+        : ['pulse', 'crt'];
+      need = options.some(a => done.includes(a)) ? [] : options.slice(0, 1);
     }
     for (const a of need) if (!out.includes(a)) out.push(a);
   }
@@ -314,8 +315,7 @@ export function debriefPatient(
         ? 'Pacjenta nie oznaczono.'
         : `Oznaczono jako ${CATEGORY_LABEL[given]} — ${VERDICT_SUFFIX[verdict as 'over' | 'under']}.`,
     );
-    const needed = [...new Set(r.steps.flatMap(s => actionsForStep(s, r.protocol, p.vitals)))];
-    const missing = needed.filter(a => !actionsBefore.includes(a));
+    const missing = assessmentActions(r, p.vitals, actionsBefore).filter(a => !actionsBefore.includes(a));
     if (missing.length) parts.push(`Nie wykonano: ${missing.map(a => ACTION_NOUN[a]).join(', ')}.`);
     if (alternative) {
       parts.push(`Wg ${alternative.protocol}: ${CATEGORY_LABEL[alternative.category]} — dla dziecka 9–12 lat zaliczany jest kolor z każdego z algorytmów.`);
