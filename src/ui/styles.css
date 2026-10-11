@@ -10,6 +10,7 @@
   --red: #d6303a;
   --yellow: #f2c230;
   --green: #3fa34d;
+  --orange: #ef7d22;
   --black: #1a1c2c;
   --pending: #6b7280;
   --font-head: 'Silkscreen', monospace;
@@ -335,6 +336,7 @@ a { color: var(--accent); }
 .stat.ok { border-left-color: var(--green); }
 .stat.over { border-left-color: var(--yellow); }
 .stat.under { border-left-color: var(--red); }
+.stat.procedure { border-left-color: var(--orange); }
 .meldunek .h-small { margin-top: 0; }
 .debrief-list { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
 .debrief-row { display: grid; grid-template-columns: 2.2fr 1fr 1fr 1fr 32px; gap: 10px; align-items: center; padding: 6px 10px; }
@@ -346,6 +348,10 @@ a { color: var(--accent); }
 .debrief-item.verdict-over { border-left-color: var(--yellow); }
 .debrief-item.verdict-under { border-left-color: var(--red); }
 .debrief-item.verdict-untagged { border-left-color: var(--pending); }
+.debrief-item.verdict-procedure { border-left-color: var(--orange); }
+.verdict-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 10px 0 0; color: var(--muted); font-size: 17px; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.legend-item .verdict { font-size: 10px; padding: 2px 4px; }
 .chip-lg {
   display: inline-block; padding: 3px 6px; border: 2px solid var(--ink); box-shadow: 0 0 0 2px var(--text);
   font-family: var(--font-head); font-size: 12px; color: var(--text); white-space: nowrap;
@@ -356,6 +362,10 @@ a { color: var(--accent); }
 .v-over { color: var(--yellow); }
 .v-under { color: #ff6b6b; }
 .v-untagged { color: var(--muted); }
+.v-procedure { color: var(--orange); }
+.procedure-note { color: #ffb36b; }
+.steps li.after-tag { color: var(--muted); }
+.tag-moment { margin: 4px 0 0; font-size: 16px; }
 .toggle { color: var(--accent); text-align: center; }
 .pd-notes { padding: 0 10px 6px; }
 .pd-notes p { margin: 2px 0; }
