@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { Kit } from './materials';
 import type { TerrainKind } from '../scenarios/types';
 import { RAILWAY } from '../scenarios/propSizes';
-import { cropField, delineator, house, pine, roadSign, tree, utilityPole, wires } from './scenery';
+import { SNOW, SNOW_SHADE, cropField, delineator, house, pine, roadSign, tree, utilityPole, wires } from './scenery';
 import { beam } from './propUtils';
 
 export type { TerrainKind } from '../scenarios/types';
@@ -30,6 +30,7 @@ export function buildTerrain(kit: Kit, parent: THREE.Object3D, size = 40, kind: 
     case 'field': buildField(kit, g, size, free); break;
     case 'highway': buildHighway(kit, g, size, free); break;
     case 'railway': buildRailway(kit, g, size, free); break;
+    case 'snow': buildSnow(kit, g, size, free); break;
   }
   return g;
 }
@@ -468,5 +469,118 @@ function bushCluster(kit: Kit, g: THREE.Object3D, x: number, z: number, seed: nu
     const fz = z + Math.sin(a) * d;
     kit.part(stemGeo, '#3f7a34', g, fx, 0.11, fz);
     kit.part(flowerGeo, colors[(seed + i) % colors.length], g, fx, 0.24, fz);
+  }
+}
+
+// ---------- 'snow' ----------
+
+const SNOWY = {
+  apronBack: -8,  // ploughed apron starts at the hall front
+  roadIn: 6,      // access road (along X) between roadIn and roadOut
+  roadOut: 12,
+} as const;
+
+/**
+ * Winter: snow-covered ground, a ploughed car park / apron in front of the exhibition hall (−8 < z < 6)
+ * with parking bays and patches of packed snow, a ploughed access road along X (6 < z < 12), snow piles
+ * pushed to the edges, car park lamps and snowy trees beyond. Asphalt top y = 0.015, markings and
+ * packed-snow patches ≤ 0.02 (patients lie on them); piles, lamps and trees only where `free` allows.
+ */
+function buildSnow(kit: Kit, g: THREE.Object3D, size: number, free: FreeFn): void {
+  const half = size / 2;
+  const ASPH = '#5c6068';
+  const LINE = '#e4e6e2';
+  kit.box(size, 0.2, size, SNOW, 0, -0.1, 0, g);
+  // ploughed surface (apron + road as one slab, top 0.015 — just above the snow, below the markings)
+  const d = SNOWY.roadOut - SNOWY.apronBack;
+  kit.box(size, 0.2, d, ASPH, 0, -0.085, (SNOWY.apronBack + SNOWY.roadOut) / 2, g).castShadow = false;
+  const mark = (w: number, dd: number, x: number, z: number) => {
+    kit.box(w, 0.2, dd, LINE, x, -0.08, z, g).castShadow = false; // top 0.02
+  };
+  // road edge line, dashed centre line
+  mark(size, 0.12, 0, SNOWY.roadIn + 0.2);
+  mark(size, 0.12, 0, SNOWY.roadOut - 0.2);
+  for (let x = -half + 2; x < half - 1; x += 5) mark(2.2, 0.12, x, (SNOWY.roadIn + SNOWY.roadOut) / 2);
+  // parking bays along the apron's front edge and on both sides of the hall
+  for (let x = -half + 3; x < half - 2; x += 2.6) {
+    if (Math.abs(x) < 15) continue; // the apron in front of the hall stays clear (fire access)
+    mark(0.1, 4.8, x, 2.8);
+    mark(0.1, 4.8, x, -4.5);
+  }
+
+  // packed snow / slush patches on the asphalt (flat; two heights 1 mm apart, tyre tracks 0.0185, markings 0.02)
+  const patch = kit.own(new THREE.CircleGeometry(1, 8));
+  for (let i = 0; i < 22; i++) {
+    const x = (hash(i, 41.3) * 2 - 1) * half * 0.9;
+    const z = SNOWY.apronBack + 0.5 + hash(i, 19.7) * (d - 1);
+    const m = kit.part(patch, i % 3 ? SNOW_SHADE : '#c8d0d8', g, x, i % 2 ? 0.016 : 0.017, z);
+    m.rotation.x = -Math.PI / 2;
+    m.rotation.z = i;
+    m.scale.set(0.6 + hash(i, 7.1) * 1.4, 0.4 + hash(i, 3.9) * 0.8, 1);
+    m.castShadow = false;
+  }
+  // tyre tracks on the access road
+  for (const dz of [-1.6, -0.9, 0.9, 1.6]) {
+    kit.box(size, 0.003, 0.25, '#4e5258', 0, 0.017, (SNOWY.roadIn + SNOWY.roadOut) / 2 + dz, g).castShadow = false;
+  }
+
+  // ploughed snow piles along the edges of the cleared area (never on patients)
+  const piles: Array<[number, number]> = [
+    [-17.5, -6.5], [17.5, -6.5], [-19, 4.5], [19, 4.5], [-13, 13], [-4, 13.2], [5, 13], [14, 13.3],
+    [-24, -7], [24, -7], [-26, 13], [26, 13],
+  ];
+  piles.forEach(([px, pz], i) => { if (free(px, pz, 1.8)) snowPile(kit, g, px, pz, i); });
+
+  // car park lamps (two-armed) at the apron edges
+  for (const [lx, lz] of [[-15.5, -1], [15.5, 1.5], [-9, 12.6], [9, 12.6], [-22, 5.5], [22, -1]] as const) {
+    if (free(lx, lz, 0.6)) parkLamp(kit, g, lx, lz);
+  }
+  // snowy trees beyond the road and beside the hall
+  for (let i = 0, x = -half + 3; x < half - 3; i++, x += 3.5 + hash(i, 4.7) * 2.5) {
+    const z = 14.5 + hash(i + 50, 2.9) * 4;
+    if (!free(x, z, 2.2)) continue;
+    if (hash(i, 8.3) < 0.55) pine(kit, g, x, z, i, true);
+    else tree(kit, g, x, z, i, true);
+  }
+  for (const side of [-1, 1]) {
+    for (let i = 0; i < 4; i++) {
+      const x = side * (17.5 + hash(i + side * 9, 3.1) * 5);
+      const z = -10 - i * 3.2;
+      if (free(x, z, 2)) pine(kit, g, x, z, i + 20 + side, true);
+    }
+  }
+  // snow drifts scattered on the open snow (low mounds, away from the cleared area)
+  const drift = kit.own(new THREE.SphereGeometry(1, 9, 6));
+  for (let i = 0; i < 18; i++) {
+    const x = (hash(i, 27.1) * 2 - 1) * half * 0.85;
+    const z = SNOWY.roadOut + 1 + hash(i, 65.3) * (half - SNOWY.roadOut - 2);
+    if (!free(x, z, 1.5)) continue;
+    const m = kit.part(drift, i % 2 ? SNOW : SNOW_SHADE, g, x, -0.05, z);
+    m.scale.set(1 + hash(i, 5.5) * 1.5, 0.35, 0.8 + hash(i, 2.2));
+  }
+}
+
+/** Heap of ploughed snow (~1.2 m) with a dirty grey base. */
+function snowPile(kit: Kit, g: THREE.Object3D, x: number, z: number, seed: number): void {
+  const lump = kit.own(new THREE.DodecahedronGeometry(1, 0));
+  kit.part(lump, '#b8c0c8', g, x, 0.05, z).scale.set(1.9, 0.45, 1.3);
+  for (let i = 0; i < 3; i++) {
+    const a = seed * 1.3 + i * 2.1;
+    const m = kit.part(lump, i % 2 ? SNOW_SHADE : SNOW, g, x + Math.cos(a) * 0.6, 0.35 + i * 0.12, z + Math.sin(a) * 0.4);
+    m.scale.set(1.1 - i * 0.15, 0.6 - i * 0.1, 0.9 - i * 0.1);
+    m.rotation.y = a;
+  }
+}
+
+/** Car park lamp ~7 m with two arms (along X) and snow on the luminaires. */
+function parkLamp(kit: Kit, g: THREE.Object3D, x: number, z: number): void {
+  const POST = '#5a646e';
+  kit.part(new THREE.CylinderGeometry(0.16, 0.2, 0.5, 8), '#8a8e96', g, x, 0.25, z);
+  kit.part(new THREE.CylinderGeometry(0.07, 0.1, 6.6, 8), POST, g, x, 3.5, z);
+  kit.box(1.8, 0.07, 0.07, POST, x, 6.75, z, g);
+  for (const s of [-1, 1]) {
+    kit.box(0.6, 0.14, 0.3, '#2a2a2e', x + s * 0.9, 6.68, z, g);
+    kit.box(0.5, 0.03, 0.24, '#f4f0c0', x + s * 0.9, 6.6, z, g);
+    kit.box(0.52, 0.08, 0.26, SNOW, x + s * 0.9, 6.77, z, g);
   }
 }

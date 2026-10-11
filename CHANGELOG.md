@@ -30,6 +30,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   wire, dirt service road, tree line and a power line.
 - Regional EMU car model (white/red livery) in three variants: on the rails with a raised
   pantograph, rolled onto its side at the foot of the embankment, and derailed with a crushed cab.
+- New scenario "Zawalenie dachu hali" (fictional, inspired by Katowice 2006): the snow-loaded roof of
+  an exhibition hall collapses during a winter fair. 16 template patients (4 green, 5 yellow, 5 red,
+  2 black) — visitors, exhibitors and families with children, crush injuries, fractures, head
+  injuries, a casualty pulled from under the snow who breathes only after airway opening. Random
+  codes with the `HALA` prefix.
+- Winter terrain: snow-covered ground, ploughed car park and access road with packed-snow patches,
+  snow piles, car park lamps and snow-capped trees.
+- New 3D models: exhibition hall with a V-collapsed roof section (bent trusses and columns, snow-laden
+  panels down to the floor, fair stands visible inside), fallen roof panel, bent truss fragment;
+  white snow-powder variant of the dust cloud.
 
 ### Fixed (visuals)
 

@@ -73,8 +73,10 @@ export interface ScenarioProp {
  * - 'railway' — railway embankment along X (track at z = −6, crest −8 < z < −4, slopes down to z = −10 and z = −2),
  *               catenary masts behind the track, flat grass in front, dirt service road at 9,2 < z < 12,6
  *               (see RAILWAY in propSizes.ts)
+ * - 'snow'   — zima: odśnieżony plac/parking przed halą (−8 < z < 6) i droga dojazdowa (6 < z < 12) wzdłuż X,
+ *               dalej śnieg, pryzmy odgarniętego śniegu, ośnieżone drzewa i latarnie
  */
-export type TerrainKind = 'road' | 'street' | 'field' | 'highway' | 'railway';
+export type TerrainKind = 'road' | 'street' | 'field' | 'highway' | 'railway' | 'snow';
 
 export interface Scenario {
   id: string;

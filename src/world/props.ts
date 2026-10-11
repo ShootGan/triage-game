@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { Kit } from './materials';
 import { buildTenement } from './buildings';
+import { buildGirder, buildHall, buildRoofPanel } from './hall';
 import { buildBelongings, buildDust, buildLitter, buildSpeaker, buildStall } from './dressing';
 import { GLASS, GLASS_CRACKED, HAZARD, SIGNAL_BLUE, beam, blinkLight, canvasMat, propGroup, rbox, rng, sideText } from './propUtils';
 import { buildTrain } from './train';
@@ -847,6 +848,9 @@ export function buildProp(kit: Kit, parent: THREE.Object3D, kind: PropKind, x: n
     case 'tenement': return buildTenement(kit, parent, x, z, rotY, variant);
     case 'firefighter': return buildFirefighter(kit, parent, x, z, rotY, variant);
     case 'train': return buildTrain(kit, parent, x, z, rotY, variant);
+    case 'hall': return buildHall(kit, parent, x, z, rotY);
+    case 'roofpanel': return buildRoofPanel(kit, parent, x, z, rotY);
+    case 'girder': return buildGirder(kit, parent, x, z, rotY);
   }
 }
 

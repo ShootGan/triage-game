@@ -4,6 +4,7 @@ import { driverSeat } from '../propSizes';
 import { busesScenario } from '../buses';
 import { concertScenario } from '../concert';
 import { festivalScenario } from '../festival';
+import { hallScenario } from '../hall';
 import { pileupScenario } from '../pileup';
 import { tenementScenario } from '../tenement';
 import { trainScenario } from '../train';
@@ -556,7 +557,63 @@ const buses: ScenarioLayout = {
   ],
 };
 
-export const LAYOUTS: readonly ScenarioLayout[] = [bus, pileup, tenement, concert, festival, buses, train];
+// ───────────────────────────── HALA ─────────────────────────────
+const hall: ScenarioLayout = {
+  id: 'hall',
+  prefix: 'HALA',
+  template: hallScenario,
+  mechanisms: ['zmiazdzenie', 'upadek'],
+  count: [12, 16],
+  ageWeights: { adult: 5, elderly: 1.5, child: 1.5, teen: 1, infant: 0.3 },
+  ageRanges: { child: [3, 10] },
+  maxInfants: 1,
+  roles: [
+    { m: 'zwiedzający', f: 'zwiedzająca', ages: ['teen', 'adult', 'elderly'], weight: 3 },
+    { m: 'zwiedzający z rodziną', f: 'zwiedzająca z rodziną', ages: ['child'], weight: 2 },
+    { m: 'wystawca', f: 'wystawczyni', ages: ['adult', 'elderly'], weight: 2 },
+    { m: 'sprzedawca na stoisku', f: 'sprzedawczyni na stoisku', ages: ['teen', 'adult'] },
+    { m: 'ochroniarz', f: 'pracownica ochrony', ages: ['adult'], max: 1 },
+    { m: 'pracownik techniczny hali', f: 'pracownica obsługi targów', ages: ['adult'], max: 1 },
+  ],
+  roleChance: 0.85,
+  briefing: (i) =>
+    lines(
+      'SWD PRM — zadysponowanie, kod 1.',
+      'Zdarzenie masowe: zawalenie dachu hali wystawowej pod ciężarem śniegu podczas targów. Mróz ok. −15 °C.',
+      `Według organizatora w hali przebywało kilkuset zwiedzających i wystawców${i.children + i.infants > 0 ? ', w tym rodziny z dziećmi' : ''}; część wyszła o własnych siłach, część jest wydobywana spod konstrukcji.`,
+      'UWAGA: ryzyko dalszego zawalenia dachu — nie wchodzić do hali ani na zawaloną konstrukcję. PSP prowadzi działania poszukiwawczo-ratownicze i wynosi poszkodowanych przed halę, Policja zabezpiecza dojazd.',
+      'Kolejne ZRM w drodze. Jesteś pierwszym zespołem na miejscu — przeprowadź segregację wstępną (START / JumpSTART). Chroń poszkodowanych przed wychłodzeniem. Punkt zbiórki dla chodzących na parkingu przy wejściu głównym.',
+    ),
+  slots: [
+    // template patients
+    S(-10, 0.5, -0.6, 'na parkingu', false),
+    S(-5.5, 3.5, 2.6, 'przy punkcie zbiórki', false, false),
+    S(-10.5, 5.5, 2.2, 'na parkingu', false),
+    S(7, 3.5, -2.6, 'na parkingu', false),
+    S(-3, -1.5, 1.2, 'przed halą', true),
+    S(5, -2.6, -1.4, 'przed halą', true),
+    S(1.5, 2.5, 2.9, 'na parkingu', false),
+    S(-7, -1.5, 0.3, 'przed halą', true),
+    S(9.5, 0.5, -2.2, 'przy wozie strażackim', false),
+    S(1, -2.8, 0.2, 'przy płycie dachowej', true),
+    S(-1, 0.8, 2.4, 'przed halą', true),
+    S(3.5, 0.2, -0.8, 'przed halą', true),
+    S(-4.5, 0.8, -1.2, 'przed halą', true),
+    S(-2.5, -4.3, 1.6, 'przy zawalonym dachu', true),
+    S(4.8, -5.2, -0.4, 'przy zawalonym dachu', true),
+    S(-8.5, -4.2, 2.8, 'przy zawalonym dachu', true),
+    // extra slots
+    S(-1, 5, 3.0, 'na parkingu', false),
+    S(10.5, 4.5, -2.4, 'na parkingu', false),
+    S(-12, -3, 0.8, 'przy wejściu do hali', true),
+    S(-6, -3.3, 1.9, 'przy płycie dachowej', true),
+    S(7.5, -1.5, -1.8, 'przy dźwigarze', true),
+    S(3, 5.5, 2.7, 'na parkingu', false),
+    S(-7.5, 7, 2.9, 'przy drodze dojazdowej', false),
+  ],
+};
+
+export const LAYOUTS: readonly ScenarioLayout[] = [bus, pileup, tenement, concert, festival, buses, train, hall];
 
 export function layoutById(id: string): ScenarioLayout | undefined {
   return LAYOUTS.find((l) => l.id === id);
