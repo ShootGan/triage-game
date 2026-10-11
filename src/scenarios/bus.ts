@@ -1,4 +1,8 @@
+import { driverSeat } from './propSizes';
 import type { Scenario } from './types';
+
+/** The passenger car: position and rotation (its driver is trapped inside — see p07). */
+export const BUS_CAR: readonly [number, number, number] = [5, -1.6, 3.01];
 
 /**
  * Wypadek autobusu szkolnego (MVP).
@@ -17,8 +21,19 @@ export const busScenario: Scenario = {
   timeLimitSec: 600,
   collectionPoint: [9, 7],
   props: [
-    { kind: 'bus', position: [-5, -0.8], rotation: 0.3 },
-    { kind: 'car', position: [5, -1.6], rotation: -0.5 },
+    // bus came from −x and swerved; the car came from +x, hit its front and bounced back (front towards the bus)
+    { kind: 'bus', position: [-5, -0.8], rotation: 0.3, variant: 'crash' },
+    // roof already cut off by PSP, firefighters still cutting the A-pillar to free the driver
+    { kind: 'car', position: [BUS_CAR[0], BUS_CAR[1]], rotation: BUS_CAR[2], variant: 'sedan-cut', color: '#2f4f8a' },
+    { kind: 'extrication', position: [BUS_CAR[0], BUS_CAR[1]], rotation: BUS_CAR[2], color: '#2f4f8a' },
+    { kind: 'spill', position: [3, -1.9], rotation: 0.4 },
+    { kind: 'skid', position: [-12.5, 1.55], rotation: 0.3 },
+    { kind: 'skid', position: [10, -1.0], rotation: -0.13 },
+    { kind: 'belongings', position: [-1.8, 1.6], rotation: 0 },
+    // services outside the patient slots: police across the road west, ambulance east, cones behind it
+    { kind: 'police', position: [-18, 0.5], rotation: Math.PI / 2 - 0.4 },
+    { kind: 'ambulance', position: [14.5, 2], rotation: Math.PI },
+    { kind: 'cones', position: [19.5, 0], rotation: 0 },
     { kind: 'glass', position: [-0.5, 1.2], rotation: 0 },
     { kind: 'glass', position: [2.8, 0.4], rotation: 1.1 },
     { kind: 'glass', position: [0.8, -1.8], rotation: 2.3 },
@@ -166,11 +181,11 @@ export const busScenario: Scenario = {
         avpu: 'V',
       },
       injuries: ['rana szarpana uda prawego z obfitym, pulsującym krwawieniem', 'skóra blada, zimna, spocona'],
-      remark: 'Otwiera oczy na głos, mamrocze niezrozumiale.',
+      remark: 'Zakleszczony w fotelu kierowcy, strażacy wycinają słupek. Otwiera oczy na głos, mamrocze niezrozumiale.',
       appearance: { sex: 'm', child: false, skin: '#e0ac69', hair: '#3d2b1f', hairStyle: 'short', beard: false, shirt: '#ecf0f1', pants: '#34495e', sleeves: 'long' },
-      pose: 'back',
-      position: [6, -4.6],
-      rotation: 2.0,
+      pose: 'sitting',
+      trapped: true,
+      ...driverSeat(...BUS_CAR),
     },
     {
       id: 'p08',

@@ -218,6 +218,7 @@ describe('układy scen (sloty)', () => {
       expect(Math.abs(x)).toBeLessThanOrEqual(SCENE_HALF_X);
       expect(Math.abs(z)).toBeLessThanOrEqual(SCENE_HALF_Z);
       for (const pr of t.props) {
+        if (s.trapped && pr.kind === 'car') continue; // the driver's seat — inside its car by design (validate.ts checks it)
         expect(insidePropFootprint(pr.kind, pr.position[0], pr.position[1], pr.rotation, x, z, 0.4), `${x},${z} w ${pr.kind}`).toBe(false);
       }
       const dc = Math.hypot(x - t.collectionPoint[0], z - t.collectionPoint[1]);
@@ -418,3 +419,28 @@ describe('zderzenie autobusów: ciężarne, dzieci, obsługa', () => {
   });
 });
 
+
+describe('autobus: kierowca uwięziony w aucie', () => {
+  it('każdy kod: dokładnie jeden uwięziony — siedzi, nie chodzi, oddycha, kieruje samochodem', () => {
+    const rng = createRng('trapped');
+    for (let i = 0; i < 60; i++) {
+      const code = `AUTOBUS-${Array.from({ length: 4 }, () => rng.pick([...CODE_ALPHABET])).join('')}`;
+      const s = generateScenario('bus', code);
+      const trapped = s.patients.filter((p) => p.trapped);
+      expect(trapped.length, code).toBe(1);
+      const [p] = trapped;
+      expect(p.pose, code).toBe('sitting');
+      expect(p.vitals.canWalk, code).toBe(false);
+      expect(p.vitals.breathing.spontaneous, code).toBe(true);
+      expect(p.label, code).toMatch(/\((kierowca samochodu|kierująca samochodem)\)$/);
+      expect(p.remark, code).toMatch(/^Zakleszczon[ya] w fotelu kierowcy/);
+      expect(scenarioIssues(s), code).toEqual([]);
+    }
+  });
+
+  it('inne układy nie mają uwięzionych', () => {
+    for (const id of scenarioIds().filter((x) => x !== 'bus')) {
+      expect(generateScenario(id, randomCode(id)).patients.some((p) => p.trapped), id).toBe(false);
+    }
+  });
+});

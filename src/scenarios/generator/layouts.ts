@@ -1,5 +1,6 @@
 import type { TriageCategory } from '../../engine/triage';
-import { busScenario } from '../bus';
+import { BUS_CAR, busScenario } from '../bus';
+import { driverSeat } from '../propSizes';
 import { busesScenario } from '../buses';
 import { concertScenario } from '../concert';
 import { festivalScenario } from '../festival';
@@ -27,10 +28,16 @@ export interface Slot {
   core: boolean;
   /** Czy może tu leżeć ktoś niechodzący (false = za blisko punktu zbiórki). */
   lying: boolean;
+  /**
+   * Driver's seat of a car being cut open: always filled (by an adult who can't walk, breathes
+   * and can sit), the patient gets `trapped: true` and the layout's trapped role.
+   */
+  trapped?: boolean;
 }
 
 /** Dozwolone pozy w slocie. */
 export function slotPoses(s: Slot): PatientPose[] {
+  if (s.trapped) return ['sitting'];
   return s.lying ? ['back', 'front', 'sitting', 'standing'] : ['sitting', 'standing'];
 }
 
@@ -50,6 +57,8 @@ export interface Role {
   required?: boolean;
   /** Przy roli obowiązkowej: płeć osoby `sex` z prawdopodobieństwem `p` (np. kierowca — częściej mężczyzna). */
   prefer?: { sex: 'm' | 'f'; p: number };
+  /** Role of the patient placed in the layout's `trapped` slot (e.g. the car driver). */
+  trapped?: boolean;
 }
 
 /**
@@ -126,6 +135,12 @@ const S = (x: number, z: number, rotation: number, context: string, core: boolea
   lying,
 });
 
+/** Trapped slot: the driver's seat of the car at (x, z, rotation). */
+const T = (car: readonly [number, number, number], context: string): Slot => {
+  const seat = driverSeat(car[0], car[1], car[2]);
+  return { position: seat.position, rotation: seat.rotation, context, core: true, lying: true, trapped: true };
+};
+
 const lines = (...ls: (string | false | null | undefined)[]) => ls.filter((l): l is string => !!l).join('\n');
 
 // ───────────────────────────── AUTOBUS ─────────────────────────────
@@ -142,7 +157,7 @@ const bus: ScenarioLayout = {
   maxInfants: 0,
   roles: [
     { m: 'kierowca autobusu', ages: ['adult'], max: 1, weight: 2 },
-    { m: 'kierowca samochodu', f: 'kierująca samochodem', ages: ['adult', 'elderly'], max: 1, weight: 2 },
+    { m: 'kierowca samochodu', f: 'kierująca samochodem', ages: ['adult', 'elderly'], max: 1, weight: 2, trapped: true },
     { m: 'pasażer samochodu', f: 'pasażerka samochodu', ages: ['teen', 'adult', 'elderly'], max: 2 },
     { m: 'opiekun wycieczki', f: 'opiekunka wycieczki', ages: ['adult'], weight: 2 },
     { m: 'nauczyciel', f: 'nauczycielka', ages: ['adult'], max: 2, weight: 2 },
@@ -177,6 +192,7 @@ const bus: ScenarioLayout = {
     S(-3.5, 3.2, 2.3, 'na poboczu', false),
     S(2.5, 2.2, -2, 'na jezdni', true),
     S(3, 0.2, -1.4, 'przy samochodzie', true),
+    T(BUS_CAR, 'w samochodzie'),
   ],
 };
 

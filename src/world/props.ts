@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { Kit } from './materials';
 import { buildBelongings, buildDust, buildLitter, buildSpeaker, buildStall } from './dressing';
 import { GLASS, GLASS_CRACKED, HAZARD, SIGNAL_BLUE, beam, blinkLight, canvasMat, propGroup, rbox, rng, sideText } from './propUtils';
-import { buildFiretruck } from './vehicles';
+import { buildExtrication, buildFiretruck } from './vehicles';
 import { PROP_HALF_SIZE, type PropKind } from '../scenarios/propSizes';
 
 export type { PropKind } from '../scenarios/propSizes';
@@ -61,8 +61,11 @@ export function buildBus(kit: Kit, parent: THREE.Object3D, x: number, z: number,
     rbox(kit, 0.2, 0.3, 2.4, '#2a2a2e', 5.05, 0.45, 0.15, bus, 0.25, 0.2, 0);
     for (const lx of [5.1, -5.06]) for (const lz of [-1.1, 1.1]) blinkLight(kit, bus, 0.06, 0.16, 0.22, HAZARD, lx, 1.0, lz, 'hazard');
   }
-  bus.position.set(x, 0.15, z);
-  bus.rotation.set(0, rotY, 0.12);
+  // Slight sideways lean on the suspension (roll about the bus's own long axis, applied before the yaw);
+  // lifted just enough that the lower wheels touch the ground.
+  bus.rotation.order = 'YXZ';
+  bus.rotation.set(0.04, rotY, 0);
+  bus.position.set(x, 1.3 * Math.sin(0.04), z);
   return bus;
 }
 
@@ -80,8 +83,9 @@ export function buildCar(kit: Kit, parent: THREE.Object3D, x: number, z: number,
   const seed = Math.abs(Math.round(x * 7 + z * 13));
   const body = color ?? CAR_COLORS[seed % CAR_COLORS.length];
   const roof = variant === 'roof';
-  const crash = !!variant?.endsWith('-crash') || roof;
-  const shape = (variant?.replace('-crash', '') as CarShape | 'roof' | undefined);
+  const cut = !!variant?.endsWith('-cut');
+  const crash = !!variant?.endsWith('-crash') || roof || cut;
+  const shape = (variant?.replace(/-(crash|cut)$/, '') as CarShape | 'roof' | undefined);
   const s: CarShape = shape && shape !== 'roof' ? shape : CAR_SHAPES[seed % CAR_SHAPES.length];
   // auto na dachu: cała bryła odwrócona wokół osi X, podniesiona o wysokość
   const car = kit.joint(outer, 0, 0, 0);
@@ -104,12 +108,17 @@ export function buildCar(kit: Kit, parent: THREE.Object3D, x: number, z: number,
       suv: { len: 3.7, bodyH: 0.9, cabL: 2.3, cabX: -0.45, cabH: 0.65 },
     }[s];
     const by = wheelR + dims.bodyH / 2 + 0.02;
-    kit.box(dims.len, dims.bodyH, 1.75, body, 0, by, 0, car);
     const cy = by + dims.bodyH / 2 + dims.cabH / 2;
-    kit.box(dims.cabL, dims.cabH, 1.62, body, dims.cabX, cy, 0, car);
-    kit.box(dims.cabL + 0.06, dims.cabH * 0.7, 1.68, glass, dims.cabX, cy + 0.02, 0, car);
-    if (s === 'suv') kit.box(dims.cabL - 0.2, 0.06, 1.3, '#2a2a2e', dims.cabX, cy + dims.cabH / 2 + 0.03, 0, car); // relingi
-    height = cy + dims.cabH / 2;
+    if (cut) {
+      openCabin(kit, car, body, dims, by);
+      height = by + dims.bodyH / 2;
+    } else {
+      kit.box(dims.len, dims.bodyH, 1.75, body, 0, by, 0, car);
+      kit.box(dims.cabL, dims.cabH, 1.62, body, dims.cabX, cy, 0, car);
+      kit.box(dims.cabL + 0.06, dims.cabH * 0.7, 1.68, glass, dims.cabX, cy + 0.02, 0, car);
+      if (s === 'suv') kit.box(dims.cabL - 0.2, 0.06, 1.3, '#2a2a2e', dims.cabX, cy + dims.cabH / 2 + 0.03, 0, car); // relingi
+      height = cy + dims.cabH / 2;
+    }
   }
   // reflektory, tylne światła, zderzaki — przy faktycznych krawędziach danego kształtu (wysunięte o 3–4 cm)
   const [front, rear] = ({ sedan: [1.8, -1.8], hatch: [1.7, -1.7], suv: [1.85, -1.85], van: [1.85, -1.9] } as const)[s];
@@ -137,6 +146,41 @@ export function buildCar(kit: Kit, parent: THREE.Object3D, x: number, z: number,
     car.position.y = height + 0.02;
   }
   return outer;
+}
+
+/** Seat cushion height of a cut-open car — where a trapped patient sits (see GameView). */
+export const CAR_SEAT_Y = 0.5;
+
+/**
+ * Body of a car whose roof firefighters have cut off: solid hood and boot, an open cabin tub with
+ * seats, dashboard and steering wheel; no door on the driver's side (−z), pillar stubs left over.
+ */
+function openCabin(
+  kit: Kit, car: THREE.Object3D, body: string,
+  d: { len: number; bodyH: number; cabL: number; cabX: number }, by: number,
+): void {
+  const bottom = by - d.bodyH / 2;
+  const top = by + d.bodyH / 2;
+  const cabFront = d.cabX + d.cabL / 2;
+  const cabRear = d.cabX - d.cabL / 2;
+  const half = d.len / 2;
+  kit.box(half - cabFront, d.bodyH, 1.75, body, (half + cabFront) / 2, by, 0, car);   // hood section
+  kit.box(cabRear + half, d.bodyH, 1.75, body, (cabRear - half) / 2, by, 0, car);     // boot section
+  kit.box(d.cabL, 0.14, 1.75, '#2a2a2e', d.cabX, bottom + 0.07, 0, car);             // floor
+  kit.box(d.cabL, d.bodyH, 0.08, body, d.cabX, by, 0.835, car);                       // passenger side, door still on
+  kit.box(d.cabL, 0.16, 0.08, body, d.cabX, bottom + 0.08, -0.835, car);              // driver side: only the sill
+  const SEAT = '#3a3d44';
+  for (const z of [-0.4, 0.4]) {
+    kit.box(0.5, 0.12, 0.46, SEAT, -0.1, CAR_SEAT_Y + 0.06, z, car);
+    rbox(kit, 0.12, 0.62, 0.46, SEAT, -0.42, CAR_SEAT_Y + 0.38, z, car, 0, 0, 0.15);
+  }
+  kit.box(0.5, 0.12, 1.4, SEAT, -0.95, CAR_SEAT_Y + 0.06, 0, car);                    // rear bench
+  kit.box(0.28, 0.28, 1.6, '#2a2a2e', cabFront - 0.14, top - 0.02, 0, car);           // dashboard
+  const wheel = kit.part(new THREE.TorusGeometry(0.17, 0.03, 6, 12), '#1e1e24', car, cabFront - 0.38, top + 0.04, -0.4);
+  wheel.rotation.y = Math.PI / 2;
+  wheel.rotation.x = 0.5;
+  // stubs of the cut pillars
+  for (const px of [cabFront - 0.05, cabRear + 0.05]) for (const pz of [-0.8, 0.8]) kit.box(0.08, 0.18, 0.08, body, px, top + 0.09, pz, car);
 }
 
 const POLICE_BLUE = '#1f50c8';
@@ -797,6 +841,7 @@ export function buildProp(kit: Kit, parent: THREE.Object3D, kind: PropKind, x: n
     case 'belongings': return buildBelongings(kit, parent, x, z, rotY);
     case 'dust': return buildDust(kit, parent, x, z, rotY, variant);
     case 'cones': return buildCones(kit, parent, x, z, rotY);
+    case 'extrication': return buildExtrication(kit, parent, x, z, rotY, color);
   }
 }
 

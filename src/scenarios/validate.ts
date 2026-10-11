@@ -36,6 +36,7 @@ export function scenarioIssues(s: Scenario): string[] {
   // nikt w obrysie rekwizytu (margines 0,4 m — postać ma swoją długość); punkt zbiórki też wolny
   for (const pr of s.props) {
     for (const p of ps) {
+      if (p.trapped && pr.kind === 'car') continue; // sits inside the car being cut open
       if (insidePropFootprint(pr.kind, pr.position[0], pr.position[1], pr.rotation, p.position[0], p.position[1], 0.4)) {
         out.push(`${p.id}: w obrysie rekwizytu ${pr.kind}`);
       }
@@ -79,6 +80,12 @@ export function scenarioIssues(s: Scenario): string[] {
     if (p.majorBleeding && v.canWalk) out.push(`${id}: masywny krwotok, a chodzi`);
     if (p.injuries.length === 0) out.push(`${id}: brak opisu obrażeń`);
     if (p.appearance.pregnant && (p.appearance.sex !== 'f' || p.appearsChild)) out.push(`${id}: ciąża tylko u dorosłej kobiety`);
+    if (p.trapped) {
+      if (p.pose !== 'sitting' || v.canWalk) out.push(`${id}: uwięziony w aucie — siedzi, nie chodzi`);
+      if (!s.props.some((pr) => pr.kind === 'car' && insidePropFootprint('car', pr.position[0], pr.position[1], pr.rotation, p.position[0], p.position[1]))) {
+        out.push(`${id}: uwięziony, ale poza autem`);
+      }
+    }
   }
   if (!ps.some((p) => p.vitals.canWalk)) out.push('brak chodzących poszkodowanych');
   return out;

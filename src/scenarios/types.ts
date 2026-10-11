@@ -32,6 +32,11 @@ export interface ScenarioPatient {
   injuries: string[];
   /** Masywny krwotok zewnętrzny — kałuża krwi na scenie; da się zatamować. */
   majorBleeding?: boolean;
+  /**
+   * Trapped in a vehicle being cut open by firefighters: sits in the driver's seat (see `driverSeat`),
+   * may be inside the car's footprint, can't walk. Exam works as usual (roof already removed).
+   */
+  trapped?: boolean;
   /** Co mówi/robi pacjent, gdy gracz podchodzi (opcjonalny „klimat"). */
   remark?: string;
   appearance: PatientAppearance;

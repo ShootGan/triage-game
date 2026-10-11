@@ -65,6 +65,13 @@ describe('scenariusz: wypadek autobusu szkolnego', () => {
     }
   });
 
+  it('kierowca samochodu uwięziony w aucie (siedzi, nie chodzi)', () => {
+    const trapped = patients.filter((p) => p.trapped);
+    expect(trapped.map((p) => p.id)).toEqual(['p07']);
+    expect(trapped[0]).toMatchObject({ pose: 'sitting' });
+    expect(trapped[0].vitals.canWalk).toBe(false);
+  });
+
   it('pozycje: nikt w obrysie pojazdu', () => {
     // Prostokąt pojazdu w jego lokalnym układzie (z zapasem).
     const footprint: Partial<Record<PropKind, readonly [number, number]>> = { bus: [5.5, 1.8], car: [2.6, 1.3] };
@@ -73,6 +80,7 @@ describe('scenariusz: wypadek autobusu szkolnego', () => {
       if (!f) continue;
       const [hl, hw] = f;
       for (const p of patients) {
+        if (p.trapped && prop.kind === 'car') continue; // the driver trapped inside the car
         const dx = p.position[0] - prop.position[0];
         const dz = p.position[1] - prop.position[1];
         const c = Math.cos(prop.rotation);

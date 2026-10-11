@@ -7,7 +7,7 @@ import { CameraRig, viewAxes } from './camera';
 import { Kit } from '../world/materials';
 import { buildTerrain } from '../world/terrain';
 import { PROP_HALF_SIZE } from '../scenarios/propSizes';
-import { buildCollectionPoint, buildMedBag, buildProp, insideFootprint, propFootprint, type Footprint } from '../world/props';
+import { CAR_SEAT_Y, buildCollectionPoint, buildMedBag, buildProp, insideFootprint, propFootprint, type Footprint } from '../world/props';
 import { createHuman, type Human } from '../world/human';
 import { applyPose, placeHuman, walkCycle, type LyingBackOptions, type PoseName } from '../world/poses';
 
@@ -327,6 +327,7 @@ export class GameView implements IGameView {
     this.patientRoots.push(h.root);
     applyPose(h, POSE_MAP[p.pose], lyingVariation(p.id));
     placeHuman(h, p.position[0], p.position[1], p.rotation);
+    if (p.trapped) h.root.position.y = CAR_SEAT_Y; // on the driver's seat of the cut-open car
     h.root.updateMatrixWorld(true);
 
     const br = p.vitals.breathing;
@@ -344,7 +345,7 @@ export class GameView implements IGameView {
       walked: false,
     };
 
-    if (p.majorBleeding) {
+    if (p.majorBleeding && !p.trapped) { // a trapped patient bleeds into the seat, not onto the road
       // kałuża pod udem (na tej nodze później opaska uciskowa)
       h.legs[0].hip.localToWorld(_v.set(0, -0.22, 0));
       const pool = new THREE.Mesh(this.poolGeo, this.kit.toon(POOL_COLOR));
@@ -516,6 +517,13 @@ export class GameView implements IGameView {
     h.root.updateMatrixWorld(true);
     const chest = h.torso.localToWorld(_v.copy(_chest)).clone();
     const rot = h.root.rotation.y;
+    if (e.data.trapped) {
+      // standing at the open driver's door: to the patient's left (a figure faces local +z, so left is +x)
+      const left = new THREE.Vector3(Math.cos(rot), 0, -Math.sin(rot));
+      const pos = chest.clone().addScaledVector(left, 1.2);
+      this.moveMedic(pos.x, pos.z, Math.atan2(chest.x - pos.x, chest.z - pos.z), 'standing');
+      return;
+    }
     const lying = !e.walked && (e.data.pose === 'back' || e.data.pose === 'front');
     const upright = e.walked || e.data.pose === 'standing';
     const dist = upright ? 0.9 : h.child ? 0.7 : 0.88;

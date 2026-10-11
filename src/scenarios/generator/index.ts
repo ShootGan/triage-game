@@ -559,7 +559,18 @@ function tryGenerate(layout: ScenarioLayout, code: string, rng: Rng): Generated 
   // ── miejsca: najpierw niechodzący (potrzebują slotów „lying"), potem chodzący ──
   const free = new Set<Slot>(layout.slots);
   const placement = new Map<Draft, { slot: Slot; pose: PatientPose }>();
-  const order = [...drafts.filter((d) => !d.vitals.canWalk), ...drafts.filter((d) => d.vitals.canWalk)];
+  // Trapped slots first: always filled by an adult who can't walk, breathes and can sit.
+  for (const slot of layout.slots.filter((s) => s.trapped)) {
+    const fits = drafts.filter(
+      (d) =>
+        !placement.has(d) && !d.vitals.canWalk && d.vitals.breathing.spontaneous && d.arch.poses.includes('sitting') &&
+        (d.group === 'adult' || d.group === 'elderly') && d.pregnancyWeek === undefined,
+    );
+    if (fits.length === 0) return null;
+    placement.set(rng.pick(fits), { slot, pose: 'sitting' });
+    free.delete(slot);
+  }
+  const order = [...drafts.filter((d) => !d.vitals.canWalk), ...drafts.filter((d) => d.vitals.canWalk)].filter((d) => !placement.has(d));
   for (const d of order) {
     const walker = d.vitals.canWalk;
     // niechodzący tylko w slotach „lying" (≥ 3 m od punktu zbiórki — reguła validate.ts)
@@ -621,7 +632,13 @@ function tryGenerate(layout: ScenarioLayout, code: string, rng: Rng): Generated 
     const allUsed = remarks.length > 0 && remarks.every((r) => usedText.has(r));
     const remark = remarks.length && !(allUsed && rng.chance(0.5)) ? gender(pickFresh(remarks), d.sex) : undefined;
 
-    const role = pregnant ? null : (fixedRole.get(d) ?? pickRole(layout, d.group, d.sex, roleUse, rng));
+    const trappedRole = slot.trapped ? layout.roles.find((ro) => ro.trapped && (d.sex === 'm' ? ro.m : ro.f)) : undefined;
+    if (trappedRole) roleUse.set(trappedRole, (roleUse.get(trappedRole) ?? 0) + 1);
+    const role = pregnant
+      ? null
+      : trappedRole
+        ? (d.sex === 'm' ? trappedRole.m : trappedRole.f)!
+        : (fixedRole.get(d) ?? pickRole(layout, d.group, d.sex, roleUse, rng));
     const label = pregnant
       ? `Kobieta w ciąży, ${ageText(d.ageYears)} (ok. ${d.pregnancyWeek}. tydzień)`
       : `${noun(d.group, d.sex, d.arch)}, ${ageText(d.ageYears, d.months)}${role ? ` (${role})` : ''}`;
@@ -641,6 +658,11 @@ function tryGenerate(layout: ScenarioLayout, code: string, rng: Rng): Generated 
     if (pregnant) p.appearance.pregnant = true;
     if (d.arch.majorBleeding) p.majorBleeding = true;
     if (remark) p.remark = remark;
+    if (slot.trapped) {
+      p.trapped = true;
+      p.rotation = slot.rotation; // facing the dashboard, no jitter
+      p.remark = `Zakleszczon${d.sex === 'm' ? 'y' : 'a'} w fotelu kierowcy, strażacy wycinają słupek.${remark ? ` ${remark}` : ''}`;
+    }
     return p;
   });
 

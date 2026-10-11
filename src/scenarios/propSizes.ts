@@ -26,7 +26,8 @@ export type PropKind =
   | 'litter'     // cups, bottles, lost items — flat, no footprint
   | 'belongings' // scattered backpacks, jackets, books — flat, no footprint
   | 'dust'       // dust cloud (variant 'smoke' — dark rising column) — no footprint
-  | 'cones';     // row of 4 traffic cones along local z (~3 m), closing a lane — no footprint
+  | 'cones'      // row of 4 traffic cones along local z (~3 m), closing a lane — no footprint
+  | 'extrication'; // firefighters cutting a car open (placed on the car's position/rotation) — no footprint
 
 export const PROP_HALF_SIZE: Record<PropKind, [number, number] | null> = {
   bus: [5.2, 1.5],
@@ -52,7 +53,18 @@ export const PROP_HALF_SIZE: Record<PropKind, [number, number] | null> = {
   belongings: null,
   dust: null,
   cones: null,
+  extrication: null,
 };
+
+/** Driver's seat of a car (front left: local x −0.1, z −0.4), facing the car's front. */
+export function driverSeat(carX: number, carZ: number, carRot: number): { position: [number, number]; rotation: number } {
+  const [lx, lz] = [-0.1, -0.4];
+  const c = Math.cos(carRot);
+  const s = Math.sin(carRot);
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  // Three.js yaw: world = (x·cos + z·sin, −x·sin + z·cos); a human faces its local +z, hence +π/2.
+  return { position: [r2(carX + lx * c + lz * s), r2(carZ - lx * s + lz * c)], rotation: r2(carRot + Math.PI / 2) };
+}
 
 /** Czy punkt (x, z) leży w obrysie rekwizytu (z marginesem). */
 export function insidePropFootprint(

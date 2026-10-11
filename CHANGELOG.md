@@ -17,6 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - "Bus collision" scene: head-on crash with both fronts crumpled, skid marks, spill, belongings,
   fire engine blocking the road, ambulance and cones.
 - Render demo: "Nowe modele" scene with a zoom button per model.
+- "School bus" scene: the car driver is always trapped in the driver's seat (template and every
+  random code) while two PSP firefighters cut the car open — hydraulic cutter and spreader, power
+  unit with hoses, roof and door already removed. The patient is examined as usual; the medic
+  stands at the open door. Crashed bus and car, skid marks, spill, belongings, police car, ambulance.
+
+### Fixed (visuals)
+
+- School bus model was tilted about the wrong axis — its front hovered ~0.6 m above the road.
 
 - Children aged 9–12: a colour is accepted from either JumpSTART or START (sources disagree on the
   age limit); the debrief shows both paths.

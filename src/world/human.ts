@@ -13,6 +13,8 @@ export interface HumanOptions {
   child?: boolean;
   sleeves?: 'short' | 'long';
   medic?: boolean;
+  /** PSP firefighter: navy turnout gear with yellow reflective bands, helmet, "STRAŻ" on the back. */
+  firefighter?: boolean;
   beard?: boolean;
   /** Widoczna ciąża — zaokrąglony brzuch (tylko dorosłe kobiety). */
   pregnant?: boolean;
@@ -50,13 +52,24 @@ export interface Human {
 
 const STRIPE = '#e9ecb8'; // pasy odblaskowe
 const GLOVE = '#3a5a9a';
+const FF_SUIT = '#232c44';
+const FF_STRIPE = '#d8e84a';
+const FF_GLOVE = '#2a2a2e';
+const FF_HELMET = '#f0f0ec';
 
 /** Proceduralny generator postaci (port z art-preview/3d-v3.html). */
 export function createHuman(kit: Kit, o: HumanOptions = {}): Human {
+  const ff = !!o.firefighter;
   const {
-    skin = '#f1c27d', shirt = '#3b5dc9', pants = '#41506b', hair = '#5a3b2a', shoes = '#2a2a2e',
-    hairStyle = 'short', female = false, child = false, sleeves = 'short', medic = false, beard = false,
+    skin = '#f1c27d', hair = '#5a3b2a', shoes = '#2a2a2e',
+    hairStyle = 'short', female = false, child = false, medic = false, beard = false,
   } = o;
+  const shirt = ff ? FF_SUIT : (o.shirt ?? '#3b5dc9');
+  const pants = ff ? FF_SUIT : (o.pants ?? '#41506b');
+  const sleeves = ff ? 'long' : (o.sleeves ?? 'short');
+  // Reflective trim shared by medic and firefighter gear (different colours).
+  const trim = medic ? STRIPE : ff ? FF_STRIPE : null;
+  const glove = medic ? GLOVE : ff ? FF_GLOVE : null;
   const skinDark = new THREE.Color(skin).multiplyScalar(0.75).getStyle();
   const root = new THREE.Group();
   const body = kit.joint(root, 0, 0.94, 0);
@@ -76,17 +89,17 @@ export function createHuman(kit: Kit, o: HumanOptions = {}): Human {
   // Kołnierz
   const collar = kit.part(new THREE.TorusGeometry(0.06, 0.018, 6, 14), medic ? '#8f1d2c' : shirt, body, 0, 0.655, 0);
   collar.rotation.x = Math.PI / 2;
-  if (medic) {
-    const band = kit.part(new THREE.CylinderGeometry(0.168, 0.168, 0.045, 20, 1, true), STRIPE, body, 0, 0.3, 0);
+  if (trim) {
+    const band = kit.part(new THREE.CylinderGeometry(0.168, 0.168, 0.045, 20, 1, true), trim, body, 0, 0.3, 0);
     band.scale.z = 0.63;
-    const band2 = kit.part(new THREE.CylinderGeometry(0.162, 0.162, 0.045, 20, 1, true), STRIPE, body, 0, 0.22, 0);
+    const band2 = kit.part(new THREE.CylinderGeometry(0.162, 0.162, 0.045, 20, 1, true), trim, body, 0, 0.22, 0);
     band2.scale.z = 0.63;
     const backGeo = kit.own(new THREE.PlaneGeometry(0.3, 0.11));
-    const back = new THREE.Mesh(backGeo, kit.textMaterial(['RATOWNIK', 'MEDYCZNY']));
+    const back = new THREE.Mesh(backGeo, ff ? kit.textMaterial(['STRAŻ'], FF_SUIT, FF_STRIPE) : kit.textMaterial(['RATOWNIK', 'MEDYCZNY']));
     back.position.set(0, 0.47, -0.128);
     back.rotation.y = Math.PI;
     body.add(back);
-    kit.box(0.05, 0.06, 0.01, '#f4f4f4', 0.09, 0.47, 0.125, body); // naszywka
+    if (medic) kit.box(0.05, 0.06, 0.01, '#f4f4f4', 0.09, 0.47, 0.125, body); // naszywka
   }
 
   // Szyja i głowa
@@ -102,7 +115,12 @@ export function createHuman(kit: Kit, o: HumanOptions = {}): Human {
     kit.box(0.034, 0.008, 0.01, hair, s * 0.038, 0.045, 0.092, head).rotation.z = s * -0.12; // brew
   }
   kit.box(0.035, 0.006, 0.01, skinDark, 0, -0.06, 0.088, head); // usta
-  makeHair(kit, head, hairStyle, hair);
+  if (ff) {
+    // helmet shell with a rim and a raised visor instead of hair
+    kit.sphere(0.13, FF_HELMET, head, 0, 0.04, -0.01, 1, 0.85, 1.08);
+    kit.part(new THREE.CylinderGeometry(0.15, 0.16, 0.02, 14), FF_HELMET, head, 0, -0.005, -0.02);
+    kit.box(0.2, 0.05, 0.02, '#c8a020', 0, 0.09, 0.12, head).rotation.x = -0.5;
+  } else makeHair(kit, head, hairStyle, hair);
   if (beard) {
     kit.sphere(0.074, hair, head, 0, -0.06, 0.03, 0.98, 0.78, 0.84);
     kit.box(0.05, 0.012, 0.02, hair, 0, -0.042, 0.095, head); // wąsy
@@ -116,20 +134,20 @@ export function createHuman(kit: Kit, o: HumanOptions = {}): Human {
     const sh = kit.joint(body, s * 0.205 * sx, 0.55, 0);
     sh.rotation.z = s * 0.06;
     kit.limb(sh, 0.06, 0.048, 0.27, shirt);
-    if (medic) kit.part(new THREE.CylinderGeometry(0.054, 0.054, 0.035, 10, 1, true), STRIPE, sh, 0, -0.18, 0);
+    if (trim) kit.part(new THREE.CylinderGeometry(0.054, 0.054, 0.035, 10, 1, true), trim, sh, 0, -0.18, 0);
     const el = kit.joint(sh, 0, -0.27, 0);
     kit.limb(el, 0.046, 0.036, 0.24, sleeves === 'long' ? shirt : skin);
-    if (sleeves === 'long') kit.limb(kit.joint(el, 0, -0.22, 0), 0.034, 0.034, 0.02, medic ? '#2a2a2e' : skin);
+    if (sleeves === 'long') kit.limb(kit.joint(el, 0, -0.22, 0), 0.034, 0.034, 0.02, medic || ff ? '#2a2a2e' : skin);
     const hand = kit.joint(el, 0, -0.245, 0);
-    kit.box(0.035, 0.08, 0.07, medic ? GLOVE : skin, 0, -0.04, 0, hand); // dłoń (ratownik w rękawiczkach)
-    kit.box(0.025, 0.04, 0.022, medic ? GLOVE : skin, 0, -0.02, 0.04, hand).rotation.x = 0.5; // kciuk
+    kit.box(0.035, 0.08, 0.07, glove ?? skin, 0, -0.04, 0, hand); // dłoń (ratownik w rękawiczkach)
+    kit.box(0.025, 0.04, 0.022, glove ?? skin, 0, -0.02, 0.04, hand).rotation.x = 0.5; // kciuk
     arms.push({ sh, el, hand });
 
     const hip = kit.joint(body, s * 0.095 * (female ? 1.05 : 1), -0.03, 0);
     kit.limb(hip, 0.088, 0.062, 0.42, pants);
     const knee = kit.joint(hip, 0, -0.42, 0);
     kit.limb(knee, 0.06, 0.044, 0.41, pants);
-    if (medic) kit.part(new THREE.CylinderGeometry(0.056, 0.052, 0.035, 10, 1, true), STRIPE, knee, 0, -0.22, 0);
+    if (trim) kit.part(new THREE.CylinderGeometry(0.056, 0.052, 0.035, 10, 1, true), trim, knee, 0, -0.22, 0);
     const ankle = kit.joint(knee, 0, -0.43, 0);
     kit.box(0.09, 0.07, 0.2, shoes, 0, -0.01, 0.035, ankle);
     kit.sphere(0.045, shoes, ankle, 0, -0.012, 0.13, 1, 0.75, 1);
