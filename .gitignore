@@ -1,4 +1,5 @@
 node_modules
+.vite/
 .claude/worktrees/
 dist
 *.log
