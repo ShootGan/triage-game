@@ -74,7 +74,8 @@ describe('scenariusz: karambol na autostradzie', () => {
 
     it('oddechy > 30', () => expect(decisive('red', 'resp-rate')).toBe(true));
     it('brak tętna promieniowego', () => expect(decisive('red', 'perfusion', v => !v.peripheralPulse)).toBe(true));
-    it('tętno obecne, ale CRT > 2 s', () => expect(decisive('red', 'perfusion', v => v.peripheralPulse && v.crtSeconds > 2)).toBe(true));
+    // pulse and CRT are interchangeable, so they always agree: no "pulse present, CRT > 2 s" case
+    it('wstrząs: brak tętna i CRT > 2 s', () => expect(decisive('red', 'perfusion', v => !v.peripheralPulse && v.crtSeconds > 2)).toBe(true));
     it('nie wykonuje poleceń', () => expect(decisive('red', 'mental')).toBe(true));
     it('bezdech, oddycha po udrożnieniu', () => expect(decisive('red', 'airway')).toBe(true));
     it('bezdech po udrożnieniu → CZARNY', () => expect(decisive('black', 'airway')).toBe(true));

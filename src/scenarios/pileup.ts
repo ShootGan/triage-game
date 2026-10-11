@@ -281,7 +281,7 @@ export const pileupScenario: Scenario = {
       rotation: -1.0,
     },
     {
-      // START: tętno promieniowe obecne, ale CRT > 2 s → CZERWONY (żona a01).
+      // START: shock from a pelvic fracture — no radial pulse, CRT > 2 s → CZERWONY (żona a01).
       id: 'a12',
       label: 'Kobieta, ok. 60 lat (pasażerka srebrnej osobówki)',
       ageYears: 60,
@@ -289,7 +289,7 @@ export const pileupScenario: Scenario = {
       vitals: {
         canWalk: false,
         breathing: { spontaneous: true, afterAirway: true, rate: 24 },
-        peripheralPulse: true,
+        peripheralPulse: false,
         crtSeconds: 3.5,
         obeysCommands: true,
         avpu: 'A',

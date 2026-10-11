@@ -41,7 +41,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - "Incomplete procedure" now also covers a correct colour given without the assessment that
   decides it, and a tag placed before controlling a major bleed — both count as errors.
 - START perfusion: radial pulse and capillary refill are interchangeable — when perfusion is
-  adequate either one counts as the assessment.
+  adequate either one counts as the assessment. Patients in shock now have both an absent radial
+  pulse and CRT > 2 s (pelvic fracture, extensive burns, pile-up a12), and scenario validation
+  rejects a palpable pulse with CRT > 2 s, so either check gives the same answer.
 - 5 rescue breaths take 15 s (was 10 s).
 - Pulse button reads "Tętno obwodowe" for children (brachial for infants); the pulse is checked
   on an uninjured limb when a limb bleeds.

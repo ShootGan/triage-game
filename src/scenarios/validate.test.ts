@@ -31,6 +31,6 @@ describe('walidator scenariuszy', () => {
   it('dziecko < 9 lat z tętnem i CRT > 2 s — sprzeczne z JumpSTART', () => {
     const kid = busScenario.patients.find((p) => p.appearsChild && p.ageYears < 9 && p.vitals.breathing.spontaneous && p.vitals.peripheralPulse)!;
     const broken = { ...busScenario, patients: [{ ...kid, vitals: { ...kid.vitals, crtSeconds: 3 } }] };
-    expect(scenarioIssues(broken).some((i) => i.includes('CRT > 2 s'))).toBe(true);
+    expect(scenarioIssues(broken).some((i) => i.includes('tętno obecne, ale CRT > 2 s'))).toBe(true);
   });
 });
