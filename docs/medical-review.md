@@ -8,6 +8,26 @@ Oznaczenia pewności: **[pewne]** — zgodne ze źródłem pierwotnym/wtórnym, 
 
 ---
 
+## 0. Stan wdrożenia i decyzje (aktualizacja 2026-10-11)
+
+**Decyzje autora:**
+- **Źródło algorytmu:** oryginał L. Romig (JumpSTART) i START w wersji z 1996 r. Załącznik z gov.pl odrzucony jako podstawa. Nie wiadomo, kto go wydał ani do jakiego dokumentu należy, a dotyczy głównie segregacji wtórnej. Nie wprowadzamy „wariantu PL” (A1, A2: bez zmian w logice).
+- **Wiek (A3):** u dziecka 9–12 lat zaliczany jest kolor zarówno wg JumpSTART, jak i START. Debrief pokazuje obie ścieżki. Twórczyni algorytmu podaje 1–8 lat, ale też zasadę „wygląda na dziecko → JumpSTART”.
+- **Niemowlęta (A4):** wariant A (Romig). Treść dobrana tak, żeby nie budziła wątpliwości: ZIELONE niemowlę bez widocznych obrażeń, ŻÓŁTE tylko z obrażeniami z listy Romiga. Lista potwierdzona w dokumencie szkoleniowym z 2016 r., który cytuje stronę JumpSTART (z „mnogimi zasinieniami”).
+- **Punktacja (S3, S4):** trafiony kolor bez oceny rozstrzygającej albo bez zatamowania masywnego krwotoku daje werdykt „niepełna procedura” i nie liczy się do trafności. **S5:** wyróżniony „błąd krytyczny”.
+- **C12:** żart zostaje.
+
+**Wdrożone:** S1, S2 (wcześniej), S3–S7, A3, A4, A2 (strażnik w walidatorze + dopisek przy CRT u dziecka < 9 lat), E1–E6, C1, C2, C6, C8 (wcześniej), C3 i C4 (uwagi dydaktyczne w debriefie), C5, C7, C9, C11, C13. Bez zmian: A1, A5, C10, C12.
+
+**Nowsze źródła (2021–2026) — skuteczność JumpSTART:** algorytm nie był zmieniany. Nowe prace oceniają jego trafność:
+- Vassallo J i wsp. *Comparative analysis of major incident triage tools in children: a UK population-based analysis.* Emerg Med J 2022;39(10):779–785. JumpSTART do 8 lat, czułość dla czynności ratujących życie 45%, zaniżanie 55%. https://pmc.ncbi.nlm.nih.gov/articles/PMC9510399/
+- Stefani L i wsp. *JumpSTART Triage Protocol in Disaster Pediatric Patients: A Systematic Literature Review.* Prehosp Disaster Med 2022. Najszybszy i najczęściej wybierany, ale za mało dowodów na trafność. https://www.cambridge.org/core/journals/prehospital-and-disaster-medicine/article/abs/jumpstart-triage-protocol-in-disaster-pediatric-patients-a-systematic-literature-review/3E7641AEC28B58AB723F0E5807E33AEF
+- Preprint (Research Square, bez recenzji): systematyczne zaniżanie kategorii u ciężko rannych dzieci < 8 lat. https://www.researchsquare.com/article/rs-8126290/v1
+
+Wniosek dodany do debriefu: JumpSTART często zaniża kategorię u ciężko rannych dzieci, więc po segregacji wstępnej dzieci wymagają szybkiej segregacji wtórnej.
+
+---
+
 ## 1. Podsumowanie — 5 najważniejszych problemów
 
 1. **KRYTYCZNY — CZARNY bez wykonania procedury liczy się jako „POPRAWNIE”** (`scoring/index.ts:10–17`). Potwierdzone w grze: kierowca z bezdechem (z17) oznaczony jako CZARNY bez udrożnienia dróg oddechowych dostaje „POPRAWNIE” i tylko ostrzeżenie. Prawidłowa reguła jest w sekcji 3 (S1). Ten błąd poprawia już równoległy agent.
