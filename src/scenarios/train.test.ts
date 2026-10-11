@@ -22,6 +22,16 @@ const EXPECTED: Record<string, TriageCategory> = {
   k14: 'red',
   k15: 'black',
   k16: 'black',
+  k17: 'green',
+  k18: 'green',
+  k19: 'green',
+  k20: 'yellow',
+  k21: 'yellow',
+  k22: 'yellow',
+  k23: 'red',
+  k24: 'red',
+  k25: 'red',
+  k26: 'black',
 };
 
 const patients = trainScenario.patients;
@@ -40,8 +50,8 @@ describe('scenariusz: katastrofa kolejowa', () => {
     expect(scenarioIssues(trainScenario)).toEqual([]);
   });
 
-  it('16 pacjentów, unikalne identyfikatory zgodne z EXPECTED', () => {
-    expect(patients).toHaveLength(16);
+  it('26 pacjentów, unikalne identyfikatory zgodne z EXPECTED', () => {
+    expect(patients).toHaveLength(26);
     expect(patients.map((p) => p.id).sort()).toEqual(Object.keys(EXPECTED).sort());
   });
 
@@ -52,10 +62,10 @@ describe('scenariusz: katastrofa kolejowa', () => {
   it('rozkład kategorii', () => {
     const count = (c: TriageCategory) => Object.values(EXPECTED).filter((x) => x === c).length;
     expect({ green: count('green'), yellow: count('yellow'), red: count('red'), black: count('black') }).toEqual({
-      green: 4,
-      yellow: 4,
-      red: 6,
-      black: 2,
+      green: 7,
+      yellow: 7,
+      red: 9,
+      black: 3,
     });
   });
 
@@ -101,7 +111,7 @@ describe('scenariusz: katastrofa kolejowa', () => {
   });
 
   describe('dzieci (JumpSTART)', () => {
-    it('2 dzieci', () => expect(patients.filter((p) => p.appearsChild)).toHaveLength(2));
+    it('3 dzieci', () => expect(patients.filter((p) => p.appearsChild)).toHaveLength(3));
     it('dziewczynka z bezdechem: oddycha po udrożnieniu → CZERWONE', () => {
       const r = resultOf('k13');
       expect(r.protocol).toBe('JumpSTART');
