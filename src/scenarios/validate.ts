@@ -22,7 +22,8 @@ export function scenarioIssues(s: Scenario): string[] {
   }
 
   // granice i odstępy
-  const inBounds = (x: number, z: number) => Math.abs(x) <= SCENE_HALF_X && Math.abs(z) <= SCENE_HALF_Z;
+  const [hx, hz] = s.bounds ?? [SCENE_HALF_X, SCENE_HALF_Z];
+  const inBounds = (x: number, z: number) => Math.abs(x) <= hx && Math.abs(z) <= hz;
   for (const p of ps) if (!inBounds(...p.position)) out.push(`${p.id}: poza granicami sceny`);
   if (!inBounds(...s.collectionPoint)) out.push('punkt zbiórki poza granicami sceny');
   for (let i = 0; i < ps.length; i++) {

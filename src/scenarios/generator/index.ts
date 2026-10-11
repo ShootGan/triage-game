@@ -688,6 +688,7 @@ function tryGenerate(layout: ScenarioLayout, code: string, rng: Rng): Generated 
     patients,
   };
   if (t.terrain) scenario.terrain = t.terrain;
+  if (t.bounds) scenario.bounds = [t.bounds[0], t.bounds[1]];
   if (t.special) scenario.special = true;
 
   // ── weryfikacja końcowa ──

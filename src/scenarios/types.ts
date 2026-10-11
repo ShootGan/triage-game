@@ -99,6 +99,8 @@ export interface Scenario {
   special?: boolean;
   /** Otoczenie (domyślnie 'road'). */
   terrain?: TerrainKind;
+  /** Half-extents [x, z] of the area patients may occupy; default [12, 9] (validate.ts). Larger for big scenes. */
+  bounds?: [number, number];
   /** Punkt zbiórki dla chodzących (x, z). */
   collectionPoint: [number, number];
   props: ScenarioProp[];

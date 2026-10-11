@@ -217,8 +217,9 @@ describe('układy scen (sloty)', () => {
     expect(slots.length).toBeGreaterThanOrEqual(l.count[1] + 3);
     for (const s of slots) {
       const [x, z] = s.position;
-      expect(Math.abs(x)).toBeLessThanOrEqual(SCENE_HALF_X);
-      expect(Math.abs(z)).toBeLessThanOrEqual(SCENE_HALF_Z);
+      const [hx, hz] = t.bounds ?? [SCENE_HALF_X, SCENE_HALF_Z];
+      expect(Math.abs(x)).toBeLessThanOrEqual(hx);
+      expect(Math.abs(z)).toBeLessThanOrEqual(hz);
       for (const pr of t.props) {
         if (s.trapped && pr.kind === 'car') continue; // the driver's seat — inside its car by design (validate.ts checks it)
         expect(insidePropFootprint(pr.kind, pr.position[0], pr.position[1], pr.rotation, x, z, 0.4), `${x},${z} w ${pr.kind}`).toBe(false);
