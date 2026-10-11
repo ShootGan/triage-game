@@ -31,9 +31,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hint describes JumpSTART as "looks like a child (usually up to ~8 years)" and lists the
   infant injury criteria.
 
+- Infant injury texts follow Romig's criteria: GREEN infants have no visible injury, YELLOW
+  infants only signs from the list (heavy bleeding, multiple bruises, distended tender abdomen).
+- Pregnancy: "widoczna ciąża" instead of "zaawansowana" (weeks start at 20); worry about the baby
+  moved out of the injury list.
+- Remarks no longer give away exam results (apnoea, pain response, brachial pulse).
+
 ### Fixed
 
 - Decimal comma in the START perfusion step of the debrief path.
+- "ok. 32 lat" (genitive after "około") in scenario labels.
+- Scenario validation rejects a child under 9 with a pulse and CRT > 2 s.
 
 ## [0.3.0] - 2026-10-11
 

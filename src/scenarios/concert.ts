@@ -329,7 +329,7 @@ export const concertScenario: Scenario = {
         obeysCommands: false,
         avpu: 'U',
       },
-      injuries: ['głęboka sinica twarzy i szyi z licznymi wybroczynami', 'szerokie źrenice', 'brak oddechu'],
+      injuries: ['głęboka sinica twarzy i szyi z licznymi wybroczynami', 'szerokie źrenice'],
       appearance: { sex: 'm', child: false, skin: '#f3d2b8', hair: '#d9a441', hairStyle: 'long', beard: false, shirt: '#000000', pants: '#2c3e50', sleeves: 'short' },
       pose: 'front',
       position: [-5.5, -0.8],

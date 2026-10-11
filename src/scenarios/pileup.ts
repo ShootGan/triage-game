@@ -102,7 +102,7 @@ export const pileupScenario: Scenario = {
         avpu: 'A',
         significantExternalInjury: false,
       },
-      injuries: ['niewielkie zaczerwienienie czoła, bez ran i krwiaków'],
+      injuries: ['bez widocznych obrażeń'],
       remark: 'Leży w foteliku samochodowym wyjętym z auta obok matki. Głośno płacze, żywo rusza wszystkimi kończynami.',
       appearance: { sex: 'f', child: true, skin: '#f8dcc4', hair: '#e3c48f', hairStyle: 'short', shirt: '#ffb3d9', pants: '#fff3a8', sleeves: 'long' },
       pose: 'back',
@@ -197,7 +197,7 @@ export const pileupScenario: Scenario = {
     {
       // START: oddechy > 30 → CZERWONY (matka niemowlęcia a03 i chłopca a05).
       id: 'a08',
-      label: 'Kobieta, ok. 32 lata (kierująca rodzinnym autem)',
+      label: 'Kobieta, ok. 32 lat (kierująca rodzinnym autem)',
       ageYears: 32,
       appearsChild: false,
       vitals: {
@@ -261,7 +261,7 @@ export const pileupScenario: Scenario = {
     {
       // START: bezdech, oddycha po udrożnieniu dróg oddechowych → CZERWONY.
       id: 'a11',
-      label: 'Mężczyzna, ok. 22 lata (pasażer srebrnej osobówki)',
+      label: 'Mężczyzna, ok. 22 lat (pasażer srebrnej osobówki)',
       ageYears: 22,
       appearsChild: false,
       vitals: {

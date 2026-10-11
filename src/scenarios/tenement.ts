@@ -185,7 +185,7 @@ export const tenementScenario: Scenario = {
     {
       // JumpSTART: bezdech z tętnem, oddycha po 5 oddechach ratowniczych → CZERWONA.
       id: 't08',
-      label: 'Dziewczynka, ok. 4 lata (wydobyta spod gruzu)',
+      label: 'Dziewczynka, ok. 4 lat (wydobyta spod gruzu)',
       ageYears: 4,
       appearsChild: true,
       vitals: {
@@ -227,7 +227,7 @@ export const tenementScenario: Scenario = {
     {
       // JumpSTART: AVPU „P" z nieadekwatną reakcją (ułożenie wyprostne) → CZERWONY.
       id: 't10',
-      label: 'Chłopiec, ok. 3 lata (mieszkaniec)',
+      label: 'Chłopiec, ok. 3 lat (mieszkaniec)',
       ageYears: 3,
       appearsChild: true,
       vitals: {
@@ -294,7 +294,7 @@ export const tenementScenario: Scenario = {
     {
       // START: osoba starsza, bezdech mimo udrożnienia dróg oddechowych → CZARNA.
       id: 't13',
-      label: 'Kobieta, ok. 82 lata (mieszkanka parteru)',
+      label: 'Kobieta, ok. 82 lat (mieszkanka parteru)',
       ageYears: 82,
       appearsChild: false,
       vitals: {

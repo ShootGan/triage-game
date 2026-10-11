@@ -21,4 +21,10 @@ describe('walidator scenariuszy', () => {
     expect(issues.some((i) => i.includes('za blisko'))).toBe(true);
     expect(issues.some((i) => i.includes('AVPU ≠ A'))).toBe(true);
   });
+
+  it('dziecko < 9 lat z tętnem i CRT > 2 s — sprzeczne z JumpSTART', () => {
+    const kid = busScenario.patients.find((p) => p.appearsChild && p.ageYears < 9 && p.vitals.breathing.spontaneous && p.vitals.peripheralPulse)!;
+    const broken = { ...busScenario, patients: [{ ...kid, vitals: { ...kid.vitals, crtSeconds: 3 } }] };
+    expect(scenarioIssues(broken).some((i) => i.includes('CRT > 2 s'))).toBe(true);
+  });
 });

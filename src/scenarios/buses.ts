@@ -205,7 +205,7 @@ export const busesScenario: Scenario = {
     {
       // Ciąża nie podnosi kategorii: nie chodzi, parametry prawidłowe → ŻÓŁTA.
       id: 'z09',
-      label: 'Kobieta w ciąży, ok. 34 lata (ok. 28. tydzień)',
+      label: 'Kobieta w ciąży, ok. 34 lat (ok. 28. tydzień)',
       ageYears: 34,
       appearsChild: false,
       vitals: {
@@ -289,7 +289,7 @@ export const busesScenario: Scenario = {
     {
       // Krwawienie wewnętrzne (bez krwotoku zewnętrznego): brak tętna promieniowego → CZERWONA.
       id: 'z13',
-      label: 'Kobieta w ciąży, ok. 33 lata (ok. 30. tydzień)',
+      label: 'Kobieta w ciąży, ok. 33 lat (ok. 30. tydzień)',
       ageYears: 33,
       appearsChild: false,
       vitals: {
@@ -408,7 +408,7 @@ export const busesScenario: Scenario = {
         obeysCommands: true,
         avpu: 'A',
       },
-      injuries: ['otarcia przedramion', 'niepokój o dziecko, brzuch miękki, niebolesny'],
+      injuries: ['otarcia przedramion', 'brzuch miękki, niebolesny'],
       remark: 'Krąży przy autokarze z apteczką samochodową: „Wczoraj miałyśmy zajęcia z pierwszej pomocy! W czym pomóc?"',
       appearance: { sex: 'f', child: false, skin: '#f5d0b0', hair: '#c97f3d', hairStyle: 'ponytail', shirt: '#7dcea0', pants: '#2e4053', sleeves: 'short', pregnant: true },
       pose: 'standing',
@@ -493,7 +493,7 @@ export const busesScenario: Scenario = {
         painResponseAppropriate: false,
       },
       injuries: ['rozległy krwiak okolicy skroniowej prawej', 'nierówne źrenice'],
-      remark: 'Leży przy autobusie szkolnym, nie reaguje na wołanie. Na ucisk prostuje kończyny.',
+      remark: 'Leży przy autobusie szkolnym, nie reaguje na wołanie.',
       appearance: { sex: 'f', child: true, skin: '#c68642', hair: '#1b1b1b', hairStyle: 'long', shirt: CLASS_SHIRT, pants: '#2874a6', sleeves: 'short' },
       pose: 'back',
       position: [10.6, -0.6],

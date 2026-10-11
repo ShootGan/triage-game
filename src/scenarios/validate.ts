@@ -70,6 +70,10 @@ export function scenarioIssues(s: Scenario): string[] {
       out.push(`${id}: oddycha, ale rate ≤ 0`);
     }
     if (!v.peripheralPulse && v.crtSeconds <= 2) out.push(`${id}: brak tętna obwodowego przy CRT ≤ 2 s`);
+    // JumpSTART ignores CRT; a child with a pulse and slow CRT would teach a different answer than the algorithm.
+    if (p.appearsChild && p.ageYears < 9 && v.peripheralPulse && v.breathing.spontaneous && v.crtSeconds > 2) {
+      out.push(`${id}: dziecko z tętnem obwodowym, ale CRT > 2 s`);
+    }
     if (v.nonAmbulatoryByAge && (!p.appearsChild || p.ageYears > 2)) out.push(`${id}: nonAmbulatoryByAge tylko dla niemowląt`);
     if (p.majorBleeding && v.canWalk) out.push(`${id}: masywny krwotok, a chodzi`);
     if (p.injuries.length === 0) out.push(`${id}: brak opisu obrażeń`);

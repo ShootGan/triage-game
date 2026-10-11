@@ -398,7 +398,8 @@ export const ARCHETYPES: readonly Archetype[] = [
     vitals: {
       walk: false, breathing: 'spontaneous', rate: 'normal', pulse: true, crt: [1, 2], avpu: 'A', obeys: false, infantInjury: false,
     },
-    injuries: [['niewielkie zaczerwienienie czoła, bez ran i krwiaków', 'bez widocznych obrażeń', 'drobne otarcie policzka']],
+    // Romig's criteria: only no injury at all keeps it GREEN unambiguously.
+    injuries: [['bez widocznych obrażeń']],
     remarks: [
       'Głośno płacze, żywo rusza wszystkimi kończynami.',
       { t: 'Leży w foteliku samochodowym wyjętym z auta. Głośno płacze, żywo rusza kończynami.', mech: ['komunikacyjny'] },
@@ -532,7 +533,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     mechanisms: ['wybuch', 'upadek', 'komunikacyjny'],
     vitals: STABLE(),
     injuries: [
-      ['widoczna zaawansowana ciąża'],
+      ['widoczna ciąża'],
       [
         'obrzęk i zniekształcenie stawu skokowego prawego',
         { t: 'obrzęk i zniekształcenie stawu skokowego prawego po skoku z okna', mech: ['wybuch'] },
@@ -632,9 +633,10 @@ export const ARCHETYPES: readonly Archetype[] = [
       walk: false, breathing: 'spontaneous', rate: 'normal', pulse: true, crt: [1, 2], avpu: 'A', obeys: false, infantInjury: true,
     },
     injuries: [[
-      'rana płatowata owłosionej skóry głowy, krwawiąca',
-      'obrzęk i zniekształcenie przedramienia prawego',
-      'rozległy krwiak czoła',
+      // Only signs from Romig's "significant external injury" list.
+      'rana płatowata owłosionej skóry głowy, obficie krwawiąca',
+      'mnogie zasinienia tułowia i kończyn',
+      'wzdęty, tkliwy brzuch, zasinienie powłok brzusznych',
     ]],
     extraInjuries: ['otarcia twarzy'],
     remarks: [
@@ -839,7 +841,7 @@ export const ARCHETYPES: readonly Archetype[] = [
       walk: false, breathing: 'spontaneous', rate: [12, 22], pulse: true, crt: [1.5, 2], avpu: 'P', obeys: false, painAppropriate: false,
     },
     injuries: [['rozległy krwiak okolicy ciemieniowej', 'rana tłuczona potylicy'], ['nierówne źrenice', 'krwawienie z ucha']],
-    remarks: ['Nie reaguje na głos. Na ucisk prostuje kończyny.'],
+    remarks: ['Nie reaguje na głos.'],
     poses: ['back'],
     weight: 0.7,
   },
@@ -940,7 +942,7 @@ export const ARCHETYPES: readonly Archetype[] = [
       walk: false, breathing: 'spontaneous', rate: [18, 28], pulse: true, crt: [1.5, 2], avpu: 'P', obeys: false, painAppropriate: false,
     },
     injuries: [['rozległy krwiak czoła', 'rozległy krwiak okolicy potylicznej'], ['nierówne źrenice', 'krwawienie z nosa']],
-    remarks: ['Nie reaguje na wołanie. Na ucisk prostuje kończyny.', 'Nie płacze, oczy zamknięte.'],
+    remarks: ['Nie reaguje na wołanie.', 'Nie płacze, oczy zamknięte.'],
     poses: ['back'],
   },
   {
@@ -952,7 +954,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     mechanisms: ALL,
     vitals: { walk: false, breathing: 'spontaneous', rate: [16, 24], pulse: true, crt: [1.5, 2], avpu: 'U', obeys: false },
     injuries: [['krwiak okularowy obustronny', 'rozległy krwiak okolicy skroniowej'], ['wyciek płynu z nosa podbarwiony krwią', 'krwawienie z ucha']],
-    remarks: ['Leży bez ruchu, nie reaguje na głos ani na ból.'],
+    remarks: ['Leży bez ruchu, oczy zamknięte.'],
     poses: ['back'],
     weight: 0.7,
   },

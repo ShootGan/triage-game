@@ -255,7 +255,7 @@ function pregnancyFindings(v: Vitals, rng: Rng): string[] {
   const step = r.steps.at(-1)?.id;
   const contractions = () => `skurcze co ok. ${rng.int(4, 15)} min`;
   if (r.category === 'green') {
-    return ['niepokój o dziecko, brzuch miękki, niebolesny', 'pobolewanie podbrzusza, brzuch miękki', 'twardnienie brzucha przy chodzeniu, ustępuje w spoczynku', contractions()];
+    return ['brzuch miękki, niebolesny', 'pobolewanie podbrzusza, brzuch miękki', 'twardnienie brzucha przy chodzeniu, ustępuje w spoczynku', contractions()];
   }
   if (r.category === 'yellow') {
     return ['ból podbrzusza, brzuch miękki', 'pobolewanie podbrzusza przy ruchu', 'twardnienie brzucha co kilka minut', contractions()];
@@ -264,8 +264,8 @@ function pregnancyFindings(v: Vitals, rng: Rng): string[] {
     return ['krwawienie z dróg rodnych, twardy, bolesny brzuch', 'twardy, napięty, bolesny brzuch, plamienie z dróg rodnych'];
   }
   if (step === 'resp-rate') return ['brzuch miękki, niebolesny', 'duszność nasila się w pozycji na plecach'];
-  if (r.category === 'black') return ['widoczna zaawansowana ciąża'];
-  return ['widoczna zaawansowana ciąża, brzuch miękki'];
+  if (r.category === 'black') return ['widoczna ciąża'];
+  return ['widoczna ciąża, brzuch miękki'];
 }
 
 /** Wypowiedzi ciężarnych (tylko przytomne, wykonujące polecenia). */
