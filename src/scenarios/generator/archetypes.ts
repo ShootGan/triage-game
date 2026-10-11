@@ -601,7 +601,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     injuries: [[
       { t: 'obrzęk i zniekształcenie stopy prawej po przydeptaniu', mech: ['tlum'] },
       'obrzęk i zniekształcenie stawu skokowego lewego',
-      'obrzęk i zniekształcenie przedramienia prawego, nie może się podnieść',
+      'obrzęk i zniekształcenie podudzia prawego, nie może się podnieść',
     ]],
     extraInjuries: ['otarcia dłoni'],
     remarks: ['Płacze cicho: „Nie mogę chodzić…"'],
@@ -781,14 +781,15 @@ export const ARCHETYPES: readonly Archetype[] = [
   {
     id: 'r-oparzenia-rozlegle',
     category: 'red',
-    criterion: 'START: CRT > 2 s (wstrząs oparzeniowy)',
+    // Wstrząs oparzeniowy narasta godzinami — wczesny zły nawrót kapilarny tłumaczy uraz towarzyszący (krwawienie wewnętrzne).
+    criterion: 'START: CRT > 2 s (oparzenia + krwawienie wewnętrzne)',
     source: [],
     ages: ['teen', 'adult'],
     mechanisms: ['wybuch', 'oparzenie'],
     vitals: { walk: false, breathing: 'spontaneous', rate: [22, 30], pulse: true, crt: [3, 4], avpu: 'A', obeys: true },
     injuries: [
       ['rozległe oparzenia II i III stopnia tułowia i ramion', 'oparzenia II–III stopnia obu kończyn dolnych i brzucha'],
-      ['skóra poza oparzeniami blada, chłodna'],
+      ['twardy, bolesny brzuch po uderzeniu odłamkiem; skóra poza oparzeniami blada, chłodna'],
     ],
     remarks: ['Drży, jęczy: „Pić… zimno mi…"'],
     poses: ['back'],

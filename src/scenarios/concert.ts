@@ -172,7 +172,7 @@ export const concertScenario: Scenario = {
         avpu: 'A',
       },
       injuries: ['bolesność uciskowa żeber po lewej — podejrzenie złamania żeber', 'płytki oddech z powodu bólu'],
-      remark: 'Leży na boku trzymając się za żebra: „Boli przy każdym wdechu…"',
+      remark: 'Leży na plecach, trzymając się za żebra: „Boli przy każdym wdechu…"',
       appearance: { sex: 'f', child: false, skin: '#f0d5be', hair: '#e5c07b', hairStyle: 'long', shirt: '#4a148c', pants: '#212121', sleeves: 'short' },
       pose: 'back',
       position: [3, 1.8],

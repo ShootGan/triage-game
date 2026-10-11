@@ -264,7 +264,7 @@ export const pileupScenario: Scenario = {
         obeysCommands: false,
         avpu: 'U',
       },
-      injuries: ['krwiak czoła', 'chrapliwy oddech przy zapadniętej żuchwie — po udrożnieniu słaby oddech własny'],
+      injuries: ['krwiak czoła', 'zapadnięta żuchwa, sinica warg, brak widocznych ruchów oddechowych'],
       remark: 'Leży na jezdni na plecach, wyrzucony przez przednią szybę. Bez reakcji.',
       appearance: { sex: 'm', child: false, skin: '#8d5524', hair: '#0f0f0f', hairStyle: 'short', shirt: '#f4d03f', pants: '#1a1a1a', sleeves: 'short' },
       pose: 'back',
