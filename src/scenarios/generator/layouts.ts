@@ -6,6 +6,7 @@ import { concertScenario } from '../concert';
 import { festivalScenario } from '../festival';
 import { pileupScenario } from '../pileup';
 import { tenementScenario } from '../tenement';
+import { trainScenario } from '../train';
 import type { PatientPose, Scenario } from '../types';
 import type { AgeGroup, Mechanism, Range } from './archetypes';
 
@@ -300,6 +301,64 @@ const tenement: ScenarioLayout = {
   ],
 };
 
+// ───────────────────────────── POCIĄG ─────────────────────────────
+const train: ScenarioLayout = {
+  id: 'train',
+  prefix: 'POCIAG',
+  template: trainScenario,
+  mechanisms: ['kolejowy'],
+  count: [12, 18],
+  ageWeights: { adult: 6, elderly: 1.8, teen: 1.4, child: 1, infant: 0.3 },
+  ageRanges: { child: [3, 10] },
+  maxInfants: 1,
+  minAdults: 2,
+  roles: [
+    { m: 'maszynista', ages: ['adult'], max: 1, weight: 1.5 },
+    { m: 'kierownik pociągu', f: 'konduktorka', ages: ['adult'], max: 1, weight: 1.5 },
+    { m: 'pasażer', f: 'pasażerka', ages: ['teen', 'adult', 'elderly'], weight: 4 },
+    { m: 'pasażer z pierwszego wagonu', f: 'pasażerka z pierwszego wagonu', ages: ['teen', 'adult', 'elderly'], weight: 1.5 },
+    { m: 'uczeń dojeżdżający do szkoły', f: 'uczennica dojeżdżająca do szkoły', ages: ['teen'], max: 3 },
+    { m: 'z rodzicami', f: 'z rodzicami', ages: ['child'] },
+  ],
+  roleChance: 0.8,
+  briefing: (i) =>
+    lines(
+      'SWD PRM — zadysponowanie, kod 1.',
+      'Zdarzenie masowe: wykolejenie pociągu regionalnego na nasypie kolejowym wśród pól, ok. 1,5 km za przystankiem. Pierwszy wagon z rozbitą kabiną maszynisty zjechał z nasypu, drugi przewrócił się na bok u jego podnóża.',
+      `Zgłaszająca (konduktorka): w pociągu ok. 60 pasażerów, wielu poszkodowanych, część wydostała się przez okna.${i.unresponsive > 0 ? ' Są osoby nieprzytomne.' : ''}${i.children + i.infants > 0 ? ' Wśród pasażerów dzieci.' : ''}`,
+      'UWAGA: nie wchodzić na nasyp ani do wagonów — sieć trakcyjna traktowana jako pod napięciem do czasu potwierdzenia wyłączenia. PSP ewakuuje pasażerów z wagonów, Policja zabezpiecza dojazd drogą polną, kolejne ZRM i LPR w drodze.',
+      'Jesteś pierwszym zespołem na miejscu — przeprowadź segregację wstępną (START / JumpSTART). Punkt zbiórki dla chodzących przy drodze polnej.',
+    ),
+  slots: [
+    // template positions (k01–k16)
+    S(9, 5, 3, 'przy rozbitym wagonie', false),
+    S(-0.5, 7, 2.8, 'na łące', false),
+    S(5.5, 7.2, -2.6, 'na łące', false),
+    S(-12, 4.2, 1.2, 'przy punkcie zbiórki', false, false),
+    S(6, 4.8, 1.9, 'na łące', false),
+    S(-6, 4.2, -0.4, 'przy przewróconym wagonie', true),
+    S(-3, 4.4, 2.4, 'na łące', false),
+    S(3, 4.6, 0.6, 'na łące', false),
+    S(10.5, 2.6, -1.4, 'przy rozbitej kabinie', true),
+    S(4.5, 2.4, 0.3, 'przy rozbitym wagonie', true),
+    S(1.5, 2, -0.8, 'między wagonami', true),
+    S(-4.5, 1.8, 1.6, 'przy przewróconym wagonie', true),
+    S(-7.5, 2, 0.5, 'przy przewróconym wagonie', true),
+    S(-10.5, 1.8, -1.1, 'przy przewróconym wagonie', true),
+    S(-1.5, 2.2, 2.2, 'między wagonami', true),
+    S(7.5, 2.2, -2, 'przy rozbitym wagonie', true),
+    // extra slots
+    S(0, 4.6, -1.2, 'na łące', false),
+    S(-9, 4, 0.8, 'na łące', false),
+    S(9, 7.4, 2.6, 'na łące', false),
+    S(-6.5, 6.6, 2.9, 'na łące', false),
+    S(-3.5, 6.8, -2.7, 'na łące', false),
+    S(2.5, 7.2, 3.1, 'na łące', false),
+    S(11.5, 6.8, -2.4, 'na łące', false),
+    S(-8.6, 8.6, 2, 'przy punkcie zbiórki', false, false),
+  ],
+};
+
 // ───────────────────────────── KONCERT ─────────────────────────────
 const DARK_SHIRTS = ['#111111', '#1e1e1e', '#2d3436', '#0b0b0b', '#1a1a2e', '#14213d', '#3d0c02', '#22313f', '#4a148c', '#7b1e1e', '#556b2f', '#000000'];
 const concert: ScenarioLayout = {
@@ -497,7 +556,7 @@ const buses: ScenarioLayout = {
   ],
 };
 
-export const LAYOUTS: readonly ScenarioLayout[] = [bus, pileup, tenement, concert, festival, buses];
+export const LAYOUTS: readonly ScenarioLayout[] = [bus, pileup, tenement, concert, festival, buses, train];
 
 export function layoutById(id: string): ScenarioLayout | undefined {
   return LAYOUTS.find((l) => l.id === id);

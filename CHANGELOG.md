@@ -21,6 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   random code) while two PSP firefighters cut the car open — hydraulic cutter and spreader, power
   unit with hoses, roof and door already removed. The patient is examined as usual; the medic
   stands at the open door. Crashed bus and car, skid marks, spill, belongings, police car, ambulance.
+- New scenario "Katastrofa kolejowa" (fictional regional train derailment on an embankment):
+  16 patients (4 green, 4 yellow, 6 red, 2 black, two children on JumpSTART), PSP firefighters at
+  the wagons, fire engine, ambulance and police on a dirt service road. Random codes `POCIAG-XXXX`
+  with a new train-crash mechanism (no seat-belt or steering-wheel injuries) and two train-specific
+  patient types.
+- Railway terrain: ballast embankment with sleepers and rails, overhead-line masts with contact
+  wire, dirt service road, tree line and a power line.
+- Regional EMU car model (white/red livery) in three variants: on the rails with a raised
+  pantograph, rolled onto its side at the foot of the embankment, and derailed with a crushed cab.
 
 ### Fixed (visuals)
 

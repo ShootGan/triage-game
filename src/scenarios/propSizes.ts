@@ -29,7 +29,8 @@ export type PropKind =
   | 'cones'      // row of 4 traffic cones along local z (~3 m), closing a lane — no footprint
   | 'extrication' // firefighters cutting a car open (placed on the car's position/rotation) — no footprint
   | 'tenement'    // intact neighbouring tenement 12 × 8 m (variant: palette, floors, damaged side)
-  | 'firefighter'; // single PSP firefighter (variant 'kneel' | 'point' | 'stand')
+  | 'firefighter' // single PSP firefighter (variant 'kneel' | 'point' | 'stand')
+  | 'train';      // regional EMU car 20 × 2.9 m (variant 'upright' on the rails, 'derailed' on its side, 'crash' cab crushed)
 
 export const PROP_HALF_SIZE: Record<PropKind, [number, number] | null> = {
   bus: [5.2, 1.5],
@@ -58,7 +59,26 @@ export const PROP_HALF_SIZE: Record<PropKind, [number, number] | null> = {
   extrication: null,
   tenement: [6, 4],
   firefighter: [0.4, 0.4],
+  // covers the widest variant (car lying on its side, ~4.7 m across)
+  train: [10.2, 2.4],
 };
+
+/**
+ * Railway terrain geometry (terrain 'railway'), shared by the terrain builder, the train model
+ * and the scenario: a ballast embankment along X with one track. Patients lie on flat grass in front
+ * (z > toeFront); the 'upright' train variant stands on the rails at `railTop`.
+ */
+export const RAILWAY = {
+  trackZ: -6,      // track centre line
+  crestFront: -4,  // front edge of the embankment top
+  crestBack: -8,   // back edge of the embankment top
+  toeFront: -2,    // foot of the front slope (flat ground from here on)
+  toeBack: -10,    // foot of the back slope
+  crestY: 1.2,     // embankment height
+  railTop: 1.73,   // top of the rails
+  gauge: 1.435,
+  roadZ: [9.2, 12.6] as const, // dirt service road along the embankment (for emergency vehicles)
+} as const;
 
 /** Driver's seat of a car (front left: local x −0.1, z −0.4), facing the car's front. */
 export function driverSeat(carX: number, carZ: number, carRot: number): { position: [number, number]; rotation: number } {

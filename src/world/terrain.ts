@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import type { Kit } from './materials';
 import type { TerrainKind } from '../scenarios/types';
+import { RAILWAY } from '../scenarios/propSizes';
 import { cropField, delineator, house, pine, roadSign, tree, utilityPole, wires } from './scenery';
+import { beam } from './propUtils';
 
 export type { TerrainKind } from '../scenarios/types';
 
@@ -27,6 +29,7 @@ export function buildTerrain(kit: Kit, parent: THREE.Object3D, size = 40, kind: 
     case 'street': buildStreet(kit, g, size, free); break;
     case 'field': buildField(kit, g, size, free); break;
     case 'highway': buildHighway(kit, g, size, free); break;
+    case 'railway': buildRailway(kit, g, size, free); break;
   }
   return g;
 }
@@ -230,6 +233,101 @@ function motorwaySign(kit: Kit, g: THREE.Object3D, x: number, z: number): void {
   back.position.set(x, 2.3, z - 0.01);
   back.rotation.y = Math.PI;
   g.add(back);
+}
+
+// ---------- 'railway' ----------
+
+/**
+ * Prism along X with a cross-section given as (z, y) points (counter-clockwise seen from +x),
+ * spanning the whole terrain.
+ */
+function prismAlongX(kit: Kit, g: THREE.Object3D, size: number, zy: ReadonlyArray<readonly [number, number]>, color: string): THREE.Mesh {
+  // the shape is drawn in (u, v) = (−z, y) and extruded along +z, then turned so the extrusion runs along X
+  const shape = new THREE.Shape(zy.map(([z, y]) => new THREE.Vector2(-z, y)));
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: size, bevelEnabled: false });
+  geo.rotateY(Math.PI / 2);
+  geo.translate(-size / 2, 0, 0);
+  const m = kit.part(geo, color, g);
+  m.castShadow = false;
+  return m;
+}
+
+/**
+ * Railway line on an embankment (see RAILWAY in propSizes.ts): grass slopes, ballast bed, concrete sleepers
+ * and two rails; catenary masts with a cantilever, messenger and contact wire behind the track; flat grass
+ * in front (patients lie here, surface y = 0); a dirt service road beyond the patient zone; trees and a
+ * low-voltage line in the background.
+ */
+function buildRailway(kit: Kit, g: THREE.Object3D, size: number, free: FreeFn): void {
+  const R = RAILWAY;
+  const half = size / 2;
+  kit.box(size, 0.2, size, '#5f9a4a', 0, -0.1, 0, g);
+
+  // embankment (base slightly below the grass to avoid coplanar faces)
+  prismAlongX(kit, g, size, [[R.toeFront, -0.01], [R.crestFront, R.crestY], [R.crestBack, R.crestY], [R.toeBack, -0.01]], '#6f8f4a');
+  // ballast bed on the crest
+  const tc = R.trackZ;
+  prismAlongX(kit, g, size, [[tc + 1.9, R.crestY - 0.02], [tc + 1.4, R.crestY + 0.3], [tc - 1.4, R.crestY + 0.3], [tc - 1.9, R.crestY - 0.02]], '#8d8780');
+  // concrete sleepers (embedded in the ballast) and rails
+  const sleeper = kit.own(new THREE.BoxGeometry(0.26, 0.14, 2.5));
+  for (let x = -half + 0.3; x < half; x += 0.62) kit.part(sleeper, '#a7a39b', g, x, R.crestY + 0.33, tc).castShadow = false;
+  const railH = R.railTop - (R.crestY + 0.4);
+  for (const s of [-1, 1]) {
+    const rz = tc + s * R.gauge / 2;
+    kit.box(size, railH, 0.07, '#6a5a4c', 0, R.crestY + 0.4 + railH / 2, rz, g).castShadow = false;
+    kit.box(size, 0.02, 0.075, '#c9cdd2', 0, R.railTop - 0.009, rz, g).castShadow = false; // polished running surface
+  }
+
+  // catenary: masts on the back slope, cantilever over the track, messenger + contact wire
+  const mastZ = R.crestBack - 0.7;
+  const mastBase = R.crestY * (R.toeBack - mastZ) / (R.toeBack - R.crestBack) - 0.2;
+  const wireY = R.railTop + 5.6;
+  const STEEL = '#7d8288';
+  for (let x = -half + 4; x < half; x += 14) {
+    kit.box(0.7, 0.9, 0.7, '#9c9890', x, mastBase + 0.25, mastZ, g); // concrete foundation
+    kit.box(0.28, wireY + 2.2 - mastBase, 0.22, STEEL, x, (wireY + 2.2 + mastBase) / 2, mastZ, g);
+    beam(kit, 0.08, STEEL, { x, y: wireY + 1.6, z: mastZ }, { x, y: wireY + 1.3, z: tc + 0.3 }, g); // top tube
+    beam(kit, 0.08, STEEL, { x, y: wireY + 0.5, z: mastZ }, { x, y: wireY + 0.7, z: tc + 0.3 }, g); // bracket
+    kit.box(0.06, 1.1, 0.06, '#4a4d52', x, wireY + 0.9, tc + 0.3, g); // dropper to the contact wire
+  }
+  for (const [y, t] of [[wireY, 0.03], [wireY + 1.3, 0.035]] as const) {
+    kit.box(size, t, t, '#2a2a2e', 0, y, tc + 0.3, g).castShadow = false;
+  }
+
+  // dirt service road with darker wheel ruts (top y = 0.01, below the 0.02 limit)
+  const [r0, r1] = R.roadZ;
+  kit.box(size, 0.2, r1 - r0, '#a08c6a', 0, -0.09, (r0 + r1) / 2, g).castShadow = false;
+  for (const dz of [0.9, 2.5]) kit.box(size, 0.205, 0.45, '#8a7656', 0, -0.0875, r0 + dz, g).castShadow = false;
+
+  tufts(kit, g, size, 220, (_x, z) => (z > R.toeBack - 0.3 && z < R.toeFront + 0.3) || (z > r0 - 0.2 && z < r1 + 0.2));
+
+  // background: a tree line behind the embankment, a low-voltage line and trees beyond the service road
+  for (let i = 0, x = -half + 3; x < half - 3; i++, x += 4 + hash(i, 4.7) * 3) {
+    const z = R.toeBack - 3 - hash(i + 30, 2.9) * 5;
+    if (!free(x, z, 2.2)) continue;
+    if (hash(i, 8.3) < 0.5) pine(kit, g, x, z, i);
+    else tree(kit, g, x, z, i);
+  }
+  for (let i = 0, x = -half + 5; x < half - 5; i++, x += 7 + hash(i, 6.1) * 6) {
+    const z = r1 + 3 + hash(i + 70, 3.7) * 4;
+    if (free(x, z, 2.2)) tree(kit, g, x, z, i + 40);
+  }
+  let prev: number | null = null;
+  for (let x = -half + 6; x < half - 4; x += 15) {
+    const z = r1 + 1.4;
+    if (free(x, z, 1)) {
+      utilityPole(kit, g, x, z);
+      if (prev !== null) wires(kit, g, prev, x, z);
+      prev = x;
+    } else prev = null;
+  }
+  // bushes between the embankment and the patient zone edges
+  for (let i = 0; i < 12; i++) {
+    const x = (hash(i, 41.3) * 2 - 1) * half * 0.8;
+    if (Math.abs(x) < 13) continue;
+    const z = 1 + hash(i, 19.7) * 7;
+    if (free(x, z, 1.8)) bushCluster(kit, g, x, z, i);
+  }
 }
 
 // ---------- 'street' ----------

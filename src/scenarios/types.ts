@@ -57,7 +57,7 @@ export interface ScenarioProp {
    * Wariant modelu. Auto: 'sedan' | 'hatch' | 'suv' | 'van', z dopiskiem '-crash' (zgnieciony przód) lub 'roof'
    * (na dachu); domyślnie losowany z pozycji. Ciężarówka: 'jackknife' (złożona w scyzoryk).
    * Bus: 'crash' (crumpled front, cracked windscreen, hazard lights). Barrier: 'down' (knocked over).
-   * Stall: 'balloons' | 'food'. Dust: 'smoke'.
+   * Stall: 'balloons' | 'food'. Dust: 'smoke'. Train: 'upright' | 'derailed' | 'crash'.
    */
   variant?: string;
 }
@@ -70,8 +70,11 @@ export interface ScenarioProp {
  * - 'highway' — autostrada: jezdnia −5,6 < z < 4,6 (2 pasy + pas awaryjny przy z > 1,9), pas rozdziału z trawą
  *               i podwójną stalową barierą przy z ≈ −7,5, przeciwna jezdnia z < −9,4; za poboczem trawa,
  *               bariera na poboczu (z ≈ 5,1) tylko przy |x| > 11
+ * - 'railway' — railway embankment along X (track at z = −6, crest −8 < z < −4, slopes down to z = −10 and z = −2),
+ *               catenary masts behind the track, flat grass in front, dirt service road at 9,2 < z < 12,6
+ *               (see RAILWAY in propSizes.ts)
  */
-export type TerrainKind = 'road' | 'street' | 'field' | 'highway';
+export type TerrainKind = 'road' | 'street' | 'field' | 'highway' | 'railway';
 
 export interface Scenario {
   id: string;

@@ -26,9 +26,10 @@ export const APPEARS_CHILD: Record<AgeGroup, boolean> = {
   elderly: false,
 };
 
-export type Mechanism = 'komunikacyjny' | 'zmiazdzenie' | 'wybuch' | 'upadek' | 'oparzenie' | 'tlum';
+/** 'kolejowy' — train derailment: like a road crash but no seat belts or steering wheels, thrown about the car. */
+export type Mechanism = 'komunikacyjny' | 'zmiazdzenie' | 'wybuch' | 'upadek' | 'oparzenie' | 'tlum' | 'kolejowy';
 
-export const ALL_MECHANISMS: readonly Mechanism[] = ['komunikacyjny', 'zmiazdzenie', 'wybuch', 'upadek', 'oparzenie', 'tlum'];
+export const ALL_MECHANISMS: readonly Mechanism[] = ['komunikacyjny', 'zmiazdzenie', 'wybuch', 'upadek', 'oparzenie', 'tlum', 'kolejowy'];
 
 export type Range = readonly [number, number];
 
@@ -144,6 +145,7 @@ export const ARCHETYPES: readonly Archetype[] = [
       'Rozgląda się nerwowo i próbuje się do kogoś dodzwonić.',
       { t: '„Huknęło tak, że mnie przewróciło…"', mech: ['wybuch'] },
       { t: '„Ktoś mnie popchnął i upadł{em|am}… Gdzie są moi znajomi?"', mech: ['tlum'] },
+      { t: '„Wagon zaczął się przechylać i wszyscy polecieliśmy na jedną stronę…"', mech: ['kolejowy'] },
       { t: '„Nogi mi się trzęsą, ale chodzę."', ages: ['elderly'] },
     ],
     poses: UPRIGHT,
@@ -156,12 +158,12 @@ export const ARCHETYPES: readonly Archetype[] = [
     criterion: 'chodzi',
     source: ['p02', 't04'],
     ages: ADULTLIKE,
-    mechanisms: ['komunikacyjny', 'wybuch', 'zmiazdzenie', 'upadek'],
+    mechanisms: ['komunikacyjny', 'wybuch', 'zmiazdzenie', 'upadek', 'kolejowy'],
     vitals: WALKER(),
     injuries: [[
       'rana cięta przedramienia lewego, krwawienie żylne niewielkie',
       'rana cięta grzbietu dłoni prawej, krwawienie niewielkie',
-      { t: 'rana cięta przedramienia od szyby, krwawienie żylne niewielkie', mech: ['komunikacyjny', 'wybuch'] },
+      { t: 'rana cięta przedramienia od szyby, krwawienie żylne niewielkie', mech: ['komunikacyjny', 'wybuch', 'kolejowy'] },
     ]],
     remarks: [
       'Uciska ranę chusteczką: „Dam radę, idźcie do ciężej rannych."',
@@ -197,7 +199,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     criterion: 'chodzi (dystraktor: twarz zalana krwią)',
     source: ['a02'],
     ages: ['teen', 'adult'],
-    mechanisms: ['komunikacyjny', 'wybuch', 'upadek', 'tlum', 'zmiazdzenie'],
+    mechanisms: ['komunikacyjny', 'wybuch', 'upadek', 'tlum', 'zmiazdzenie', 'kolejowy'],
     vitals: WALKER(),
     injuries: [[
       'rana cięta skóry owłosionej głowy — twarz i ubranie zalane krwią, krwawienie już niewielkie',
@@ -279,7 +281,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     criterion: 'chodzi',
     source: ['c02'],
     ages: ['teen', 'adult'],
-    mechanisms: ['tlum', 'upadek', 'komunikacyjny'],
+    mechanisms: ['tlum', 'upadek', 'komunikacyjny', 'kolejowy'],
     vitals: WALKER(),
     injuries: [[
       'obrzęk i bolesność stawu skokowego lewego — podejrzenie skręcenia',
@@ -298,13 +300,13 @@ export const ARCHETYPES: readonly Archetype[] = [
     criterion: 'chodzi',
     source: ['c04'],
     ages: ['teen', 'adult'],
-    mechanisms: ['tlum', 'komunikacyjny', 'upadek'],
+    mechanisms: ['tlum', 'komunikacyjny', 'upadek', 'kolejowy'],
     vitals: WALKER(),
     injuries: [['krwawienie z nosa (niewielkie)']],
     extraInjuries: ['otarcie policzka lewego', 'zasinienie wokół oka'],
     remarks: [
       { t: 'Przyciska chusteczkę do nosa: „Dostał{em|am} łokciem. Pomóżcie tamtym przy barierkach!"', mech: ['tlum'] },
-      { t: '„Uderzył{em|am} twarzą w fotel przed sobą."', mech: ['komunikacyjny'] },
+      { t: '„Uderzył{em|am} twarzą w fotel przed sobą."', mech: ['komunikacyjny', 'kolejowy'] },
       '„To tylko nos. Zajmijcie się innymi."',
     ],
     poses: UPRIGHT,
@@ -339,7 +341,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     extraInjuries: [
       'zabrudzone, zapłakane policzki',
       { t: 'drzazga w dłoni prawej', mech: ['upadek', 'zmiazdzenie'] },
-      { t: 'drobne rany cięte policzka od szkła', mech: ['komunikacyjny', 'wybuch'] },
+      { t: 'drobne rany cięte policzka od szkła', mech: ['komunikacyjny', 'wybuch', 'kolejowy'] },
       { t: 'twarz i włosy pokryte pyłem', mech: ['wybuch'] },
     ],
     remarks: [
@@ -417,7 +419,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     criterion: 'nie chodzi; oddech, perfuzja i stan świadomości prawidłowe',
     source: ['p04', 'c06', 'f04'],
     ages: ['child', 'teen', 'adult', 'elderly'],
-    mechanisms: ['komunikacyjny', 'upadek', 'tlum', 'zmiazdzenie', 'wybuch'],
+    mechanisms: ['komunikacyjny', 'upadek', 'tlum', 'zmiazdzenie', 'wybuch', 'kolejowy'],
     vitals: STABLE(),
     injuries: [[
       'zniekształcenie podudzia prawego — podejrzenie złamania',
@@ -443,7 +445,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     criterion: 'nie chodzi; parametry prawidłowe',
     source: ['p05'],
     ages: ['child', 'teen', 'adult'],
-    mechanisms: ['komunikacyjny', 'upadek', 'zmiazdzenie'],
+    mechanisms: ['komunikacyjny', 'upadek', 'zmiazdzenie', 'kolejowy'],
     vitals: STABLE(),
     injuries: [[
       'bolesność i zniekształcenie uda lewego — podejrzenie złamania kości udowej',
@@ -462,7 +464,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     criterion: 'nie chodzi; parametry prawidłowe',
     source: ['a06'],
     ages: ['elderly'],
-    mechanisms: ['komunikacyjny', 'upadek', 'tlum', 'wybuch'],
+    mechanisms: ['komunikacyjny', 'upadek', 'tlum', 'wybuch', 'kolejowy'],
     vitals: STABLE('normal'),
     injuries: [[
       'skrócenie i rotacja zewnętrzna kończyny dolnej lewej — podejrzenie złamania szyjki kości udowej',
@@ -478,7 +480,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     criterion: 'nie chodzi; parametry prawidłowe',
     source: ['a07'],
     ages: ['teen', 'adult'],
-    mechanisms: ['komunikacyjny', 'upadek', 'zmiazdzenie', 'wybuch'],
+    mechanisms: ['komunikacyjny', 'upadek', 'zmiazdzenie', 'wybuch', 'kolejowy'],
     vitals: STABLE(),
     injuries: [[
       'otwarte złamanie podudzia prawego, krwawienie żylne umiarkowane',
@@ -510,7 +512,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     criterion: 'nie chodzi; oddechy ≤ 30/min, perfuzja i świadomość prawidłowe',
     source: ['c07'],
     ages: ADULTLIKE,
-    mechanisms: ['tlum', 'komunikacyjny', 'upadek', 'zmiazdzenie'],
+    mechanisms: ['tlum', 'komunikacyjny', 'upadek', 'zmiazdzenie', 'kolejowy'],
     vitals: STABLE([22, 28]),
     injuries: [[
       'bolesność uciskowa żeber po lewej — podejrzenie złamania żeber',
@@ -581,7 +583,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     criterion: 'nie chodzi; parametry prawidłowe',
     source: [],
     ages: ADULTLIKE,
-    mechanisms: ['upadek', 'zmiazdzenie', 'komunikacyjny', 'tlum'],
+    mechanisms: ['upadek', 'zmiazdzenie', 'komunikacyjny', 'tlum', 'kolejowy'],
     vitals: STABLE(),
     injuries: [[
       'ból odcinka lędźwiowego kręgosłupa, drętwienie nóg',
@@ -598,7 +600,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     criterion: 'START: senny (AVPU „V"), ale wykonuje proste polecenia; parametry prawidłowe',
     source: [],
     ages: ADULTLIKE,
-    mechanisms: ['upadek', 'zmiazdzenie', 'komunikacyjny', 'wybuch', 'tlum'],
+    mechanisms: ['upadek', 'zmiazdzenie', 'komunikacyjny', 'wybuch', 'tlum', 'kolejowy'],
     vitals: { ...STABLE(), avpu: 'V' },
     injuries: [['guz okolicy czołowej', 'krwiak okolicy potylicznej', 'rana tłuczona skóry głowy, niewielkie krwawienie']],
     extraInjuries: ['otarcia twarzy'],
@@ -671,7 +673,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     criterion: 'START: oddechy > 30/min',
     source: ['p06', 'a08'],
     ages: ADULTLIKE,
-    mechanisms: ['komunikacyjny', 'tlum', 'upadek', 'zmiazdzenie'],
+    mechanisms: ['komunikacyjny', 'tlum', 'upadek', 'zmiazdzenie', 'kolejowy'],
     vitals: { ...STABLE([32, 40]), crt: [1.5, 2] },
     injuries: [[
       { t: 'otarcie klatki piersiowej od pasa bezpieczeństwa', mech: ['komunikacyjny'] },
@@ -694,7 +696,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     criterion: 'START: oddechy > 30/min',
     source: ['c09'],
     ages: ['teen', 'adult'],
-    mechanisms: ['tlum', 'zmiazdzenie'],
+    mechanisms: ['tlum', 'zmiazdzenie', 'kolejowy'],
     vitals: { ...STABLE([32, 40]), crt: [1.5, 2] },
     injuries: [
       ['sinoniebieskie zabarwienie twarzy i szyi z licznymi wybroczynami'],
@@ -711,7 +713,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     criterion: 'START: oddechy > 30/min',
     source: ['c13'],
     ages: ADULTLIKE,
-    mechanisms: ['komunikacyjny', 'tlum', 'zmiazdzenie', 'upadek'],
+    mechanisms: ['komunikacyjny', 'tlum', 'zmiazdzenie', 'upadek', 'kolejowy'],
     vitals: { ...STABLE([34, 42]), crt: [1.5, 2] },
     injuries: [[
       'paradoksalny ruch fragmentu klatki piersiowej po prawej — podejrzenie wiotkiej klatki piersiowej',
@@ -746,7 +748,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     criterion: 'START: brak tętna promieniowego / CRT > 2 s (masywny krwotok)',
     source: ['a09', 't11', 'c12'],
     ages: ['teen', 'adult'],
-    mechanisms: ['komunikacyjny', 'wybuch', 'tlum', 'zmiazdzenie', 'upadek'],
+    mechanisms: ['komunikacyjny', 'wybuch', 'tlum', 'zmiazdzenie', 'upadek', 'kolejowy'],
     majorBleeding: true,
     vitals: { walk: false, breathing: 'spontaneous', rate: [22, 30], pulse: false, crt: [3, 5], avpu: 'A', obeys: true },
     injuries: [
@@ -771,7 +773,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     criterion: 'START: brak tętna promieniowego / CRT > 2 s (masywny krwotok)',
     source: ['p07'],
     ages: ['teen', 'adult', 'elderly'],
-    mechanisms: ['komunikacyjny', 'wybuch', 'zmiazdzenie'],
+    mechanisms: ['komunikacyjny', 'wybuch', 'zmiazdzenie', 'kolejowy'],
     majorBleeding: true,
     vitals: { walk: false, breathing: 'spontaneous', rate: [24, 30], pulse: false, crt: [3.5, 5], avpu: 'V', obeys: false },
     injuries: [
@@ -789,7 +791,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     criterion: 'START: wstrząs — brak tętna promieniowego, CRT > 2 s',
     source: ['a12'],
     ages: ADULTLIKE,
-    mechanisms: ['komunikacyjny', 'zmiazdzenie', 'upadek'],
+    mechanisms: ['komunikacyjny', 'zmiazdzenie', 'upadek', 'kolejowy'],
     vitals: { walk: false, breathing: 'spontaneous', rate: [20, 28], pulse: false, crt: [2.5, 4], avpu: 'A', obeys: true },
     injuries: [['silny ból miednicy, niestabilność przy delikatnym ucisku'], ['skóra blada, chłodna']],
     remarks: ['Jęczy: „Wszystko mnie boli na dole… nie mogę się ruszyć."'],
@@ -936,7 +938,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     criterion: 'JumpSTART: brak tętna obwodowego (masywny krwotok)',
     source: ['f09'],
     ages: ['child'],
-    mechanisms: ['komunikacyjny', 'wybuch', 'zmiazdzenie', 'upadek', 'tlum'],
+    mechanisms: ['komunikacyjny', 'wybuch', 'zmiazdzenie', 'upadek', 'tlum', 'kolejowy'],
     majorBleeding: true,
     vitals: { walk: false, breathing: 'spontaneous', rate: [30, 40], pulse: false, crt: [3, 5], avpu: 'A', obeys: true },
     injuries: [
@@ -1040,7 +1042,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     criterion: 'START: bezdech mimo udrożnienia dróg oddechowych',
     source: ['t13'],
     ages: ADULTLIKE,
-    mechanisms: ['komunikacyjny', 'zmiazdzenie', 'wybuch', 'upadek'],
+    mechanisms: ['komunikacyjny', 'zmiazdzenie', 'wybuch', 'upadek', 'kolejowy'],
     vitals: { walk: false, breathing: 'none', rate: [0, 0], pulse: false, crt: [5, 6], avpu: 'U', obeys: false },
     injuries: [
       ['zniekształcenie klatki piersiowej, sinica twarzy'],
@@ -1089,6 +1091,40 @@ export const ARCHETYPES: readonly Archetype[] = [
     injuries: [['rozległy uraz głowy', 'zmiażdżenie klatki piersiowej'], ['sinica twarzy', 'szerokie źrenice']],
     poses: ['back'],
     weight: 0.4,
+  },
+
+  // ═════════════════════════ TRAIN-SPECIFIC ('kolejowy') ═════════════════════════
+  {
+    id: 'g-kolej-okno',
+    pregnancy: 'ok',
+    category: 'green',
+    criterion: 'chodzi',
+    source: ['k02'],
+    ages: ADULTLIKE,
+    mechanisms: ['kolejowy'],
+    vitals: WALKER(),
+    injuries: [['otarcia dłoni i przedramion', 'stłuczenie kolana prawego', 'drobne rany cięte dłoni od szkła, krwawienie niewielkie']],
+    remarks: [
+      '„Wyszł{em|am} górą, przez okno przewróconego wagonu. Pomóżcie tym, co zostali w środku!"',
+      'Otrzepuje się z odłamków szkła: „Nic mi nie jest, mogę iść."',
+    ],
+    poses: UPRIGHT,
+  },
+  {
+    id: 'y-kolej-fotele',
+    category: 'yellow',
+    criterion: 'nie chodzi; parametry prawidłowe',
+    source: [],
+    ages: ADULTLIKE,
+    mechanisms: ['kolejowy'],
+    vitals: STABLE(),
+    injuries: [[
+      'uraz zmiażdżeniowy podudzia lewego — obrzęk, zasinienie, deformacja',
+      'uraz zmiażdżeniowy stopy prawej — obrzęk, zasinienie',
+    ]],
+    extraInjuries: ['otarcia rąk', 'stłuczenie biodra lewego'],
+    remarks: ['„Noga utknęła mi między fotelami… strażacy ją uwolnili. Nie dam rady stanąć."'],
+    poses: ['back', 'sitting'],
   },
 ];
 

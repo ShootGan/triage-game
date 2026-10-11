@@ -170,7 +170,7 @@ const log = document.getElementById('log') as HTMLDivElement;
 
 // stan demo — z parametrów URL (?terrain=street&scene=props&fp=1), żeby łatwo linkować widoki
 const params = new URLSearchParams(location.search);
-let terrain: TerrainKind = (['road', 'street', 'field', 'highway'] as const).find((t) => t === params.get('terrain')) ?? 'road';
+let terrain: TerrainKind = (['road', 'street', 'field', 'highway', 'railway'] as const).find((t) => t === params.get('terrain')) ?? 'road';
 type SceneKind = 'crash' | 'props' | 'vehicles' | 'models';
 let sceneKind: SceneKind = (['props', 'vehicles', 'models'] as const).find((k) => k === params.get('scene')) ?? 'crash';
 let showFootprints = params.get('fp') !== '0';
@@ -230,7 +230,7 @@ function button(label: string, fn: () => void, active = false): void {
 
 function renderBar(): void {
   bar.replaceChildren();
-  for (const t of ['road', 'street', 'field', 'highway'] as const) button(t, () => { terrain = t; mount(); }, t === terrain);
+  for (const t of ['road', 'street', 'field', 'highway', 'railway'] as const) button(t, () => { terrain = t; mount(); }, t === terrain);
   button('Wypadek', () => { sceneKind = 'crash'; mount(); }, sceneKind === 'crash');
   button('Rekwizyty', () => { sceneKind = 'props'; mount(); }, sceneKind === 'props');
   button('Pojazdy', () => { sceneKind = 'vehicles'; mount(); }, sceneKind === 'vehicles');
