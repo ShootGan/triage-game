@@ -1,7 +1,7 @@
 import type { Scenario } from './types';
 
 /**
- * Karambol na drodze ekspresowej we mgle.
+ * Karambol na autostradzie.
  * Kategorie NIE są tu wpisane — liczy je silnik triage z `vitals`.
  * Zamierzony rozkład (źródło prawdy: pileup.test.ts): 4 ZIELONE, 3 ŻÓŁTE, 5 CZERWONYCH, 1 CZARNY.
  * Przypadki dydaktyczne: niemowlę ZIELONE wg reguły niemowlęcej JumpSTART (a03),
@@ -9,29 +9,37 @@ import type { Scenario } from './types';
  */
 export const pileupScenario: Scenario = {
   id: 'pileup',
-  title: 'Karambol na drodze ekspresowej',
+  title: 'Karambol na autostradzie',
   briefing: [
     'SWD PRM — zadysponowanie, kod 1.',
-    'Zdarzenie masowe: karambol na drodze ekspresowej w gęstej mgle — ciężarówka i kilka samochodów osobowych, kierunek na Warszawę, ok. 3 km za węzłem.',
-    'Zgłaszający: wielu poszkodowanych, w tym dzieci; część osób chodzi po jezdni. Widoczność poniżej 50 m — zagrożenie kolejnymi najechaniami.',
+    'Zdarzenie masowe: karambol na autostradzie A2 — ciężarówka i kilka samochodów osobowych, jezdnia w kierunku Warszawy, ok. 3 km za węzłem.',
+    'Zgłaszający: wielu poszkodowanych, w tym dzieci; część osób chodzi po jezdni. Zagrożenie kolejnymi najechaniami.',
     'PSP zabezpiecza miejsce zdarzenia (wyciek paliwa z ciężarówki), Policja zamyka jezdnię, kolejne ZRM i LPR w drodze.',
     'Jesteś pierwszym zespołem na miejscu — przeprowadź segregację wstępną (START / JumpSTART). Punkt zbiórki dla chodzących na poboczu, na trawie.',
   ].join('\n'),
   timeLimitSec: 660,
-  terrain: 'road',
+  terrain: 'highway',
   collectionPoint: [-8, 7],
   props: [
-    { kind: 'truck', position: [-6.5, -0.8], rotation: 0.2 },
-    { kind: 'car', position: [0.8, 1.4], rotation: -0.4 },   // rodzinne auto (a03, a05, a08)
-    { kind: 'car', position: [4.2, -1.3], rotation: 0.8 },   // a01, a11, a12
-    { kind: 'car', position: [8.5, 1.0], rotation: -0.15 },  // a06, a07
-    { kind: 'car', position: [-3.5, 5.5], rotation: 1.2 },   // w rowie (a13)
-    { kind: 'car', position: [9.6, -4.6], rotation: 2.5 },    // za barierą (a09, a10)
+    { kind: 'truck', position: [-6.5, -0.8], rotation: 0.2, variant: 'jackknife' },
+    { kind: 'car', position: [0.8, 1.4], rotation: -0.4, variant: 'suv-crash', color: '#3f7a4a' }, // rodzinne auto (a03, a05, a08)
+    { kind: 'car', position: [4.2, -1.3], rotation: 0.8, variant: 'sedan-crash', color: '#c8c8cc' }, // srebrna osobówka (a01, a11, a12)
+    { kind: 'car', position: [8.5, 1.0], rotation: -0.15, variant: 'hatch-crash', color: '#e8e8ea' }, // biała osobówka (a06, a07)
+    { kind: 'car', position: [-3.5, 5.5], rotation: 1.2, variant: 'roof', color: '#b03a3a' },        // na dachu w rowie (a13)
+    { kind: 'car', position: [9.6, -4.6], rotation: 2.5, variant: 'van-crash', color: '#d8d2c0' },   // bus dostawczy (a09, a10)
     { kind: 'glass', position: [2.5, 0], rotation: 0 },
     { kind: 'glass', position: [-1.5, -1], rotation: 1.3 },
     { kind: 'glass', position: [6.5, -0.5], rotation: 2.1 },
     { kind: 'glass', position: [-2, 3.5], rotation: 0.7 },
     { kind: 'glass', position: [9, -2.5], rotation: 0.4 },
+    // ślady hamowania przed ciężarówką, plama paliwa pod naczepą, rozsypany ładunek, trójkąty za zdarzeniem
+    { kind: 'skid', position: [-15, -1.6], rotation: 0.1 },
+    { kind: 'spill', position: [-8.8, -2.6], rotation: 0.4 },
+    { kind: 'cargo', position: [-12.2, -3.4], rotation: 0.3 },
+    { kind: 'triangle', position: [-19, -3.5], rotation: Math.PI / 2 },
+    { kind: 'triangle', position: [-18.5, 0.2], rotation: Math.PI / 2 },
+    // pierwszy ZRM na pasie awaryjnym, przed punktem zbiórki
+    { kind: 'ambulance', position: [-12, 3.25], rotation: 0 },
   ],
   patients: [
     // ── ZIELONI ──────────────────────────────────────────────
@@ -264,7 +272,7 @@ export const pileupScenario: Scenario = {
         obeysCommands: false,
         avpu: 'U',
       },
-      injuries: ['krwiak czoła', 'chrapliwy oddech przy zapadniętej żuchwie — po udrożnieniu słaby oddech własny'],
+      injuries: ['krwiak czoła', 'zapadnięta żuchwa, sinica warg, brak widocznych ruchów oddechowych'],
       remark: 'Leży na jezdni na plecach, wyrzucony przez przednią szybę. Bez reakcji.',
       appearance: { sex: 'm', child: false, skin: '#8d5524', hair: '#0f0f0f', hairStyle: 'short', shirt: '#f4d03f', pants: '#1a1a1a', sleeves: 'short' },
       pose: 'back',

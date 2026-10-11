@@ -99,6 +99,38 @@ const propsScenario: Scenario = {
   ],
 };
 
+/** Pojazdy i detale karambolu: wszystkie warianty aut, ciężarówka w scyzoryk, karetka, ładunek, ślady, plama, trójkąty. */
+const vehiclesScenario: Scenario = {
+  id: 'demo-vehicles',
+  title: 'Demo pojazdów',
+  briefing: 'Warianty pojazdów.',
+  timeLimitSec: 600,
+  terrain: 'highway',
+  collectionPoint: [14, 7.5],
+  props: [
+    { kind: 'car', position: [-12, -3.5], rotation: 0, variant: 'sedan', color: '#2f4f8a' },
+    { kind: 'car', position: [-7, -3.5], rotation: 0, variant: 'hatch', color: '#b03a3a' },
+    { kind: 'car', position: [-2, -3.5], rotation: 0, variant: 'suv', color: '#1e1e24' },
+    { kind: 'car', position: [3, -3.5], rotation: 0, variant: 'van', color: '#d8d2c0' },
+    { kind: 'car', position: [-12, 0.5], rotation: 0, variant: 'sedan-crash', color: '#c8c8cc' },
+    { kind: 'car', position: [-7, 0.5], rotation: 0, variant: 'hatch-crash', color: '#e8e8ea' },
+    { kind: 'car', position: [-2, 0.5], rotation: 0, variant: 'suv-crash', color: '#3f7a4a' },
+    { kind: 'car', position: [3, 0.5], rotation: 0, variant: 'van-crash', color: '#8a5a2a' },
+    { kind: 'car', position: [8, 0.5], rotation: 0.3, variant: 'roof', color: '#b03a3a' },
+    { kind: 'truck', position: [9, -3.5], rotation: 0, variant: 'jackknife' },
+    { kind: 'ambulance', position: [0, 3.4], rotation: 0 },
+    { kind: 'cargo', position: [-9, 3.4], rotation: 0 },
+    { kind: 'skid', position: [4, 3.2], rotation: 0 },
+    { kind: 'spill', position: [11, 3.3], rotation: 0 },
+    { kind: 'triangle', position: [-15, 3.5], rotation: Math.PI / 2 },
+  ],
+  patients: [
+    pt({ id: 'v1', ageYears: 40, vitals: vitals({ canWalk: true }), appearance: look('#3fa34d'), pose: 'standing', position: [-4.5, -1.5], rotation: 0.4 }),
+    pt({ id: 'v2', ageYears: 30, vitals: vitals(), appearance: look('#7a3b8a', { sex: 'f', hairStyle: 'long' }), pose: 'back', position: [6, -1.5], rotation: Math.PI / 2 }),
+    pt({ id: 'karetka', ageYears: 35, vitals: vitals({ canWalk: true }), appearance: look('#d6303a'), pose: 'standing', position: [4.2, 5.6], rotation: Math.PI }),
+  ],
+};
+
 const canvas = document.getElementById('c') as HTMLCanvasElement;
 const markerLayer = document.getElementById('markers') as HTMLDivElement;
 const bar = document.getElementById('bar') as HTMLDivElement;
@@ -106,8 +138,8 @@ const log = document.getElementById('log') as HTMLDivElement;
 
 // stan demo — z parametrów URL (?terrain=street&scene=props&fp=1), żeby łatwo linkować widoki
 const params = new URLSearchParams(location.search);
-let terrain: TerrainKind = (['road', 'street', 'field'] as const).find((t) => t === params.get('terrain')) ?? 'road';
-let sceneKind: 'crash' | 'props' = params.get('scene') === 'props' ? 'props' : 'crash';
+let terrain: TerrainKind = (['road', 'street', 'field', 'highway'] as const).find((t) => t === params.get('terrain')) ?? 'road';
+let sceneKind: 'crash' | 'props' | 'vehicles' = params.get('scene') === 'props' ? 'props' : params.get('scene') === 'vehicles' ? 'vehicles' : 'crash';
 let showFootprints = params.get('fp') !== '0';
 
 let view: GameView;
@@ -117,7 +149,9 @@ const markers = new Map<string, HTMLDivElement>();
 
 function mount(): void {
   view?.dispose();
-  scenario = { ...(sceneKind === 'props' ? propsScenario : crashScenario), terrain };
+  scenario = sceneKind === 'vehicles'
+    ? vehiclesScenario
+    : { ...(sceneKind === 'props' ? propsScenario : crashScenario), terrain };
   view = new GameView(canvas, scenario, { debugFootprints: showFootprints });
   markerLayer.replaceChildren();
   markers.clear();
@@ -161,9 +195,10 @@ function button(label: string, fn: () => void, active = false): void {
 
 function renderBar(): void {
   bar.replaceChildren();
-  for (const t of ['road', 'street', 'field'] as const) button(t, () => { terrain = t; mount(); }, t === terrain);
+  for (const t of ['road', 'street', 'field', 'highway'] as const) button(t, () => { terrain = t; mount(); }, t === terrain);
   button('Wypadek', () => { sceneKind = 'crash'; mount(); }, sceneKind === 'crash');
   button('Rekwizyty', () => { sceneKind = 'props'; mount(); }, sceneKind === 'props');
+  button('Pojazdy', () => { sceneKind = 'vehicles'; mount(); }, sceneKind === 'vehicles');
   button('Obrysy', () => { showFootprints = !showFootprints; mount(); }, showFootprints);
   button('Przegląd', () => { selected = null; view.focusPatient(null); });
   for (const p of scenario.patients) button(p.id, () => { selected = p.id; view.focusPatient(p.id); });
