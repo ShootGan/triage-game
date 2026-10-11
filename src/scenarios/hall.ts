@@ -40,7 +40,8 @@ export const hallScenario: Scenario = {
     { kind: 'belongings', position: [4.5, 2.2], rotation: 2.1 },
     { kind: 'belongings', position: [-8.5, -3], rotation: 1.2 },
   ],
-  patients: [
+  // everyone was out in about −15 °C: capillary refill is falsely prolonged (see ScenarioPatient.cold)
+  patients: ([
     // ── ZIELONI ──────────────────────────────────────────────
     {
       id: 'h01',
@@ -373,5 +374,5 @@ export const hallScenario: Scenario = {
       position: [-8.5, -4.2],
       rotation: 2.8,
     },
-  ],
+  ] as Scenario['patients']).map((p) => ({ ...p, cold: true })),
 };

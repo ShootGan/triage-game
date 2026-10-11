@@ -100,6 +100,8 @@ export interface BriefingInfo {
 export interface ScenarioLayout {
   id: string;
   /** Prefiks kodu zadania, np. „AUTOBUS". */
+  /** Winter scene: every patient gets `cold` (falsely prolonged capillary refill). */
+  cold?: boolean;
   prefix: string;
   template: Scenario;
   mechanisms: readonly Mechanism[];
@@ -561,6 +563,7 @@ const buses: ScenarioLayout = {
 const hall: ScenarioLayout = {
   id: 'hall',
   prefix: 'HALA',
+  cold: true,
   template: hallScenario,
   mechanisms: ['zmiazdzenie', 'upadek'],
   count: [12, 16],

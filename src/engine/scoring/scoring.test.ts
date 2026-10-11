@@ -505,3 +505,21 @@ describe('scoreGame', () => {
     expect(scoreGame([], {}, {}, 0)).toMatchObject({ total: 0, accuracyPct: 0, avgSecPerPatient: 0, patients: [] });
   });
 });
+
+describe('zimno (hala): nawrót kapilarny niewiarygodny', () => {
+  const cold = (over: VitalsOver = {}) => ({ ...patient('h', over), cold: true });
+
+  it('CRT wychodzi wydłużony także przy dobrej perfuzji', () => {
+    const p = cold();
+    const text = exam(p, ['crt']).log[0].text;
+    expect(Number(text.match(/(\d+(,\d+)?) s/)![1].replace(',', '.'))).toBeGreaterThan(2);
+  });
+
+  it('żółty: liczy się tylko tętno, CRT nie zastępuje oceny; debrief wyjaśnia dlaczego', () => {
+    const p = cold();
+    expect(debriefPatient(p, 'yellow', exam(p, ['breathing', 'pulse', 'commands'])).verdict).toBe('correct');
+    const d = debriefPatient(p, 'yellow', exam(p, ['breathing', 'crt', 'commands']));
+    expect(d.verdict).toBe('procedure');
+    expect(d.notes?.[0]).toMatch(/^Zimno: wychłodzona skóra fałszywie wydłuża nawrót kapilarny/);
+  });
+});

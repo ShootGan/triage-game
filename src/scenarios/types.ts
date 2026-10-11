@@ -37,6 +37,11 @@ export interface ScenarioPatient {
    * may be inside the car's footprint, can't walk. Exam works as usual (roof already removed).
    */
   trapped?: boolean;
+  /**
+   * Found in freezing cold: capillary refill on the hands is falsely prolonged in everyone, so CRT reads
+   * long regardless of perfusion and only the radial pulse counts as a perfusion check.
+   */
+  cold?: boolean;
   /** Co mówi/robi pacjent, gdy gracz podchodzi (opcjonalny „klimat"). */
   remark?: string;
   appearance: PatientAppearance;

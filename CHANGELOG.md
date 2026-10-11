@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Hall collapse (winter): cold skin makes capillary refill read prolonged for everyone, so only
+  the radial pulse counts as a perfusion check there; the debrief explains why.
+
 ## [0.4.0] - 2026-10-11
 
 ### Added

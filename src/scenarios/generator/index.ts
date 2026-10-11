@@ -658,6 +658,7 @@ function tryGenerate(layout: ScenarioLayout, code: string, rng: Rng): Generated 
     if (pregnant) p.appearance.pregnant = true;
     if (d.arch.majorBleeding) p.majorBleeding = true;
     if (remark) p.remark = remark;
+    if (layout.cold) p.cold = true;
     if (slot.trapped) {
       p.trapped = true;
       p.rotation = slot.rotation; // facing the dashboard, no jitter

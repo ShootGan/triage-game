@@ -164,6 +164,8 @@ function outcome(p: ScenarioPatient, s: PatientExamState, action: ExamActionId):
       const b = v.breathing;
       const dead = !b.spontaneous && !b.afterAirway && !b.afterRescueBreaths && !v.peripheralPulse;
       if (dead) return { text: 'Nawrót kapilarny: brak — nieoznaczalny' };
+      // Cold skin: falsely prolonged for everyone (deliberately no hint — the debrief explains it).
+      if (p.cold) return { text: `Nawrót kapilarny: ${num(Math.max(v.crtSeconds, 3 + (p.id.length % 3) * 0.5))} s` };
       // Ages 9–12 may be triaged with START too, where CRT does count.
       const note = p.appearsChild && p.ageYears < 9 ? ' (JumpSTART nie używa CRT — rozstrzyga tętno obwodowe)' : '';
       return { text: `Nawrót kapilarny: ${num(v.crtSeconds)} s${note}` };

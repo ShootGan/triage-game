@@ -69,16 +69,19 @@ function actionsForStep(step: DecisionStep, protocol: Protocol, v: Vitals): Exam
  * Actions without which a correct colour is just a guess: every step the algorithm passed through,
  * in order. START perfusion: radial pulse and CRT are alternatives — when perfusion is adequate either
  * one is enough; when the step ends the algorithm, one decisive finding (absent pulse or CRT > 2 s) is.
+ * In the cold (`cold`) CRT is falsely prolonged, so only the radial pulse counts.
  * Returns the first missing action of each unmet requirement.
  */
-function assessmentActions(r: TriageResult, v: Vitals, done: ExamActionId[]): ExamActionId[] {
+function assessmentActions(r: TriageResult, v: Vitals, done: ExamActionId[], cold = false): ExamActionId[] {
   const out: ExamActionId[] = [];
   for (const step of r.steps) {
     let need = actionsForStep(step, r.protocol, v);
     if (step.id === 'perfusion' && r.protocol === 'START') {
-      const options: ExamActionId[] = step.result
-        ? [...(!v.peripheralPulse ? ['pulse' as const] : []), ...(v.crtSeconds > 2 ? ['crt' as const] : [])]
-        : ['pulse', 'crt'];
+      const options: ExamActionId[] = cold
+        ? ['pulse']
+        : step.result
+          ? [...(!v.peripheralPulse ? ['pulse' as const] : []), ...(v.crtSeconds > 2 ? ['crt' as const] : [])]
+          : ['pulse', 'crt'];
       need = options.some(a => done.includes(a)) ? [] : options.slice(0, 1);
     }
     for (const a of need) if (!out.includes(a)) out.push(a);
@@ -233,7 +236,7 @@ function allGaps(
   const covered = new Set(gaps.map(g => g.action));
   // Apnoea branch: breaths given before opening the airway have no effect, so they don't count.
   const effective = actionsBefore.filter(a => a !== 'rescue-breaths' || atTag.rescueBreathsGiven);
-  for (const a of assessmentActions(r, p.vitals, effective)) {
+  for (const a of assessmentActions(r, p.vitals, effective, p.cold)) {
     if (!covered.has(a) && !effective.includes(a)) gaps.push({ action: a, sentence: '' });
   }
   return gaps;
@@ -315,7 +318,7 @@ export function debriefPatient(
         ? 'Pacjenta nie oznaczono.'
         : `Oznaczono jako ${CATEGORY_LABEL[given]} — ${VERDICT_SUFFIX[verdict as 'over' | 'under']}.`,
     );
-    const missing = assessmentActions(r, p.vitals, actionsBefore).filter(a => !actionsBefore.includes(a));
+    const missing = assessmentActions(r, p.vitals, actionsBefore, p.cold).filter(a => !actionsBefore.includes(a));
     if (missing.length) parts.push(`Nie wykonano: ${missing.map(a => ACTION_NOUN[a]).join(', ')}.`);
     if (alternative) {
       parts.push(`Wg ${alternative.protocol}: ${CATEGORY_LABEL[alternative.category]} — dla dziecka 9–12 lat zaliczany jest kolor z każdego z algorytmów.`);
@@ -343,7 +346,7 @@ export function debriefPatient(
     actionsDone,
     actionsBeforeTag: given === null ? null : tagIdx,
     missedLifesaving: missedLifesaving(p, ex, atTag, given),
-    notes: teachingNotes(p, r),
+    notes: teachingNotes(p, r, actionsDone),
     explanation,
   };
 }
@@ -354,8 +357,11 @@ export function isBorderlineAge(p: ScenarioPatient): boolean {
 }
 
 /** Teaching notes that are not errors (pregnancy, infant criteria). */
-function teachingNotes(p: ScenarioPatient, r: TriageResult): string[] {
+function teachingNotes(p: ScenarioPatient, r: TriageResult, actions: ExamActionId[]): string[] {
   const out: string[] = [];
+  if (p.cold && actions.includes('crt') && r.protocol === 'START') {
+    out.push('Zimno: wychłodzona skóra fałszywie wydłuża nawrót kapilarny u każdego — perfuzję oceniaj tętnem promieniowym (modyfikacja START z 1996 r.). Nawrót kapilarny nie jest tu wiarygodny.');
+  }
   if (r.steps.some(s => s.id === 'infant-injury')) {
     out.push(`Istotne obrażenia zewnętrzne u niemowlęcia wg JumpSTART: ${INFANT_SIGNIFICANT_INJURIES.join(', ')}.`);
   }
