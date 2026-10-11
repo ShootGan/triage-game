@@ -13,7 +13,12 @@ export type PropKind =
   | 'stage'      // scena koncertowa z dachem 10 × 6 m
   | 'barrier'    // segment barierek koncertowych 4 × 0.6 m
   | 'bleachers'  // zawalona trybuna 8 × 4 m
-  | 'tent';      // namiot / pawilon 3 × 3 m
+  | 'tent'       // namiot / pawilon 3 × 3 m
+  | 'ambulance'  // karetka ZRM 6.2 × 2.5 m
+  | 'cargo'      // rozsypany ładunek (kartony, palety) — niski, bez obrysu
+  | 'skid'       // ślady hamowania na asfalcie — bez obrysu
+  | 'spill'      // plama paliwa/płynów — bez obrysu
+  | 'triangle';  // trójkąt ostrzegawczy — bez obrysu
 
 export const PROP_HALF_SIZE: Record<PropKind, [number, number] | null> = {
   bus: [5.2, 1.5],
@@ -26,6 +31,11 @@ export const PROP_HALF_SIZE: Record<PropKind, [number, number] | null> = {
   barrier: [2, 0.3],
   bleachers: [4, 2],
   tent: [1.5, 1.5],
+  ambulance: [3.1, 1.25],
+  cargo: null,
+  skid: null,
+  spill: null,
+  triangle: null,
 };
 
 /** Czy punkt (x, z) leży w obrysie rekwizytu (z marginesem). */

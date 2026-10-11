@@ -21,17 +21,25 @@ export const pileupScenario: Scenario = {
   terrain: 'highway',
   collectionPoint: [-8, 7],
   props: [
-    { kind: 'truck', position: [-6.5, -0.8], rotation: 0.2 },
-    { kind: 'car', position: [0.8, 1.4], rotation: -0.4 },   // rodzinne auto (a03, a05, a08)
-    { kind: 'car', position: [4.2, -1.3], rotation: 0.8 },   // a01, a11, a12
-    { kind: 'car', position: [8.5, 1.0], rotation: -0.15 },  // a06, a07
-    { kind: 'car', position: [-3.5, 5.5], rotation: 1.2 },   // w rowie (a13)
-    { kind: 'car', position: [9.6, -4.6], rotation: 2.5 },    // za barierą (a09, a10)
+    { kind: 'truck', position: [-6.5, -0.8], rotation: 0.2, variant: 'jackknife' },
+    { kind: 'car', position: [0.8, 1.4], rotation: -0.4, variant: 'suv-crash', color: '#3f7a4a' }, // rodzinne auto (a03, a05, a08)
+    { kind: 'car', position: [4.2, -1.3], rotation: 0.8, variant: 'sedan-crash', color: '#c8c8cc' }, // srebrna osobówka (a01, a11, a12)
+    { kind: 'car', position: [8.5, 1.0], rotation: -0.15, variant: 'hatch-crash', color: '#e8e8ea' }, // biała osobówka (a06, a07)
+    { kind: 'car', position: [-3.5, 5.5], rotation: 1.2, variant: 'roof', color: '#b03a3a' },        // na dachu w rowie (a13)
+    { kind: 'car', position: [9.6, -4.6], rotation: 2.5, variant: 'van-crash', color: '#d8d2c0' },   // bus dostawczy (a09, a10)
     { kind: 'glass', position: [2.5, 0], rotation: 0 },
     { kind: 'glass', position: [-1.5, -1], rotation: 1.3 },
     { kind: 'glass', position: [6.5, -0.5], rotation: 2.1 },
     { kind: 'glass', position: [-2, 3.5], rotation: 0.7 },
     { kind: 'glass', position: [9, -2.5], rotation: 0.4 },
+    // ślady hamowania przed ciężarówką, plama paliwa pod naczepą, rozsypany ładunek, trójkąty za zdarzeniem
+    { kind: 'skid', position: [-15, -1.6], rotation: 0.1 },
+    { kind: 'spill', position: [-8.8, -2.6], rotation: 0.4 },
+    { kind: 'cargo', position: [-12.2, -3.4], rotation: 0.3 },
+    { kind: 'triangle', position: [-19, -3.5], rotation: Math.PI / 2 },
+    { kind: 'triangle', position: [-18.5, 0.2], rotation: Math.PI / 2 },
+    // pierwszy ZRM na pasie awaryjnym, przed punktem zbiórki
+    { kind: 'ambulance', position: [-12, 3.25], rotation: 0 },
   ],
   patients: [
     // ── ZIELONI ──────────────────────────────────────────────

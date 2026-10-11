@@ -145,6 +145,8 @@ export class GameView implements IGameView {
   private readonly frameCbs: Array<() => void> = [];
   private focusedId: string | null = null;
   private medicMove: MedicMove | null = null;
+  /** Migające elementy rekwizytów wg grupy ('hazard', 'blueA', 'blueB'). */
+  private readonly blinkers: Record<string, THREE.Object3D[]> = {};
   /** Ostatnio znana orientacja ekranu (do doboru kąta kamery po obrocie telefonu). */
   private portrait = false;
   private arriveCb: (() => void) | null = null;
@@ -223,9 +225,14 @@ export class GameView implements IGameView {
     ];
     buildTerrain(this.kit, scene, Math.max(80, Math.ceil((maxAbs + 30) / 10) * 20), scenario.terrain ?? 'road', keepOut);
     for (const pr of scenario.props) {
-      buildProp(this.kit, scene, pr.kind, pr.position[0], pr.position[1], pr.rotation, pr.color);
+      const obj = buildProp(this.kit, scene, pr.kind, pr.position[0], pr.position[1], pr.rotation, pr.color, pr.variant);
       const f = propFootprint(pr.kind, pr.position[0], pr.position[1], pr.rotation);
       if (f) this.footprints.push(f);
+      // migające światła (awaryjne pojazdów, sygnały karetki)
+      obj.traverse((o) => {
+        const group = o.userData.blink as string | undefined;
+        if (group) (this.blinkers[group] ??= []).push(o);
+      });
     }
     if (opts.debugFootprints) this.drawFootprints();
 
@@ -813,6 +820,13 @@ export class GameView implements IGameView {
       const id = this.hoverPos ? this.pick(this.hoverPos.x, this.hoverPos.y) : null;
       this.canvas.style.cursor = id ? 'pointer' : '';
     }
+
+    // światła awaryjne ~1,5 Hz, niebieskie sygnały naprzemiennie ~3 Hz
+    const hazardOn = Math.floor(t * 3) % 2 === 0;
+    const blueA = Math.floor(t * 6) % 2 === 0;
+    for (const o of this.blinkers.hazard ?? []) o.visible = hazardOn;
+    for (const o of this.blinkers.blueA ?? []) o.visible = blueA;
+    for (const o of this.blinkers.blueB ?? []) o.visible = !blueA;
 
     this.pipe.render(this.scene, this.rig.camera);
     for (const cb of this.frameCbs) cb();

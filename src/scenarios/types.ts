@@ -48,6 +48,11 @@ export interface ScenarioProp {
   rotation: number;
   /** Kolor nadwozia (pojazdy) — domyślnie wg rodzaju (autobus szkolny żółty). */
   color?: string;
+  /**
+   * Wariant modelu. Auto: 'sedan' | 'hatch' | 'suv' | 'van', z dopiskiem '-crash' (zgnieciony przód) lub 'roof'
+   * (na dachu); domyślnie losowany z pozycji. Ciężarówka: 'jackknife' (złożona w scyzoryk).
+   */
+  variant?: string;
 }
 
 /**

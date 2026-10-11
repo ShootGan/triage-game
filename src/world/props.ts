@@ -53,20 +53,300 @@ export function buildBus(kit: Kit, parent: THREE.Object3D, x: number, z: number,
 
 const CAR_COLORS = ['#b03a3a', '#c8c8cc', '#2f4f8a', '#1e1e24', '#3f7a4a', '#d8d2c0', '#8a5a2a'];
 
-export function buildCar(kit: Kit, parent: THREE.Object3D, x: number, z: number, rotY: number): THREE.Group {
-  const car = new THREE.Group();
-  parent.add(car);
-  // kolor nadwozia deterministycznie z pozycji — każde auto w scenie inne
-  const body = CAR_COLORS[Math.abs(Math.round(x * 7 + z * 13)) % CAR_COLORS.length];
-  kit.box(3.6, 0.7, 1.7, body, 0, 0.7, 0, car);
-  kit.box(1.9, 0.6, 1.6, body, -0.3, 1.3, 0, car);
-  kit.box(1.92, 0.42, 1.62, '#3d5470', -0.3, 1.32, 0, car);
-  kit.box(0.1, 0.25, 1.4, '#e8e8d0', 1.8, 0.8, 0, car);
-  const wheel = kit.own(new THREE.CylinderGeometry(0.34, 0.34, 0.25, 12));
-  for (const wx of [-1.2, 1.2]) for (const wz of [-0.85, 0.85]) kit.part(wheel, '#22232a', car, wx, 0.34, wz).rotation.x = Math.PI / 2;
-  car.position.set(x, 0, z);
-  car.rotation.y = rotY;
-  return car;
+const GLASS = '#3d5470';
+const GLASS_CRACKED = '#8ea6ba';
+const HAZARD = '#ffa020';
+
+/** Lampka migająca (światła awaryjne / sygnały) — nieoświetlany jaskrawy kolor; GameView przełącza `visible`. */
+function blinkLight(kit: Kit, parent: THREE.Object3D, w: number, h: number, d: number, color: string, x: number, y: number, z: number, group: string): THREE.Mesh {
+  const m = new THREE.Mesh(kit.own(new THREE.BoxGeometry(w, h, d)), kit.own(new THREE.MeshBasicMaterial({ color })));
+  m.position.set(x, y, z);
+  m.userData.blink = group;
+  parent.add(m);
+  return m;
+}
+
+type CarShape = 'sedan' | 'hatch' | 'suv' | 'van';
+const CAR_SHAPES: CarShape[] = ['sedan', 'hatch', 'suv', 'sedan', 'hatch'];
+
+/**
+ * Samochód osobowy (obrys 3.8 × 1.9 m). Wariant: 'sedan' | 'hatch' | 'suv' | 'van', z dopiskiem '-crash'
+ * (zgnieciony przód, pęknięta szyba, światła awaryjne) albo 'roof' (na dachu). Bez wariantu — kształt i kolor z pozycji.
+ */
+export function buildCar(kit: Kit, parent: THREE.Object3D, x: number, z: number, rotY: number, color?: string, variant?: string): THREE.Group {
+  const outer = propGroup(parent, x, z, rotY);
+  const seed = Math.abs(Math.round(x * 7 + z * 13));
+  const body = color ?? CAR_COLORS[seed % CAR_COLORS.length];
+  const roof = variant === 'roof';
+  const crash = !!variant?.endsWith('-crash') || roof;
+  const shape = (variant?.replace('-crash', '') as CarShape | 'roof' | undefined);
+  const s: CarShape = shape && shape !== 'roof' ? shape : CAR_SHAPES[seed % CAR_SHAPES.length];
+  // auto na dachu: cała bryła odwrócona wokół osi X, podniesiona o wysokość
+  const car = kit.joint(outer, 0, 0, 0);
+  const glass = crash ? GLASS_CRACKED : GLASS;
+  const wheelR = s === 'suv' ? 0.4 : 0.34;
+  let height = 1.6;
+
+  // Uwaga: unikamy ścian w tej samej płaszczyźnie (migotanie przy dalekiej kamerze) —
+  // elementy stykające się bokami są węższe/szersze o ≥ 3 cm, szyby wystają ≥ 3 cm.
+  if (s === 'van') {
+    kit.box(2.75, 1.6, 1.8, body, -0.525, 1.2, 0, car);    // skrzynia ładunkowa (x −1.9..0.85)
+    kit.box(1.0, 1.15, 1.74, body, 1.35, 0.95, 0, car);    // kabina (x 0.85..1.85), węższa od skrzyni
+    kit.box(0.06, 0.55, 1.56, glass, 1.88, 1.25, 0, car);  // szyba czołowa
+    kit.box(0.6, 0.45, 1.8, glass, 1.3, 1.3, 0, car);      // szyby boczne kabiny
+    height = 2.0;
+  } else {
+    const dims = {
+      sedan: { len: 3.6, bodyH: 0.7, cabL: 1.9, cabX: -0.3, cabH: 0.6 },
+      hatch: { len: 3.4, bodyH: 0.75, cabL: 2.0, cabX: -0.55, cabH: 0.62 },
+      suv: { len: 3.7, bodyH: 0.9, cabL: 2.3, cabX: -0.45, cabH: 0.65 },
+    }[s];
+    const by = wheelR + dims.bodyH / 2 + 0.02;
+    kit.box(dims.len, dims.bodyH, 1.75, body, 0, by, 0, car);
+    const cy = by + dims.bodyH / 2 + dims.cabH / 2;
+    kit.box(dims.cabL, dims.cabH, 1.62, body, dims.cabX, cy, 0, car);
+    kit.box(dims.cabL + 0.06, dims.cabH * 0.7, 1.68, glass, dims.cabX, cy + 0.02, 0, car);
+    if (s === 'suv') kit.box(dims.cabL - 0.2, 0.06, 1.3, '#2a2a2e', dims.cabX, cy + dims.cabH / 2 + 0.03, 0, car); // relingi
+    height = cy + dims.cabH / 2;
+  }
+  // reflektory, tylne światła, zderzaki — przy faktycznych krawędziach danego kształtu (wysunięte o 3–4 cm)
+  const [front, rear] = ({ sedan: [1.8, -1.8], hatch: [1.7, -1.7], suv: [1.85, -1.85], van: [1.85, -1.9] } as const)[s];
+  kit.box(0.08, 0.2, 1.4, '#e8e8d0', front + 0.04, 0.75, 0, car);
+  kit.box(0.08, 0.16, 1.5, '#8a1a1a', rear - 0.04, 0.85, 0, car);
+  kit.box(0.16, 0.18, 1.8, '#2a2a2e', front + 0.04, 0.48, 0, car);
+  kit.box(0.16, 0.18, 1.8, '#2a2a2e', rear - 0.04, 0.48, 0, car);
+  const wheel = kit.own(new THREE.CylinderGeometry(wheelR, wheelR, 0.25, 12));
+  for (const wx of [-1.2, 1.2]) for (const wz of [-0.85, 0.85]) kit.part(wheel, '#22232a', car, wx, wheelR, wz).rotation.x = Math.PI / 2;
+
+  if (crash && !roof) {
+    // zgnieciony przód: ciemne zgniecenie (+ u osobówek maska wygięta do góry)
+    kit.box(0.45, 0.55, 1.66, '#2a2a2e', 1.78, 0.65, 0, car);
+    if (s !== 'van') {
+      const hood = kit.box(0.95, 0.07, 1.56, body, 1.35, 1.14, 0, car);
+      hood.rotation.z = 0.38;
+    }
+  }
+  if (crash) {
+    // światła awaryjne (4 narożniki)
+    for (const lx of [front + 0.06, rear - 0.06]) for (const lz of [-0.72, 0.72]) blinkLight(kit, car, 0.06, 0.1, 0.18, HAZARD, lx, 0.95, lz, 'hazard');
+  }
+  if (roof) {
+    car.rotation.x = Math.PI;
+    car.position.y = height + 0.02;
+  }
+  return outer;
+}
+
+/** Tekstura z canvasa (rysowana raz na karetkę) jako materiał toon. */
+function canvasMat(kit: Kit, w: number, h: number, draw: (c: CanvasRenderingContext2D) => void): THREE.Material {
+  const cv = document.createElement('canvas');
+  cv.width = w;
+  cv.height = h;
+  const c = cv.getContext('2d');
+  if (c) draw(c);
+  const t = kit.own(new THREE.CanvasTexture(cv));
+  t.colorSpace = THREE.SRGBColorSpace;
+  return kit.own(new THREE.MeshToonMaterial({ map: t, gradientMap: kit.gradientMap }));
+}
+
+const AMB_YELLOW = '#f2dd1a';
+const AMB_RED = '#c8202a';
+const AMB_BLUE = '#1f4fb0';
+
+/** Oklejenie boku karetki: czerwono-niebieskie skośne pasy, logo „P", gwiazda życia (wg polskich ZRM). */
+function ambulanceSide(kit: Kit): THREE.Material {
+  return canvasMat(kit, 256, 104, (c) => {
+    c.fillStyle = AMB_YELLOW;
+    c.fillRect(0, 0, 256, 104);
+    // pasy: wzdłuż dołu, unoszące się skośnie ku przodowi (przód = prawa strona tekstury)
+    const band = (color: string, y0: number, h: number) => {
+      c.fillStyle = color;
+      c.beginPath();
+      c.moveTo(0, y0);
+      c.lineTo(150, y0);
+      c.lineTo(230, y0 - 46);
+      c.lineTo(256, y0 - 46);
+      c.lineTo(256, y0 - 46 + h);
+      c.lineTo(236, y0 - 46 + h);
+      c.lineTo(156, y0 + h);
+      c.lineTo(0, y0 + h);
+      c.closePath();
+      c.fill();
+    };
+    band(AMB_RED, 70, 10);
+    band(AMB_BLUE, 80, 9);
+    band(AMB_RED, 89, 6);
+    // logo „P" w czerwonym kółku i gwiazda życia
+    c.strokeStyle = AMB_RED;
+    c.lineWidth = 3;
+    c.beginPath();
+    c.arc(70, 34, 13, 0, Math.PI * 2);
+    c.stroke();
+    c.fillStyle = AMB_RED;
+    c.font = 'bold 18px sans-serif';
+    c.textAlign = 'center';
+    c.fillText('P', 70, 41);
+    c.fillStyle = AMB_BLUE;
+    for (let i = 0; i < 3; i++) {
+      c.save();
+      c.translate(118, 36);
+      c.rotate((i * Math.PI) / 3);
+      c.fillRect(-3, -11, 6, 22);
+      c.restore();
+    }
+  });
+}
+
+/** Karetka ZRM — wysoki furgon (obrys 6.2 × 2.5 m), przód przy +x, migające niebieskie sygnały. */
+export function buildAmbulance(kit: Kit, parent: THREE.Object3D, x: number, z: number, rotY: number): THREE.Group {
+  const g = propGroup(parent, x, z, rotY);
+  const DARK = '#26272c';
+  const W = 2.2; // szerokość nadwozia
+  // Sylwetka z boku (x — długość, y — wysokość), wyciągnięta na szerokość: tył, wysoki dach,
+  // zaokrąglone przejście nad szybą, pochylona szyba płynnie w krótką, opadającą maskę.
+  const s = new THREE.Shape();
+  s.moveTo(-3.1, 0.45);
+  s.lineTo(-3.1, 2.8);
+  s.quadraticCurveTo(-3.1, 2.95, -2.95, 2.95);
+  s.lineTo(1.45, 2.95);
+  s.quadraticCurveTo(1.85, 2.95, 2.0, 2.7);   // zaokrąglona krawędź dachu nad szybą
+  s.lineTo(2.45, 1.45);                         // szyba czołowa (mocno pochylona)
+  s.quadraticCurveTo(2.52, 1.36, 2.65, 1.33);  // przejście szyby w maskę
+  s.lineTo(3.08, 1.12);                         // krótka, opadająca maska
+  s.quadraticCurveTo(3.14, 1.08, 3.14, 0.98);
+  s.lineTo(3.14, 0.45);
+  s.lineTo(-3.1, 0.45);
+  const geo = new THREE.ExtrudeGeometry(s, { depth: W, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05, bevelSegments: 2, curveSegments: 6 });
+  geo.translate(0, 0, -W / 2);
+  kit.part(geo, AMB_YELLOW, g);
+  // szyba czołowa i boczne szyby kabiny
+  // szyba leży na pochyłej ścianie bryły — odsunięta na zewnątrz (wzdłuż normalnej) o fazę + grubość,
+  // inaczej chowa się w nadwoziu
+  const ws = kit.box(1.25, 0.05, W - 0.15, '#2e4560', 2.225 + 0.12 * 0.941, 2.075 + 0.12 * 0.339, 0, g);
+  ws.rotation.z = Math.atan2(1.25, -0.45);
+  for (const sz of [-1, 1]) {
+    const side = new THREE.Mesh(kit.own(new THREE.ShapeGeometry(new THREE.Shape([
+      new THREE.Vector2(1.5, 1.62), new THREE.Vector2(2.3, 1.62), new THREE.Vector2(1.94, 2.58), new THREE.Vector2(1.5, 2.58),
+    ]))), kit.toon(GLASS));
+    side.position.z = sz * (W / 2 + 0.075); // wyraźnie przed ścianą (faza 0,05) — bez migotania
+    if (sz < 0) side.rotation.y = Math.PI, side.scale.x = -1;
+    g.add(side);
+  }
+  // przód: ciemny zderzak i grill, reflektory
+  kit.box(0.16, 0.42, W + 0.06, DARK, 3.12, 0.64, 0, g);
+  kit.box(0.05, 0.22, 1.0, DARK, 3.17, 0.98, 0, g);
+  for (const sz of [-1, 1]) kit.box(0.06, 0.12, 0.42, '#f4f4e8', 3.13, 1.02, sz * 0.78, g);
+  kit.box(6.3, 0.4, W + 0.08, DARK, 0, 0.66, 0, g);         // ciemny pas dolny (progi, nadkola)
+  // oklejenie boków
+  const side = ambulanceSide(kit);
+  for (const s of [1, -1]) {
+    // oklejenie powyżej ciemnego pasa dolnego (y > 0,86), więc nie zachodzi na koła
+    const p = new THREE.Mesh(kit.own(new THREE.PlaneGeometry(4.5, 2.0)), side);
+    p.position.set(-0.8, 1.87, s * (W / 2 + 0.075));
+    if (s < 0) { p.rotation.y = Math.PI; p.scale.x = -1; } // przód tekstury zawsze przy +x
+    g.add(p);
+  }
+  // przód dachu: czerwono-biała jodełka
+  const chevron = canvasMat(kit, 64, 16, (c) => {
+    for (let i = -2; i < 10; i++) {
+      c.fillStyle = i % 2 ? '#f4f4f4' : AMB_RED;
+      c.beginPath();
+      c.moveTo(i * 8, 16);
+      c.lineTo(i * 8 + 8, 16);
+      c.lineTo(i * 8 + 16, 0);
+      c.lineTo(i * 8 + 8, 0);
+      c.closePath();
+      c.fill();
+    }
+  });
+  // na zaokrągleniu dachu nad szybą — pochylona ku przodowi
+  const chevJ = kit.joint(g, 1.86, 2.86, 0);
+  chevJ.rotation.z = 0.7;
+  const chev = new THREE.Mesh(kit.own(new THREE.PlaneGeometry(W, 0.34)), chevron);
+  chev.position.x = 0.06;
+  chev.rotation.y = Math.PI / 2;
+  chevJ.add(chev);
+  // „AMBULANS" w lustrzanym odbiciu na masce (opadającej ku przodowi)
+  const hoodJ = kit.joint(g, 2.87, 1.28, 0);
+  hoodJ.rotation.z = -0.45;
+  const hoodTxt = new THREE.Mesh(kit.own(new THREE.PlaneGeometry(1.5, 0.38)), kit.textMaterial(['AMBULANS'], AMB_YELLOW, AMB_RED));
+  hoodTxt.rotation.set(-Math.PI / 2, 0, Math.PI / 2);
+  hoodTxt.scale.x = -1;
+  hoodJ.add(hoodTxt);
+  // belka sygnałowa na przedniej krawędzi dachu + lampy z tyłu (dwie fazy niebieskich)
+  kit.box(0.32, 0.12, 1.7, '#e8e8ec', 1.4, 3.04, 0, g);
+  for (const [i, lz] of [-0.65, -0.25, 0.25, 0.65].entries()) blinkLight(kit, g, 0.26, 0.12, 0.3, '#3a7cff', 1.4, 3.14, lz, i % 2 ? 'blueA' : 'blueB');
+  for (const [i, lz] of [-0.95, 0.95].entries()) blinkLight(kit, g, 0.16, 0.16, 0.2, '#3a7cff', -3.1, 2.82, lz, i ? 'blueA' : 'blueB');
+  // koła wystają poza ciemny pas dolny (zewnętrzna ściana opony z = ±1,22), felgi jaśniejsze
+  const wheel = kit.own(new THREE.CylinderGeometry(0.4, 0.4, 0.28, 14));
+  const rim = kit.own(new THREE.CylinderGeometry(0.2, 0.2, 0.3, 10));
+  for (const wx of [2.05, -2.0]) for (const wz of [-1, 1]) {
+    kit.part(wheel, '#1c1d22', g, wx, 0.4, wz * 1.08).rotation.x = Math.PI / 2;
+    kit.part(rim, '#9a9ea6', g, wx, 0.4, wz * 1.09).rotation.x = Math.PI / 2;
+  }
+  return g;
+}
+
+/** Rozsypany ładunek: kartony i palety w promieniu ok. 2 m (niski, bez obrysu). */
+export function buildCargo(kit: Kit, parent: THREE.Object3D, x: number, z: number, rotY: number): THREE.Group {
+  const g = propGroup(parent, x, z, rotY);
+  const box = kit.own(new THREE.BoxGeometry(0.5, 0.4, 0.45));
+  for (let i = 0; i < 9; i++) {
+    const a = i * 2.39;
+    const r = 0.4 + (i % 4) * 0.45;
+    const m = kit.part(box, i % 3 ? '#b58a52' : '#c89b62', g, Math.cos(a) * r, 0.2, Math.sin(a) * r);
+    m.rotation.y = a * 0.7;
+    if (i % 4 === 3) { m.rotation.z = Math.PI / 2; m.position.y = 0.23; }
+  }
+  for (let i = 0; i < 2; i++) {
+    const p = kit.joint(g, -1.2 + i * 2.1, 0, 1.1 - i * 2.0);
+    p.rotation.y = 0.4 + i;
+    for (let k = 0; k < 4; k++) kit.box(1.2, 0.03, 0.12, '#a07a4a', 0, 0.12, -0.36 + k * 0.24, p);
+    for (const bx of [-0.5, 0, 0.5]) kit.box(0.1, 0.1, 0.8, '#8a6a3e', bx, 0.05, 0, p);
+  }
+  return g;
+}
+
+/** Ślady hamowania: dwa równoległe ciemne pasy po łuku (płasko na asfalcie). */
+export function buildSkid(kit: Kit, parent: THREE.Object3D, x: number, z: number, rotY: number): THREE.Group {
+  const g = propGroup(parent, x, z, rotY);
+  const seg = kit.own(new THREE.BoxGeometry(1.05, 0.23, 0.22));
+  for (let i = 0; i < 9; i++) {
+    const t = i - 4;
+    const bend = t * t * 0.03;
+    for (const lz of [-0.75, 0.75]) {
+      const m = kit.part(seg, '#2c2d31', g, t, -0.082, lz + bend);
+      m.rotation.y = -t * 0.06;
+      m.castShadow = false;
+    }
+  }
+  return g;
+}
+
+/** Plama paliwa/płynów (płaska, ciemna z opalizującym połyskiem). */
+export function buildSpill(kit: Kit, parent: THREE.Object3D, x: number, z: number, rotY: number): THREE.Group {
+  const g = propGroup(parent, x, z, rotY);
+  const disc = kit.own(new THREE.CircleGeometry(1, 10));
+  const parts: Array<[number, number, number, string]> = [[0, 0, 0.9, '#3a3742'], [0.8, 0.45, 0.5, '#3a3742'], [-0.6, -0.35, 0.55, '#3a3742'], [0.15, 0.1, 0.38, '#5a5070'], [-0.3, 0.25, 0.2, '#6a7a5a']];
+  parts.forEach(([px, pz, r, c], i) => {
+    const m = kit.part(disc, c, g, px, 0.021 + i * 0.0005, pz);
+    m.rotation.x = -Math.PI / 2;
+    m.scale.setScalar(r);
+    m.castShadow = false;
+  });
+  return g;
+}
+
+/** Trójkąt ostrzegawczy (czerwona rama z białym środkiem na nóżkach). */
+export function buildTriangle(kit: Kit, parent: THREE.Object3D, x: number, z: number, rotY: number): THREE.Group {
+  const g = propGroup(parent, x, z, rotY);
+  const outer = kit.part(new THREE.CylinderGeometry(0.32, 0.32, 0.04, 3), '#d6303a', g, 0, 0.32, 0);
+  outer.rotation.set(Math.PI / 2, 0, Math.PI / 2);
+  const inner = kit.part(new THREE.CylinderGeometry(0.18, 0.18, 0.05, 3), '#f4f4f4', g, 0, 0.32, 0);
+  inner.rotation.set(Math.PI / 2, 0, Math.PI / 2);
+  kit.box(0.04, 0.05, 0.4, '#555a60', 0, 0.03, 0, g);
+  kit.box(0.4, 0.05, 0.04, '#555a60', 0, 0.03, 0.15, g);
+  return g;
 }
 
 /** Odłamki szkła rozsypane wokół punktu. */
@@ -158,31 +438,49 @@ function scatterDebris(
 // ---------- Ciężarówka ----------
 
 /** Ciężarówka: kabina (biała z niebieskim pasem, przód w +x) + skrzynia ładunkowa. 9 × 2.6 m, wys. ~3.8 m. */
-export function buildTruck(kit: Kit, parent: THREE.Object3D, x: number, z: number, rotY: number): THREE.Group {
-  const g = propGroup(parent, x, z, rotY);
-  kit.box(8.6, 0.3, 1.5, '#2a2a2e', -0.1, 0.78, 0, g); // rama
+export function buildTruck(kit: Kit, parent: THREE.Object3D, x: number, z: number, rotY: number, variant?: string): THREE.Group {
+  const root = propGroup(parent, x, z, rotY);
+  const jack = variant === 'jackknife';
+  // złożona w scyzoryk: kabina obrócona względem naczepy wokół sprzęgu (x ≈ 2.45)
+  const cab = kit.joint(root, jack ? 2.45 : 0, 0, 0);
+  if (jack) cab.rotation.y = -0.55; // kabina skręcona w stronę lokalnego +z
+  const cx = jack ? -2.45 : 0; // przesunięcie, by elementy kabiny liczyć w układzie całej ciężarówki
+  const g = root;
+  kit.box(jack ? 6.9 : 8.6, 0.3, 1.5, '#2a2a2e', jack ? -0.95 : -0.1, 0.78, 0, g); // rama
   // kabina x 2.55..4.45
-  kit.box(1.9, 2.0, 2.45, '#e8ecf0', 3.5, 1.95, 0, g);
-  kit.box(1.6, 0.45, 2.35, '#e8ecf0', 3.35, 3.17, 0, g); // owiewka dachowa
-  kit.box(1.92, 0.28, 2.47, '#2f5fb0', 3.5, 1.45, 0, g); // pas
-  kit.box(0.06, 0.85, 2.2, '#3d5470', 4.46, 2.45, 0, g); // szyba czołowa
-  kit.box(0.8, 0.7, 2.47, '#3d5470', 3.75, 2.5, 0, g);   // szyby boczne
-  kit.box(0.05, 0.55, 1.3, '#3a3a40', 4.47, 1.3, 0, g);  // grill
-  kit.box(0.18, 0.35, 2.5, '#2a2a2e', 4.41, 0.9, 0, g);  // zderzak
+  const C = (w: number, h: number, d: number, c: string, bx: number, by: number, bz: number) => kit.box(w, h, d, c, bx + cx, by, bz, cab);
+  C(1.9, 2.0, 2.45, '#e8ecf0', 3.5, 1.95, 0);
+  C(1.6, 0.45, 2.35, '#e8ecf0', 3.35, 3.17, 0); // owiewka dachowa
+  C(1.96, 0.28, 2.51, '#2f5fb0', 3.5, 1.45, 0); // pas
+  C(0.06, 0.85, 2.2, jack ? GLASS_CRACKED : '#3d5470', 4.48, 2.45, 0); // szyba czołowa
+  C(0.8, 0.7, 2.51, '#3d5470', 3.75, 2.5, 0);   // szyby boczne
+  C(0.05, 0.55, 1.3, '#3a3a40', 4.49, 1.3, 0);  // grill
+  C(0.18, 0.35, 2.5, '#2a2a2e', 4.41, 0.9, 0);  // zderzak
+  C(1.5, 0.3, 1.2, '#2a2a2e', 3.4, 0.78, 0);    // rama pod kabiną
   for (const s of [-1, 1]) {
-    kit.box(0.05, 0.18, 0.4, '#f4f0c0', 4.48, 1.25, s * 0.85, g); // reflektory
-    kit.box(0.12, 0.3, 0.06, '#2a2a2e', 4.0, 2.6, s * 1.27, g);  // lusterka
+    C(0.05, 0.18, 0.4, '#f4f0c0', 4.49, 1.25, s * 0.85); // reflektory
+    C(0.12, 0.3, 0.06, '#2a2a2e', 4.0, 2.6, s * 1.27);  // lusterka
+    if (jack) for (const lx of [4.5, -4.56]) blinkLight(kit, lx > 0 ? cab : g, 0.06, 0.12, 0.2, HAZARD, lx > 0 ? lx + cx : lx, lx > 0 ? 1.0 : 1.3, s * 1.1, 'hazard');
   }
+  const cabWheel = kit.own(new THREE.CylinderGeometry(0.5, 0.5, 0.4, 14));
+  for (const wz of [-1.08, 1.08]) kit.part(cabWheel, '#22232a', cab, 3.55 + cx, 0.5, wz).rotation.x = Math.PI / 2;
+  if (!jack) return buildTrailer(kit, g);
+  buildTrailer(kit, g);
+  return root;
+}
+
+/** Skrzynia/naczepa ciężarówki (x −4.5..2.35) z kołami tylnymi. */
+function buildTrailer(kit: Kit, g: THREE.Group): THREE.Group {
   // skrzynia x -4.5..2.35, y 1.1..3.8
   kit.box(6.85, 2.7, 2.55, '#c8ccd2', -1.075, 2.45, 0, g);
-  kit.box(6.87, 0.45, 2.57, '#e8641e', -1.075, 3.3, 0, g); // pas firmowy
-  kit.box(6.87, 0.1, 2.57, '#9a9ea6', -1.075, 1.12, 0, g);
-  kit.box(0.05, 2.5, 0.06, '#7a7e86', -4.53, 2.45, 0, g);  // szczelina drzwi tylnych
-  kit.box(0.04, 0.12, 2.3, '#7a7e86', -4.53, 1.9, 0, g);   // rygle
-  kit.box(0.04, 0.12, 2.3, '#7a7e86', -4.53, 3.0, 0, g);
+  kit.box(6.91, 0.45, 2.61, '#e8641e', -1.075, 3.3, 0, g); // pas firmowy
+  kit.box(6.91, 0.1, 2.61, '#9a9ea6', -1.075, 1.12, 0, g);
+  kit.box(0.05, 2.5, 0.06, '#7a7e86', -4.54, 2.45, 0, g);  // szczelina drzwi tylnych
+  kit.box(0.04, 0.12, 2.3, '#7a7e86', -4.54, 1.9, 0, g);   // rygle
+  kit.box(0.04, 0.12, 2.3, '#7a7e86', -4.54, 3.0, 0, g);
   // koła
   const wheel = kit.own(new THREE.CylinderGeometry(0.5, 0.5, 0.4, 14));
-  for (const wx of [3.55, -2.4, -3.5]) for (const wz of [-1.08, 1.08]) kit.part(wheel, '#22232a', g, wx, 0.5, wz).rotation.x = Math.PI / 2;
+  for (const wx of [-2.4, -3.5]) for (const wz of [-1.08, 1.08]) kit.part(wheel, '#22232a', g, wx, 0.5, wz).rotation.x = Math.PI / 2;
   return g;
 }
 
@@ -475,12 +773,17 @@ export function buildTent(kit: Kit, parent: THREE.Object3D, x: number, z: number
   return g;
 }
 
-export function buildProp(kit: Kit, parent: THREE.Object3D, kind: PropKind, x: number, z: number, rotY: number, color?: string): THREE.Group {
+export function buildProp(kit: Kit, parent: THREE.Object3D, kind: PropKind, x: number, z: number, rotY: number, color?: string, variant?: string): THREE.Group {
   switch (kind) {
     case 'bus': return buildBus(kit, parent, x, z, rotY, color);
-    case 'car': return buildCar(kit, parent, x, z, rotY);
+    case 'car': return buildCar(kit, parent, x, z, rotY, color, variant);
     case 'glass': return buildGlass(kit, parent, x, z, rotY);
-    case 'truck': return buildTruck(kit, parent, x, z, rotY);
+    case 'truck': return buildTruck(kit, parent, x, z, rotY, variant);
+    case 'ambulance': return buildAmbulance(kit, parent, x, z, rotY);
+    case 'cargo': return buildCargo(kit, parent, x, z, rotY);
+    case 'skid': return buildSkid(kit, parent, x, z, rotY);
+    case 'spill': return buildSpill(kit, parent, x, z, rotY);
+    case 'triangle': return buildTriangle(kit, parent, x, z, rotY);
     case 'rubble': return buildRubble(kit, parent, x, z, rotY);
     case 'building': return buildBuilding(kit, parent, x, z, rotY);
     case 'stage': return buildStage(kit, parent, x, z, rotY);
