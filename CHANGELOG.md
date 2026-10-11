@@ -7,14 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-11
+
 ### Added
 
-- App version (e.g. `v0.2.0`) shown in the menu footer, read from `package.json` at build time.
+- New debrief verdict "Kolor poprawny, niepełna procedura" (counted as an error): the right colour
+  given without the algorithm step that decides it — e.g. BLACK without opening the airway,
+  or a child tagged BLACK without a pulse check / 5 rescue breaths when a pulse is present.
+- Debrief marks actions performed after the tag ("· po opasce"), shows when the tag was placed
+  and explains all verdicts in a legend.
+- App version (e.g. `v0.3.0`) shown in the menu footer, read from `package.json` at build time.
 - This changelog and a README with the release process.
 
 ### Changed
 
+- Life-saving notes (airway, rescue breaths, bleeding control) are judged by what was done
+  before the last tag, not by the final exam state.
 - Removed the "ćwiczenia segregacji" subtitle from the menu title.
+- Debrief summary tiles wrap to the available width.
+
+### Fixed
+
+- Tagging an apnoeic patient BLACK (or RED) with the correct colour but without the required
+  steps no longer counts as a correct triage.
 
 ## [0.2.0] - 2026-10-11
 
@@ -68,6 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Debrief with accuracy, over-/undertriage and per-patient decision paths.
 - Learn and practice modes.
 
-[Unreleased]: https://github.com/ShootGan/triage-game/compare/v0.2...HEAD
+[Unreleased]: https://github.com/ShootGan/triage-game/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/ShootGan/triage-game/compare/v0.2...v0.3.0
 [0.2.0]: https://github.com/ShootGan/triage-game/compare/v0.1-mvp...v0.2
 [0.1.0]: https://github.com/ShootGan/triage-game/releases/tag/v0.1-mvp
