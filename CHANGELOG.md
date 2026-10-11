@@ -7,84 +7,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-11
+
 ### Added
 
-- New 3D models: PSP fire engine, police car (current livery), crashed school bus, concert speaker
-  tower, festival stalls (balloons / waffles), litter, scattered belongings, dust and smoke,
-  knocked-over barrier, rows of traffic cones.
-- Rural road scenery: wider two-lane road with edge lines and gravel shoulders (no kerbs), tree
-  rows, bushes, delineator posts, power line, road signs, a house and a crop field.
-- "Bus collision" scene: head-on crash with both fronts crumpled, skid marks, spill, belongings,
-  fire engine blocking the road, ambulance and cones.
-- Render demo: "Nowe modele" scene with a zoom button per model.
-- "School bus" scene: the car driver is always trapped in the driver's seat (template and every
-  random code) while two PSP firefighters cut the car open — hydraulic cutter and spreader, power
-  unit with hoses, roof and door already removed. The patient is examined as usual; the medic
-  stands at the open door. Crashed bus and car, skid marks, spill, belongings, police car, ambulance.
 - New scenario "Katastrofa kolejowa" (fictional regional train derailment on an embankment):
   16 patients (4 green, 4 yellow, 6 red, 2 black, two children on JumpSTART), PSP firefighters at
   the wagons, fire engine, ambulance and police on a dirt service road. Random codes `POCIAG-XXXX`
   with a new train-crash mechanism (no seat-belt or steering-wheel injuries) and two train-specific
   patient types.
-- Railway terrain: ballast embankment with sleepers and rails, overhead-line masts with contact
-  wire, dirt service road, tree line and a power line.
-- Regional EMU car model (white/red livery) in three variants: on the rails with a raised
-  pantograph, rolled onto its side at the foot of the embankment, and derailed with a crushed cab.
 - New scenario "Zawalenie dachu hali" (fictional, inspired by Katowice 2006): the snow-loaded roof of
   an exhibition hall collapses during a winter fair. 16 template patients (4 green, 5 yellow, 5 red,
-  2 black) — visitors, exhibitors and families with children, crush injuries, fractures, head
-  injuries, a casualty pulled from under the snow who breathes only after airway opening. Random
-  codes with the `HALA` prefix.
-- Winter terrain: snow-covered ground, ploughed car park and access road with packed-snow patches,
-  snow piles, car park lamps and snow-capped trees.
-- New 3D models: exhibition hall with a V-collapsed roof section (bent trusses and columns, snow-laden
-  panels down to the floor, fair stands visible inside), fallen roof panel, bent truss fragment;
-  white snow-powder variant of the dust cloud.
-
-### Fixed (visuals)
-
-- School bus model was tilted about the wrong axis — its front hovered ~0.6 m above the road.
-
+  2 black) — visitors, exhibitors and families with children. Random codes with the `HALA` prefix.
+- "School bus" scene: the car driver is always trapped in the driver's seat (template and every
+  random code) while two PSP firefighters cut the car open — hydraulic cutter and spreader, power
+  unit with hoses, roof and door already removed. The patient is examined as usual; the medic stands
+  at the open door and the bleeding runs over the door sill.
 - Children aged 9–12: a colour is accepted from either JumpSTART or START (sources disagree on the
   age limit); the debrief shows both paths.
 - "Critical error" badge and summary tile for BLACK given to a patient with a chance of survival.
 - Debrief teaching notes: Romig's list of significant external injuries for infants, urgent
-  secondary triage for pregnant patients with warning signs, left-side positioning in shock.
-- New generator patient: drowsy adult with a head injury (AVPU "V") who obeys commands — YELLOW
-  in START. Some existing random codes may now produce a slightly different patient set.
-- Debrief note that JumpSTART tends to under-triage seriously injured children (Vassallo 2022,
-  Stefani 2022).
+  secondary triage for pregnant patients with warning signs, left-side positioning in shock, and a
+  note that JumpSTART tends to under-triage seriously injured children (Vassallo 2022, Stefani 2022).
+- New generator patient: drowsy adult with a head injury (AVPU "V") who obeys commands — YELLOW in START.
+- Terrains: highway (two lanes, hard shoulder, median with guardrails, opposite carriageway), railway
+  (ballast embankment, rails, overhead-line masts, service road), winter (snow, ploughed car park,
+  snow piles, snow-capped trees), and a rural road with edge lines, gravel shoulders, tree rows,
+  bushes, delineators, a power line, road signs, a house and a crop field.
+- 3D models: ZRM ambulance, PSP fire engine, police car (current livery), firefighters, car variants
+  (sedan, hatchback, SUV, van, crashed, overturned, cut open), jackknifed truck, crashed school bus,
+  regional EMU car (upright, derailed, crushed cab), exhibition hall with a collapsed roof, roof
+  panels and bent girders, neighbouring tenements forming a street frontage, speaker tower, festival
+  stalls, litter, belongings, dust/smoke/snow clouds, knocked-over barrier, cones, spilled cargo,
+  skid marks and fuel spills.
+- Scenes dressed with these models: pile-up, bus collision (head-on crash, fire engine blocking the
+  road), school bus, tenement (street frontage, firefighters searching the rubble, dust and smoke).
+- Render demo: "Pojazdy" and "Nowe modele" scenes for reviewing models.
 
 ### Changed
 
-- "Incomplete procedure" now also covers a correct colour given without the assessment that
-  decides it, and a tag placed before controlling a major bleed — both count as errors.
-- START perfusion: radial pulse and capillary refill are interchangeable — when perfusion is
-  adequate either one counts as the assessment. Patients in shock now have both an absent radial
-  pulse and CRT > 2 s (pelvic fracture, extensive burns, pile-up a12), and scenario validation
-  rejects a palpable pulse with CRT > 2 s, so either check gives the same answer.
+- "Incomplete procedure" now also covers a correct colour given without the assessment that decides
+  it, and a tag placed before controlling a major bleed — both count as errors.
+- START perfusion: radial pulse and capillary refill are interchangeable — when perfusion is adequate
+  either one counts. Patients in shock have both an absent radial pulse and CRT > 2 s, and scenario
+  validation rejects a palpable pulse with CRT > 2 s, so either check gives the same answer.
 - 5 rescue breaths take 15 s (was 10 s).
-- Pulse button reads "Tętno obwodowe" for children (brachial for infants); the pulse is checked
-  on an uninjured limb when a limb bleeds.
-- AVPU "P" results describe the full range of appropriate / inappropriate responses.
-- CRT in a dead patient reads "brak — nieoznaczalny"; in young children it notes that JumpSTART
-  does not use CRT.
+- Pulse button reads "Tętno obwodowe" for children (brachial for infants); the pulse is checked on an
+  uninjured limb when a limb bleeds.
+- AVPU "P" results describe the full range of appropriate / inappropriate responses; patients with
+  AVPU "V" may obey commands.
+- CRT in a dead patient reads "brak — nieoznaczalny"; in young children it notes that JumpSTART does
+  not use CRT.
+- Infant injury texts follow Romig's criteria; pregnancy texts and remarks no longer give away exam
+  results.
 - Narrator remarks are shown in italics instead of quotes; Polish closing quotes.
-- Hint describes JumpSTART as "looks like a child (usually up to ~8 years)" and lists the
-  infant injury criteria.
-
-- Infant injury texts follow Romig's criteria: GREEN infants have no visible injury, YELLOW
-  infants only signs from the list (heavy bleeding, multiple bruises, distended tender abdomen).
-- Pregnancy: "widoczna ciąża" instead of "zaawansowana" (weeks start at 20); worry about the baby
-  moved out of the injury list.
-- Remarks no longer give away exam results (apnoea, pain response, brachial pulse).
+- Hint describes JumpSTART as "looks like a child (usually up to ~8 years)" and lists the infant
+  injury criteria.
+- Pile-up scenario renamed to "Karambol na autostradzie"; the briefing no longer mentions fog.
+- On portrait screens the camera stays on the facade side of buildings so roofs don't hide patients.
+- Some random codes produce a different patient set than in 0.3.0 (new slots, archetypes and props).
 
 ### Fixed
 
-- Decimal comma in the START perfusion step of the debrief path.
-- "ok. 32 lat" (genitive after "około") in scenario labels.
-- Scenario validation rejects a child under 9 with a pulse and CRT > 2 s, and allows a patient
-  with AVPU "V" to obey commands (only P/U are rejected).
+- Clinical contradictions from the medical review: an apnoeic patient described as breathing, early
+  burn shock explained by an associated internal injury, a forearm fracture used to explain inability
+  to walk, and a remark that contradicted the patient's pose.
+- School bus model hovered with its front ~0.6 m above the road (tilted about the wrong axis).
+- Flickering (z-fighting) on vehicle models caused by coplanar faces.
+- Decimal comma in the START perfusion step of the debrief path; "ok. 32 lat" in labels.
 
 ## [0.3.0] - 2026-10-11
 
@@ -162,7 +152,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Debrief with accuracy, over-/undertriage and per-patient decision paths.
 - Learn and practice modes.
 
-[Unreleased]: https://github.com/ShootGan/triage-game/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/ShootGan/triage-game/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/ShootGan/triage-game/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ShootGan/triage-game/compare/v0.2...v0.3.0
 [0.2.0]: https://github.com/ShootGan/triage-game/compare/v0.1-mvp...v0.2
 [0.1.0]: https://github.com/ShootGan/triage-game/releases/tag/v0.1-mvp
