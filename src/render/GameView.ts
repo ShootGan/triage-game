@@ -345,9 +345,21 @@ export class GameView implements IGameView {
       walked: false,
     };
 
-    if (p.majorBleeding && !p.trapped) { // a trapped patient bleeds into the seat, not onto the road
+    if (p.majorBleeding) {
       // kałuża pod udem (na tej nodze później opaska uciskowa)
       h.legs[0].hip.localToWorld(_v.set(0, -0.22, 0));
+      if (p.trapped) {
+        // the seat is above the road: blood runs over the door sill (patient's left, local +x) into a pool
+        // outside — the legs themselves are hidden under the dashboard from most camera angles
+        const rot = p.rotation;
+        const [lx, lz] = [Math.cos(rot), -Math.sin(rot)];
+        const streak = this.kit.box(0.3, 0.42, 0.03, '#7a0c0c', p.position[0] + lx * 0.47, 0.24, p.position[1] + lz * 0.47, this.scene);
+        streak.rotation.y = rot;
+        streak.castShadow = false;
+        // pool just outside the sill, slightly behind the seat (the cutter works at the front pillar)
+        const [fx, fz] = [Math.sin(rot), Math.cos(rot)];
+        _v.set(p.position[0] + lx * 0.95 - fx * 0.3, 0, p.position[1] + lz * 0.95 - fz * 0.3);
+      }
       const pool = new THREE.Mesh(this.poolGeo, this.kit.toon(POOL_COLOR));
       pool.rotation.x = -Math.PI / 2;
       pool.position.set(_v.x, 0.025 + index * 0.0008, _v.z);

@@ -65,11 +65,11 @@ export function buildExtrication(kit: Kit, parent: THREE.Object3D, x: number, z:
     h.root.rotation.y = face;
     g.add(h.root);
   };
-  firefighter(1.0, -1.35, 0, 'kneeling');        // at the A-pillar, facing the car (+z)
+  firefighter(1.35, -1.3, -0.35, 'kneeling');    // at the A-pillar, facing the car — clear of the door, where the blood runs out
   firefighter(2.55, 0.45, -Math.PI / 2, 'standing'); // in front of the car, facing it (−x)
 
   // cutter at the driver-side A-pillar, spreader at the front wing
-  beam(kit, 0.1, TOOL, { x: 1.0, y: 0.82, z: -0.95 }, { x: 0.68, y: 1.08, z: -0.82 }, g);
+  beam(kit, 0.1, TOOL, { x: 1.2, y: 0.85, z: -0.95 }, { x: 0.68, y: 1.08, z: -0.82 }, g);
   kit.box(0.08, 0.12, 0.14, '#2a2a2e', 0.64, 1.12, -0.8, g);
   beam(kit, 0.1, TOOL, { x: 2.15, y: 0.95, z: 0.45 }, { x: 1.85, y: 0.72, z: 0.55 }, g);
   kit.box(0.12, 0.08, 0.16, '#2a2a2e', 1.82, 0.7, 0.56, g);
@@ -83,7 +83,7 @@ export function buildExtrication(kit: Kit, parent: THREE.Object3D, x: number, z:
       beam(kit, 0.035, HOSE, { x: a[0], y: a[1], z: a[2] }, { x: b[0], y: b[1], z: b[2] }, g).castShadow = false;
     }
   };
-  hose([[-0.9, 0.2, -2.3], [0.4, 0.03, -2.0], [1.05, 0.03, -1.7], [1.05, 0.75, -1.05]]);
+  hose([[-0.9, 0.2, -2.3], [0.6, 0.03, -2.1], [1.3, 0.03, -1.8], [1.25, 0.78, -1.0]]);
   hose([[-0.9, 0.15, -2.45], [1.6, 0.03, -2.3], [2.9, 0.03, -0.6], [2.25, 0.9, 0.42]]);
 
   // cut-off roof behind the car, driver's door on the ground, cribbing under the sills
