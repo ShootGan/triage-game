@@ -28,7 +28,8 @@ export type PropKind =
   | 'dust'       // dust cloud (variant 'smoke' — dark rising column) — no footprint
   | 'cones'      // row of 4 traffic cones along local z (~3 m), closing a lane — no footprint
   | 'extrication' // firefighters cutting a car open (placed on the car's position/rotation) — no footprint
-  | 'tenement';   // intact neighbouring tenement 12 × 8 m (variant: palette, floors, damaged side)
+  | 'tenement'    // intact neighbouring tenement 12 × 8 m (variant: palette, floors, damaged side)
+  | 'firefighter'; // single PSP firefighter (variant 'kneel' | 'point' | 'stand')
 
 export const PROP_HALF_SIZE: Record<PropKind, [number, number] | null> = {
   bus: [5.2, 1.5],
@@ -56,6 +57,7 @@ export const PROP_HALF_SIZE: Record<PropKind, [number, number] | null> = {
   cones: null,
   extrication: null,
   tenement: [6, 4],
+  firefighter: [0.4, 0.4],
 };
 
 /** Driver's seat of a car (front left: local x −0.1, z −0.4), facing the car's front. */

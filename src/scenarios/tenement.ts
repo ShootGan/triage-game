@@ -27,6 +27,18 @@ export const tenementScenario: Scenario = {
     { kind: 'tenement', position: [9, -8.5], rotation: 0, variant: 'grey-dmgL' },
     { kind: 'tenement', position: [-27, -8.5], rotation: 0, variant: 'green' },
     { kind: 'tenement', position: [21, -8.5], rotation: 0, variant: 'ochre-4' },
+    // dust over the collapse, smoke from the burning flat behind it
+    { kind: 'dust', position: [1.5, -6], rotation: 0 },
+    { kind: 'dust', position: [-6, -11], rotation: 0, variant: 'smoke' },
+    // PSP: one engine blocking the street, another parked along the kerb; firefighters searching the rubble
+    { kind: 'firetruck', position: [-16, 0.5], rotation: Math.PI / 2 - 0.3 },
+    { kind: 'firetruck', position: [14.5, 0.8], rotation: 0 },
+    { kind: 'firefighter', position: [1.8, -4.1], rotation: Math.PI, variant: 'kneel' },
+    { kind: 'firefighter', position: [-1.6, -4.0], rotation: Math.PI + 0.3, variant: 'point' },
+    { kind: 'firefighter', position: [12, -2.4], rotation: Math.PI },
+    { kind: 'cones', position: [-12.3, 0], rotation: 0 },
+    { kind: 'ambulance', position: [12.5, 8.5], rotation: Math.PI / 2 },
+    { kind: 'police', position: [-14.5, 5], rotation: 0.2 },
     { kind: 'rubble', position: [-7, -3.2], rotation: 0.3 },
     { kind: 'rubble', position: [-3, -2.8], rotation: 1.1 },
     { kind: 'rubble', position: [0.8, -3.4], rotation: 2.0 },

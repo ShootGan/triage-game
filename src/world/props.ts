@@ -3,7 +3,7 @@ import type { Kit } from './materials';
 import { buildTenement } from './buildings';
 import { buildBelongings, buildDust, buildLitter, buildSpeaker, buildStall } from './dressing';
 import { GLASS, GLASS_CRACKED, HAZARD, SIGNAL_BLUE, beam, blinkLight, canvasMat, propGroup, rbox, rng, sideText } from './propUtils';
-import { buildExtrication, buildFiretruck } from './vehicles';
+import { buildExtrication, buildFirefighter, buildFiretruck } from './vehicles';
 import { PROP_HALF_SIZE, type PropKind } from '../scenarios/propSizes';
 
 export type { PropKind } from '../scenarios/propSizes';
@@ -844,6 +844,7 @@ export function buildProp(kit: Kit, parent: THREE.Object3D, kind: PropKind, x: n
     case 'cones': return buildCones(kit, parent, x, z, rotY);
     case 'extrication': return buildExtrication(kit, parent, x, z, rotY, color);
     case 'tenement': return buildTenement(kit, parent, x, z, rotY, variant);
+    case 'firefighter': return buildFirefighter(kit, parent, x, z, rotY, variant);
   }
 }
 

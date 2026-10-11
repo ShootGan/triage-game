@@ -45,6 +45,30 @@ export function buildFiretruck(kit: Kit, parent: THREE.Object3D, x: number, z: n
   return g;
 }
 
+/**
+ * A single PSP firefighter, facing local +z. Variant: 'kneel' (digging in rubble, hands low),
+ * 'point' (standing, one arm pointing ahead), default 'stand' (standing, holding a hand lamp).
+ */
+export function buildFirefighter(kit: Kit, parent: THREE.Object3D, x: number, z: number, rotY: number, variant = 'stand'): THREE.Group {
+  const g = propGroup(parent, x, z, rotY);
+  const h = createHuman(kit, { firefighter: true, skin: '#e0b088' });
+  if (variant === 'kneel') {
+    applyPose(h, 'kneeling');
+    h.arms.forEach((a, i) => { a.sh.rotation.set(-0.7, 0, (i ? -1 : 1) * 0.2); a.el.rotation.x = -0.5; });
+  } else {
+    applyPose(h, 'standing');
+    if (variant === 'point') {
+      h.arms[1].sh.rotation.set(-1.45, 0, -0.1);
+    } else {
+      h.arms[0].sh.rotation.set(-0.9, 0, 0.1);
+      h.arms[0].el.rotation.x = -0.6;
+      kit.box(0.1, 0.12, 0.16, '#f2c230', 0, -0.06, 0.06, h.arms[0].hand); // hand lamp
+    }
+  }
+  g.add(h.root);
+  return g;
+}
+
 const TOOL = '#e8a020';
 const HOSE = '#e8641e';
 
