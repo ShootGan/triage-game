@@ -372,7 +372,8 @@ a { color: var(--accent); }
 .pd-notes p { margin: 2px 0; }
 .missed { color: #ff8a8a; }
 .teaching-note { color: var(--accent); }
-.verdict.critical { margin-left: 6px; background: #ff6b6b; color: var(--ink); border-color: #ff6b6b; }
+.pd-verdict { display: flex; flex-wrap: wrap; gap: 4px 6px; min-width: 0; }
+.verdict.critical { background: #ff6b6b; color: var(--ink); border-color: #ff6b6b; }
 .debrief-note { margin: 10px 0 0; font-size: 17px; line-height: 1.2; }
 .pd-detail { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; padding: 0 10px 10px; border-top: 2px dashed var(--panel); }
 .steps { margin: 0; padding-left: 24px; font-size: 18px; }

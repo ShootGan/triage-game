@@ -158,6 +158,8 @@ function PatientRow({ p }: { p: PatientDebrief }) {
   const [open, setOpen] = useState(p.verdict !== 'correct');
   const { ACTION_LABEL } = getDeps();
   const tagAt = p.actionsBeforeTag ?? null;
+  // Matches the exam panel: children get "peripheral pulse" even when START's colour was accepted.
+  const child = p.protocol === 'JumpSTART' || p.alternative?.protocol === 'JumpSTART';
 
   return (
     <div className={`debrief-item verdict-${p.verdict}`}>
@@ -171,7 +173,7 @@ function PatientRow({ p }: { p: PatientDebrief }) {
         <span>
           <Chip cat={p.expected} />
         </span>
-        <span>
+        <span className="pd-verdict">
           <span className={`verdict v-${p.verdict}`} title={VERDICT_HINT[p.verdict]}>
             {VERDICT_LABEL[p.verdict]}
           </span>
@@ -193,7 +195,7 @@ function PatientRow({ p }: { p: PatientDebrief }) {
           ))}
         </div>
       )}
-      {open && (p.notes?.length ?? 0) > 0 && (
+      {(p.notes?.length ?? 0) > 0 && (
         <div className="pd-notes">
           {p.notes!.map((n, i) => (
             <p key={i} className="teaching-note">
@@ -248,7 +250,7 @@ function PatientRow({ p }: { p: PatientDebrief }) {
               <ol className="steps">
                 {p.actionsDone.map((a, i) => (
                   <li key={i} className={tagAt !== null && i >= tagAt ? 'after-tag' : undefined}>
-                    {a === 'pulse' && p.protocol === 'JumpSTART' ? 'Tętno obwodowe' : ACTION_LABEL[a]}
+                    {a === 'pulse' && child ? 'Tętno obwodowe' : ACTION_LABEL[a]}
                     {tagAt !== null && i >= tagAt && ' · po opasce'}
                   </li>
                 ))}
