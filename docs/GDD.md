@@ -231,7 +231,8 @@ Zasada: `engine/` nie zna Three.js ani Reacta — czysta logika, w pełni testow
 - [ ] Statystyki postępów, ranking
 
 **TODO / pomysły na później**
-- [ ] **Osobny scenariusz: poszkodowani uwięzieni w pojazdach + PSP.** Pacjent siedzi w aucie; badanie przez okno/drzwi
+- [~] ~~**Osobny scenariusz: poszkodowani uwięzieni w pojazdach + PSP.**~~ — odrzucone (2026-10-11): prototyp logiki
+  działał, ale całość uznana za zbyt rozbudowaną i niepotrzebną; nie wracamy do tego. Pacjent siedzi w aucie; badanie przez okno/drzwi
   z ograniczonym dostępem (część czynności niedostępna: „brak dostępu — pacjent zakleszczony"); segregacja ustala
   kolejność wydobywania; gracz wskazuje PSP/KDR, kogo wydobyć najpierw; strażacy (postacie NPC) wydobywają
   po czasie → pacjent leży przy aucie i można go zbadać w pełni. Ocena w debriefie: kolejność wydobycia.
