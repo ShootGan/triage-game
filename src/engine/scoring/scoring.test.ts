@@ -601,6 +601,7 @@ describe('poprawki po przeglądzie medycznym', () => {
     expect(d.verdict).toBe('over');
     expect(d.explanation).toMatch(/CRT niewiarygodny \(zimno\)/);
     expect(d.explanation).not.toMatch(/CRT 1,5 s/);
+    expect(d.steps.find(st => st.id === 'perfusion')?.answer).toMatch(/^tętno wyczuwalne, CRT niewiarygodny \(zimno\) — nie$/);
   });
 });
 

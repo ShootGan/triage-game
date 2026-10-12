@@ -19,7 +19,7 @@ const VERDICT_LABEL: Record<Verdict, string> = {
 /** Pełne znaczenie werdyktu (legenda, podpowiedź na plakietce). */
 const VERDICT_HINT: Record<Verdict, string> = {
   correct: 'kolor rozstrzygnięty tym, co ustalono przed opaską (kolejność dowolna)',
-  procedure: 'kolor poprawny, ale ustalenia go nie rozstrzygały — połowa punktów',
+  procedure: `kolor poprawny, ale ustalenia go nie rozstrzygały — ${POINTS.guessed} z ${POINTS.correct} pkt`,
   over: 'kolor zawyżony',
   under: 'kolor zaniżony',
   untagged: 'brak opaski',

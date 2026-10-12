@@ -343,11 +343,11 @@ export function debriefPatient(
     given,
     verdict,
     critical,
-    steps: r.steps,
+    steps: shownSteps(r.steps, p.cold),
     alternative: living ? undefined : alternative && {
       protocol: (r === alternative ? primary : alternative).protocol,
       expected: (r === alternative ? primary : alternative).category,
-      steps: (r === alternative ? primary : alternative).steps,
+      steps: shownSteps((r === alternative ? primary : alternative).steps, p.cold),
     },
     actionsDone,
     actionsBeforeTag: given === null ? null : tagIdx,
@@ -384,6 +384,12 @@ function orderNote(r: TriageResult, verdict: Verdict, actionsBefore: ExamActionI
   return [
     `Kolejność badania inna niż w ${r.protocol} (oddech → perfuzja → ${mental}). Kolor zaliczony, bo ustalenia go rozstrzygały — ale zaczynaj od oddechu: to najszybsza ocena i najczęściej sama rozstrzyga.`,
   ];
+}
+
+/** In the cold the player saw a falsely long CRT, so the debrief path doesn't quote the true value. */
+function shownSteps(steps: DecisionStep[], cold = false): DecisionStep[] {
+  if (!cold) return steps;
+  return steps.map(s => (s.id === 'perfusion' ? { ...s, answer: s.answer.replace(/CRT [\d,]+ s/, 'CRT niewiarygodny (zimno)') } : s));
 }
 
 /** Child who may be triaged with either algorithm (JumpSTART age limit differs between sources). */

@@ -26,7 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   needs 5 rescue breaths per JumpSTART).
 - Breathing that returns after rescue breaths settles RED without a pulse check; the order note no
   longer flags the JumpSTART apnoea sequence (airway → pulse → breaths).
-- Cold hall: the debrief no longer quotes a capillary refill the player never saw.
+- Cold hall: the debrief (explanation and algorithm path) no longer quotes a capillary refill the
+  player never saw.
 - Yellow patients with an abdominal wound get a note about urgent surgical assessment.
 - Casualty texts reviewed: remarks fit every injury variant and pose, fewer texts give away exam
   results, clearer terms (open chest wound, tension pneumothorax). Thigh and lower-leg fractures are rarer.
