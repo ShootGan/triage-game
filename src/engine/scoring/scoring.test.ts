@@ -618,3 +618,14 @@ describe('zespół zmiażdżenia', () => {
     expect(debriefPatient(p, 'yellow', undefined).notes?.join(' ')).toMatch(/zespół zmiażdżenia/);
   });
 });
+
+describe('JumpSTART: proste polecenie zamiast AVPU', () => {
+  it('dziecko wykonuje polecenia → AVPU A/V wiadomo, ŻÓŁTY rozstrzygnięty (zgłoszenie z gry)', () => {
+    const p = { ...patient('k', { breathing: { rate: 28 } }), appearsChild: true, ageYears: 10 };
+    const d = debriefPatient(p, 'yellow', exam(p, ['breathing', 'pulse', 'commands']));
+    expect(d.verdict).toBe('correct');
+    expect(d.points).toBe(10);
+    const young = { ...p, ageYears: 6 };
+    expect(debriefPatient(young, 'yellow', exam(young, ['breathing', 'pulse', 'commands'])).verdict).toBe('correct');
+  });
+});
