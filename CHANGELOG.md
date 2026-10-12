@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-10-12
+
 ### Added
 
 - Injuries are visible on the 3D casualties: massive bleeding spurts from the limb named in the
@@ -205,7 +207,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Debrief with accuracy, over-/undertriage and per-patient decision paths.
 - Learn and practice modes.
 
-[Unreleased]: https://github.com/ShootGan/triage-game/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/ShootGan/triage-game/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/ShootGan/triage-game/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/ShootGan/triage-game/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/ShootGan/triage-game/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ShootGan/triage-game/compare/v0.2...v0.3.0
