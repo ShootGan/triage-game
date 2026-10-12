@@ -103,7 +103,7 @@ export interface Archetype {
    * Ciąża (tylko układy z `pregnancy`, np. „Zderzenie autobusów"):
    * 'ok' — archetyp pasuje do dorosłej kobiety w ciąży (teksty jej nie przeczą),
    * 'only' — wyłącznie dla kobiety w ciąży (np. y-ciaza). Brak = nie dla ciężarnej.
-   * W układach bez `pregnancy` pole jest ignorowane.
+   * W układach bez `pregnancy` archetypy 'only' nie występują (bez widocznej ciąży etykieta by kłamała), 'ok' — jak zwykłe.
    */
   pregnancy?: 'ok' | 'only';
 }
@@ -436,6 +436,7 @@ export const ARCHETYPES: readonly Archetype[] = [
       '„Proszę mi pomóc wstać… Nie, nie dam rady!"',
     ],
     poses: ['back', 'sitting'],
+    weight: 0.7,
   },
   {
     id: 'y-udo',
@@ -456,6 +457,7 @@ export const ARCHETYPES: readonly Archetype[] = [
       { t: 'Płacze cicho: „Noga mnie boli, nie mogę wstać."', ages: ['child'] },
     ],
     poses: ['back'],
+    weight: 0.7,
   },
   {
     id: 'y-szyjka-udowa',
@@ -681,7 +683,8 @@ export const ARCHETYPES: readonly Archetype[] = [
     ]],
     remarks: [
       '„Kostka… chrupnęło coś. Nie stanę na tę nogę."',
-      'Siedzi i trzyma się za stopę: „Nawet nie mogę nią ruszyć."',
+      { t: 'Siedzi i trzyma się za stopę: „Nawet nie mogę nią ruszyć."', poses: ['sitting'] },
+      'Trzyma się za nogę: „Nawet nie mogę ruszyć stopą."',
     ],
     poses: ['sitting', 'back'],
   },
@@ -696,7 +699,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     injuries: [[
       'kolano prawe obrzęknięte, zniekształcone, zablokowane w zgięciu — podejrzenie zwichnięcia',
       'kolano lewe obrzęknięte, rzepka przemieszczona na zewnątrz',
-      { t: 'rana tłuczona i obrzęk kolana od uderzenia o deskę rozdzielczą', mech: ['komunikacyjny'] },
+      { t: 'rana tłuczona kolana od deski rozdzielczej, obrzęk, nie może stanąć na nogę — podejrzenie złamania rzepki', mech: ['komunikacyjny'] },
     ]],
     remarks: ['Nie pozwala wyprostować nogi: „Nie ruszajcie kolana!"', 'Syczy z bólu przy każdym ruchu nogą.'],
     poses: ['back', 'sitting'],
@@ -751,7 +754,7 @@ export const ARCHETYPES: readonly Archetype[] = [
       'pręt wbity w pośladek, niewielkie krwawienie — nie usuwać',
     ]],
     extraInjuries: ['drobne rany cięte przedramion od szkła', 'otarcia twarzy'],
-    remarks: ['Patrzy na ranę z przerażeniem: „Wyciągnijcie to ze mnie!"', '„Nie mogę stanąć… coś mi tkwi w nodze."'],
+    remarks: ['Patrzy na ranę z przerażeniem: „Wyciągnijcie to ze mnie!"', '„Nie mogę wstać… coś we mnie tkwi."'],
     poses: ['back', 'sitting', 'front'],
   },
   {
@@ -763,7 +766,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     mechanisms: ['wybuch', 'kolejowy', 'komunikacyjny', 'zmiazdzenie'],
     vitals: STABLE(),
     injuries: [[
-      'rana kłuta powłok brzucha od odłamka, niewielkie krwawienie, brzuch miękki',
+      'rana brzucha od odłamka, niewielkie krwawienie, brzuch miękki',
       'rana cięta boku po prawej od blachy, sączące krwawienie, brzuch miękki',
     ]],
     remarks: ['Uciska ranę dłonią: „Boli przy każdym ruchu… boję się wstać."'],
@@ -780,8 +783,8 @@ export const ARCHETYPES: readonly Archetype[] = [
     vitals: STABLE(),
     injuries: [[
       'oparzenia II stopnia obu stóp z pęcherzami — buty stopione',
-      'oparzenia II stopnia podudzia lewego i stopy, zwęglone nogawki',
-      'oparzenie II stopnia pośladków i ud od płonącej podłogi',
+      'oparzenia II stopnia podudzia lewego i stopy, nadpalone nogawki',
+      'oparzenia II stopnia obu podudzi od rozlanego wrzątku',
     ]],
     extraInjuries: ['osmalone brwi i włosy', 'oparzenia I stopnia dłoni'],
     remarks: ['„Podłoga się paliła… nie mogę stanąć, nogi pieką!"', 'Polewa nogi wodą z butelki, jęczy z bólu.'],
@@ -803,7 +806,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     ],
     remarks: [
       '„Wszystko mi wiruje… nie dam rady wstać."',
-      'Pyta kilka razy: „Co się stało?", ale odpowiada logicznie i wykonuje polecenia.',
+      'Pyta kilka razy: „Co się stało?" — nie pamięta zdarzenia.',
     ],
     poses: ['back', 'sitting'],
     weight: 0.8,
@@ -1073,10 +1076,16 @@ export const ARCHETYPES: readonly Archetype[] = [
     mechanisms: ['komunikacyjny', 'upadek', 'zmiazdzenie', 'wybuch', 'kolejowy', 'tlum'],
     vitals: { ...STABLE([32, 42]), crt: [1.5, 2] },
     injuries: [
-      ['prawa połowa klatki piersiowej nie unosi się przy wdechu', 'lewa połowa klatki piersiowej nie unosi się przy wdechu'],
+      [
+        'asymetria ruchów — prawa połowa klatki piersiowej słabo unosi się przy wdechu',
+        'asymetria ruchów — lewa połowa klatki piersiowej słabo unosi się przy wdechu',
+      ],
       ['poszerzone żyły szyjne, narastająca duszność', 'trzeszczenie pod skórą szyi i klatki piersiowej przy ucisku (odma podskórna)'],
     ],
-    remarks: ['Siedzi pochylon{y|a} do przodu: „Coraz… gorzej… się… oddycha."', 'Łapie powietrze ustami, nie jest w stanie dokończyć zdania.'],
+    remarks: [
+      { t: 'Siedzi pochylon{y|a} do przodu: „Coraz… gorzej… się… oddycha."', poses: ['sitting'] },
+      'Łapie powietrze ustami: „Coraz… gorzej… się… oddycha."',
+    ],
     poses: ['sitting', 'back'],
   },
   {
@@ -1089,7 +1098,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     vitals: { ...STABLE([32, 40]), crt: [1.5, 2] },
     injuries: [[
       'rana klatki piersiowej po prawej od odłamka — przy wdechu słychać zasysanie powietrza, pieni się krew',
-      'rana kłuta klatki piersiowej po lewej — przy wdechu bulgocze krwisty płyn',
+      'rana drążąca klatki piersiowej po lewej od odłamka — przy wdechu bulgocze krwisty płyn',
     ]],
     extraInjuries: ['drobne rany cięte twarzy od szkła', 'otarcia rąk'],
     remarks: ['Przyciska dłoń do klatki piersiowej: „Coś… mnie… dźgnęło…"'],
@@ -1114,7 +1123,6 @@ export const ARCHETYPES: readonly Archetype[] = [
   },
   {
     id: 'r-sledziona',
-    pregnancy: 'ok',
     category: 'red',
     criterion: 'START: wstrząs — brak tętna promieniowego, CRT > 2 s (krwawienie wewnętrzne)',
     source: [],
@@ -1149,7 +1157,7 @@ export const ARCHETYPES: readonly Archetype[] = [
       ],
       ['skóra blada, zimna, spocona'],
     ],
-    remarks: ['Patrzy na kikut w szoku, szepcze: „Moja noga… gdzie jest moja noga…"', 'Blad{y|a}, drży: „Zimno… dużo krwi…"'],
+    remarks: ['Patrzy na kikut w szoku, szepcze: „Gdzie… gdzie to jest…"', 'Blad{y|a}, drży: „Zimno… dużo krwi…"'],
     poses: ['back'],
     weight: 0.6,
   },
@@ -1167,8 +1175,8 @@ export const ARCHETYPES: readonly Archetype[] = [
       ['pobudzenie, próbuje wstać i się przewraca', 'wg świadków chwilę po urazie miał{|a} drgawki'],
     ],
     remarks: [
-      'Pyta w kółko: „Gdzie ja jestem? Co tu się dzieje?" — nie reaguje na polecenia.',
-      'Odpycha ratownika, mówi bez związku: „Muszę iść do pracy, puśćcie mnie!"',
+      'Pyta w kółko: „Gdzie ja jestem? Co tu się dzieje?"',
+      'Odpycha ratownika, nie rozumie sytuacji: „Muszę iść do pracy, puśćcie mnie!"',
     ],
     poses: ['back', 'sitting'],
     weight: 0.8,
@@ -1398,7 +1406,7 @@ export const ARCHETYPES: readonly Archetype[] = [
         { t: 'zmiażdżenie tułowia między fotelami wagonu', mech: ['kolejowy'] },
         { t: 'zmiażdżenie tułowia w zgniecionej kabinie', mech: ['komunikacyjny'] },
       ],
-      ['skóra szaroblada, brak ruchów oddechowych', 'sinica twarzy i szyi'],
+      ['skóra szaroblada, leży bezwładnie', 'sinica twarzy i szyi'],
     ],
     poses: ['back', 'front'],
   },
@@ -1412,7 +1420,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     vitals: { walk: false, breathing: 'none', rate: [0, 0], pulse: false, crt: [5, 6], avpu: 'U', obeys: false },
     injuries: [
       ['nienaturalnie wygięte kończyny, rozległe obrażenia głowy', 'krwawienie z uszu i nosa, deformacja głowy'],
-      ['szerokie, niereagujące źrenice', 'skóra szaroblada, brak ruchów oddechowych'],
+      ['szerokie, niereagujące źrenice', 'skóra szaroblada, leży bezwładnie'],
     ],
     remarks: [
       { t: 'Leży daleko od pojazdu — wyrzucon{y|a} przy zderzeniu.', mech: ['komunikacyjny'] },

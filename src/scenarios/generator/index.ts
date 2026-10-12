@@ -507,7 +507,7 @@ function tryGenerate(layout: ScenarioLayout, code: string, rng: Rng): Generated 
           !(a.unique && used.has(a.id)) &&
           (pregnant
             ? !!a.pregnancy && a.sex !== 'm' && pregnantAgeRange(preg!, a) !== null
-            : ageRangeFor(layout, a, grp) !== null && !(preg && a.pregnancy === 'only')),
+            : ageRangeFor(layout, a, grp) !== null && a.pregnancy !== 'only'),
       );
     let group: AgeGroup;
     if (forcedChild.has(i)) {

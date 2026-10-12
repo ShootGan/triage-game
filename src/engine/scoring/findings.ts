@@ -127,7 +127,8 @@ const AVPU: readonly { avpu: Avpu; pain?: boolean }[] = [
 /**
  * Every patient state consistent with the findings (always including the true one). Unknown fields
  * range over small domains that cover all algorithm thresholds; implausible combinations are pruned
- * (someone who isn't breathing is unresponsive; someone who obeys commands is A or V).
+ * (someone who isn't breathing is unresponsive; someone who obeys commands is A or V; breathing that
+ * resumes after rescue breaths means a pulse).
  */
 export function candidateVitals(truth: Vitals, f: Findings): Vitals[] {
   const out: Vitals[] = [truth];
@@ -151,6 +152,7 @@ export function candidateVitals(truth: Vitals, f: Findings): Vitals[] {
                   if (f.painAppropriate !== undefined && a.avpu === 'P' && a.pain !== f.painAppropriate) continue;
                   if (!spontaneous && (a.avpu !== 'U' || obeysCommands)) continue;
                   if (obeysCommands && a.avpu !== 'A' && a.avpu !== 'V') continue;
+                  if (afterRescueBreaths && !peripheralPulse) continue; // breathing resumed → circulation
                   out.push({
                     ...truth,
                     breathing: { spontaneous, afterAirway, afterRescueBreaths, rate: r.rate, irregular: r.irregular },

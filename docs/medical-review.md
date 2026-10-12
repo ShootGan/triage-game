@@ -47,8 +47,16 @@ unieważnia koloru, tylko kosztuje punkty jako pominięta czynność ratująca �
   przedramię, dół podkolanowy.
 - CZARNI: `b-zmiazdzenie-tulowia`, `b-wyrzucony`, `b-oparzenia` (bezdech mimo udrożnienia).
 
-[do decyzji] `y-rana-brzucha` — rana penetrująca brzucha przy prawidłowych parametrach jest wg START ŻÓŁTA; w segregacji
-wtórnej wymaga pilnej oceny chirurgicznej. `r-amputacja` — zakładamy brak tętna promieniowego (wstrząs krwotoczny).
+Decyzje po przeglądzie dwóch recenzentów (2026-10-12): `y-rana-brzucha` zostaje ŻÓŁTA (wg START poprawnie) z uwagą
+w debriefie o pilnej ocenie chirurgicznej; `r-amputacja` zostaje z brakiem tętna promieniowego (wstrząs krwotoczny
+III–IV). Poprawione: dziecko 9–12 lat w bezdechu z tętnem — CZARNY nie jest zaliczany, gdy JumpSTART daje CZERWONY;
+oddech po oddechach ratowniczych = krążenie; CRT w hali nie jest cytowany w debriefie; wypowiedzi dopasowane do urazu
+i pozy; `r-sledziona` nie dla ciężarnych; etykieta „w ciąży” tylko z widoczną ciążą. Punkty: zgadnięty 3, zawyżony 2,
+kolor żywego u zmarłego 0.
+
+Otwarte: opisy bez cudzysłowu, które pokazują reakcję („otwiera oczy na głos”), nie są liczone jako dowód oddechu;
+część starszych wypowiedzi zdradza wynik badania; brakujące typy: uraz oka, rdzeń szyjny, zatrucie dymem/CO, zespół
+zmiażdżenia.
 
 ---
 

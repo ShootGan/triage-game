@@ -13,16 +13,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   before the tag settle it (e.g. no radial pulse in a breathing patient is RED without counting breaths).
   A right colour without such findings is "guessed" (was "procedure"); a different order than the
   algorithm only adds a teaching note.
-- Debrief shows a points score: right 10, guessed 5, over 3, under/untagged 0, BLACK for a survivor −5,
-  each missed life-saving intervention −3. Accuracy stays as a stat; time doesn't affect the score.
+- Debrief shows a points score: right 10, guessed 3, over 2 (a living colour for the dead 0),
+  under/untagged 0, BLACK for a survivor −5, each missed life-saving intervention −3. Accuracy stays
+  as a stat; time doesn't affect the score.
 - Uncontrolled major bleeding no longer voids a right colour — it costs points as a missed intervention.
 - Main injuries repeat far less: 19 new casualty types (ankle, knee and hip injuries, heel fractures,
   impaled objects, abdominal wound, foot burns, concussion; tension and open pneumothorax, airway burns,
   ruptured spleen, traumatic amputation, confused-but-alert head injury; three new dead) and more
   bleeding sites than the thigh. The same casualty type never appears a third time in one code while
   alternatives exist. Existing codes give a different set.
+- Ages 9–12: BLACK no longer counts when either algorithm gives a living colour (apnoea with a pulse
+  needs 5 rescue breaths per JumpSTART).
+- Breathing that returns after rescue breaths settles RED without a pulse check; the order note no
+  longer flags the JumpSTART apnoea sequence (airway → pulse → breaths).
+- Cold hall: the debrief no longer quotes a capillary refill the player never saw.
+- Yellow patients with an abdominal wound get a note about urgent surgical assessment.
+- Casualty texts reviewed: remarks fit every injury variant and pose, fewer texts give away exam
+  results, clearer terms (open chest wound, tension pneumothorax). Thigh and lower-leg fractures are rarer.
 - Random codes have fewer walking-wounded and more patients who need decisions: green 25–40%
   (was 40–55%), yellow 25–35%, red 20–30%, black 4–12%. Existing codes give a different set.
+
+### Fixed
+
+- "Pregnant woman" casualties outside the bus collision had no visible pregnancy (and no pregnancy notes).
 
 ## [0.4.1] - 2026-10-11
 

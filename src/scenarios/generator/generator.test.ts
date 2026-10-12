@@ -461,3 +461,15 @@ describe('różnorodność obrażeń', () => {
     }
   });
 });
+
+describe('ciąża', () => {
+  it.each(LAYOUTS.map((l) => [l.id] as const))('%s: etykieta „w ciąży" tylko z widoczną ciążą', (id) => {
+    const rng = createRng(`pregnancy|${id}`);
+    for (let i = 0; i < 100; i++) {
+      const s = generateScenario(id, randomCode(id, () => rng.next()));
+      for (const p of s.patients) {
+        if (p.label.includes('w ciąży')) expect(p.appearance.pregnant, `${s.code} ${p.id}`).toBe(true);
+      }
+    }
+  });
+});

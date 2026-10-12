@@ -535,7 +535,7 @@ describe('ocena oparta na ustaleniach (kolejność dowolna)', () => {
     const p = patient('t', { peripheralPulse: false, crtSeconds: 4 });
     const d = debriefPatient(p, 'red', exam(p, ['pulse']));
     expect(d.verdict).toBe('procedure');
-    expect(d.points).toBe(5);
+    expect(d.points).toBe(3);
   });
 
   it('pacjent mówi (wypowiedź w cudzysłowie) → oddycha; brak tętna wystarcza', () => {
@@ -549,9 +549,11 @@ describe('ocena oparta na ustaleniach (kolejność dowolna)', () => {
     expect(debriefPatient(p, 'yellow', exam(p, ['pulse', 'breathing'])).verdict).toBe('procedure');
   });
 
-  it('punkty: zawyżenie 3, zaniżenie 0, krytyczny −5, każda pominięta czynność ratująca życie −3', () => {
+  it('punkty: zawyżenie 2, kolor żywego u zmarłego 0, zaniżenie 0, krytyczny −5, każda pominięta czynność ratująca życie −3', () => {
     const y = patient('y');
-    expect(debriefPatient(y, 'red', undefined).points).toBe(3);
+    expect(debriefPatient(y, 'red', undefined).points).toBe(2);
+    const dead = apnoeic('d', {}, { peripheralPulse: false });
+    expect(debriefPatient(dead, 'red', exam(dead, ['airway'])).points).toBe(0);
     expect(debriefPatient(y, 'green', undefined).points).toBe(0);
     const a = apnoeic('a', { afterAirway: true, rate: 10 });
     expect(debriefPatient(a, 'black', undefined).points).toBe(-8);
@@ -560,8 +562,51 @@ describe('ocena oparta na ustaleniach (kolejność dowolna)', () => {
   it('scoreGame: suma punktów, maksimum, procent nieujemny', () => {
     const ps = [patient('g', { canWalk: true }), patient('y')];
     const s = scoreGame(ps, { g: 'green', y: 'red' }, {}, 60);
-    expect(s).toMatchObject({ points: 13, maxPoints: 20, scorePct: 65 });
+    expect(s).toMatchObject({ points: 12, maxPoints: 20, scorePct: 60 });
     const a = apnoeic('a', { afterAirway: true, rate: 10 });
     expect(scoreGame([a], { a: 'black' }, {}, 10).scorePct).toBe(0);
+  });
+});
+
+describe('poprawki po przeglądzie medycznym', () => {
+  const kid = (ageYears: number, b: Partial<Vitals['breathing']>) => ({
+    ...apnoeic('k', b),
+    appearsChild: true,
+    ageYears,
+  });
+
+  it('dziecko 9–12 lat w bezdechu z tętnem: CZARNY nie jest zaliczany, choć START daje CZARNY', () => {
+    const p = kid(10, { afterRescueBreaths: true, rate: 12 });
+    const d = debriefPatient(p, 'black', exam(p, ['airway']));
+    expect(d).toMatchObject({ verdict: 'under', critical: true, expected: 'red', protocol: 'JumpSTART' });
+    expect(d.alternative).toBeUndefined();
+    expect(d.explanation).toMatch(/Wg START byłby CZARNY, ale u dziecka 9–12 lat CZARNY nie jest zaliczany/);
+  });
+
+  it('JumpSTART: udrożnienie → tętno → 5 oddechów to właściwa kolejność (bez uwagi)', () => {
+    const p = { ...apnoeic('c', { afterRescueBreaths: false }), appearsChild: true, ageYears: 6 };
+    const d = debriefPatient(p, 'black', exam(p, ['airway', 'pulse', 'rescue-breaths']));
+    expect(d.verdict).toBe('correct');
+    expect(d.notes ?? []).toEqual([]);
+  });
+
+  it('oddech wraca po oddechach ratowniczych → krążenie jest, CZERWONY rozstrzygnięty bez badania tętna', () => {
+    const p = { ...apnoeic('c', { afterRescueBreaths: true, rate: 12 }), appearsChild: true, ageYears: 3 };
+    expect(debriefPatient(p, 'red', exam(p, ['airway', 'rescue-breaths'])).verdict).toBe('correct');
+  });
+
+  it('zimno: debrief nie podaje wartości CRT, której gracz nie widział', () => {
+    const p = { ...patient('h'), cold: true };
+    const d = debriefPatient(p, 'red', exam(p, ['breathing', 'crt', 'commands']));
+    expect(d.verdict).toBe('over');
+    expect(d.explanation).toMatch(/CRT niewiarygodny \(zimno\)/);
+    expect(d.explanation).not.toMatch(/CRT 1,5 s/);
+  });
+});
+
+describe('rana brzucha', () => {
+  it('ŻÓŁTY z raną brzucha → uwaga o pilnej ocenie chirurgicznej', () => {
+    const p = patient('b', {}, { injuries: ['rana brzucha od odłamka, niewielkie krwawienie, brzuch miękki'] });
+    expect(debriefPatient(p, 'yellow', undefined).notes?.join(' ')).toMatch(/pilna ocena chirurgiczna/);
   });
 });

@@ -153,7 +153,7 @@ Czas = rzeczywisty stoper od wjazdu na miejsce (czynności nie doliczają sztucz
   wg algorytmu (np. brak tętna u oddychającego → CZERWONY bez liczenia oddechów). ŻÓŁTY wymaga wykluczenia wszystkich
   kryteriów czerwonych. Kolor trafiony bez rozstrzygających ustaleń = „zgadnięty". Inna kolejność niż w algorytmie —
   tylko uwaga dydaktyczna. Silnik: `scoring/findings.ts` (sprawdza wszystkie stany pacjenta zgodne z ustaleniami).
-- **Punkty** na poszkodowanego (`scoring/points.ts`): poprawny 10, zgadnięty 5, zawyżony 3, zaniżony / brak opaski 0,
+- **Punkty** na poszkodowanego (`scoring/points.ts`): poprawny 10, zgadnięty 3, zawyżony 2 (kolor żywego u zmarłego 0), zaniżony / brak opaski 0,
   CZARNY u żywego −5; każda pominięta czynność ratująca życie −3. Wynik = % maksimum.
 - Trafność (% poprawnych opasek) — statystyka dodatkowa
 - Średni czas na pacjenta — tylko informacyjnie, **bez wpływu na wynik**

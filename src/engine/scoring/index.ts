@@ -95,7 +95,8 @@ function assessmentActions(r: TriageResult, v: Vitals, done: ExamActionId[], col
 }
 
 /** Opis rozstrzygającego ustalenia, np. „Oddechy 34/min (> 30) → CZERWONY". */
-function decisiveFinding(protocol: Protocol, category: TriageCategory, v: Vitals, last: DecisionStep): string {
+function decisiveFinding(protocol: Protocol, category: TriageCategory, v: Vitals, last: DecisionStep, cold = false): string {
+  const crt = cold ? 'CRT niewiarygodny (zimno)' : `CRT ${num(v.crtSeconds)} s (≤ 2 s)`;
   const b = v.breathing;
   const cat = CATEGORY_LABEL[category];
   switch (last.id) {
@@ -122,7 +123,7 @@ function decisiveFinding(protocol: Protocol, category: TriageCategory, v: Vitals
     case 'mental':
       if (protocol === 'START') {
         return v.obeysCommands
-          ? `Nie chodzi; oddechy ${b.rate}/min (≤ 30), tętno promieniowe obecne, CRT ${num(v.crtSeconds)} s (≤ 2 s), wykonuje polecenia → ${cat}`
+          ? `Nie chodzi; oddechy ${b.rate}/min (≤ 30), tętno promieniowe obecne, ${crt}, wykonuje polecenia → ${cat}`
           : `Nie wykonuje prostych poleceń → ${cat}`;
       }
       if (category === 'red') {
@@ -293,7 +294,10 @@ export function debriefPatient(
   // Ages 9–12: schools differ on the JumpSTART age limit, so a colour from either algorithm counts.
   const alt = isBorderlineAge(p) ? triage(p.vitals, !p.appearsChild) : undefined;
   const alternative = alt && alt.category !== primary.category ? alt : undefined;
-  const r = alternative && given === alternative.category ? alternative : primary;
+  // ...except BLACK while either algorithm gives a living colour (e.g. apnoea with a pulse:
+  // JumpSTART gives 5 rescue breaths, START would give BLACK) — then the living colour is expected.
+  const living = alternative && given === 'black' && [primary, alternative].find(x => x.category !== 'black');
+  const r = living || (alternative && given === alternative.category ? alternative : primary);
   const actionsDone = ex.log.map(l => l.action);
   const tagIdx = given === null ? ex.log.length : Math.min(tagLogIndex ?? ex.log.length, ex.log.length);
   const atTag = examStateAt(p, ex, tagIdx);
@@ -310,7 +314,7 @@ export function debriefPatient(
     }
   } else if (verdict !== 'correct') {
     const last = r.steps[r.steps.length - 1];
-    const parts = [`${decisiveFinding(r.protocol, r.category, p.vitals, last)}.`];
+    const parts = [`${decisiveFinding(r.protocol, r.category, p.vitals, last, p.cold)}.`];
     parts.push(
       given === null
         ? 'Pacjenta nie oznaczono.'
@@ -318,8 +322,11 @@ export function debriefPatient(
     );
     const missing = assessmentActions(r, p.vitals, actionsBefore, p.cold).filter(a => !actionsBefore.includes(a));
     if (missing.length) parts.push(`Nie wykonano: ${missing.map(a => ACTION_NOUN[a]).join(', ')}.`);
-    if (alternative) {
-      parts.push(`Wg ${alternative.protocol}: ${CATEGORY_LABEL[alternative.category]} — dla dziecka 9–12 lat zaliczany jest kolor z każdego z algorytmów.`);
+    const other = alternative && (r === alternative ? primary : alternative);
+    if (other && living) {
+      parts.push(`Wg ${other.protocol} byłby CZARNY, ale u dziecka 9–12 lat CZARNY nie jest zaliczany, gdy wg ${r.protocol} ma szansę przeżycia.`);
+    } else if (other) {
+      parts.push(`Wg ${other.protocol}: ${CATEGORY_LABEL[other.category]} — dla dziecka 9–12 lat zaliczany jest kolor z każdego z algorytmów.`);
     }
     explanation = parts.join(' ');
   }
@@ -337,7 +344,7 @@ export function debriefPatient(
     verdict,
     critical,
     steps: r.steps,
-    alternative: alternative && {
+    alternative: living ? undefined : alternative && {
       protocol: (r === alternative ? primary : alternative).protocol,
       expected: (r === alternative ? primary : alternative).category,
       steps: (r === alternative ? primary : alternative).steps,
@@ -347,18 +354,25 @@ export function debriefPatient(
     missedLifesaving: missed,
     notes: [...orderNote(r, verdict, actionsBefore), ...teachingNotes(p, r, actionsDone)],
     explanation,
-    points: patientPoints(verdict, critical, missed.length),
+    points: patientPoints(verdict, critical, missed.length, r.category),
   };
 }
 
-function patientPoints(verdict: Verdict, critical: boolean, missed: number): number {
-  const base = critical ? POINTS.critical : verdict === 'procedure' ? POINTS.guessed : POINTS[verdict];
+function patientPoints(verdict: Verdict, critical: boolean, missed: number, expected: TriageCategory): number {
+  const base = critical
+    ? POINTS.critical
+    : verdict === 'procedure'
+      ? POINTS.guessed
+      : verdict === 'over' && expected === 'black'
+        ? POINTS.overDead
+        : POINTS[verdict];
   return base + missed * POINTS.missedLifesaving;
 }
 
 /** Algorithm stage of an assessment action (bleeding control is done whenever found). */
+// Airway and rescue breaths are left out: in the apnoea branch JumpSTART checks the pulse before the breaths.
 const STAGE: Partial<Record<ExamActionId, number>> = {
-  breathing: 0, airway: 0, 'rescue-breaths': 0, pulse: 1, crt: 1, commands: 2, avpu: 2,
+  breathing: 0, pulse: 1, crt: 1, commands: 2, avpu: 2,
 };
 
 /** Not an error: the colour counts because the findings settled it, but the algorithm's order is faster. */
@@ -382,6 +396,9 @@ function teachingNotes(p: ScenarioPatient, r: TriageResult, actions: ExamActionI
   const out: string[] = [];
   if (p.cold && actions.includes('crt') && r.protocol === 'START') {
     out.push('Zimno: wychłodzona skóra fałszywie wydłuża nawrót kapilarny u każdego — perfuzję oceniaj tętnem promieniowym (modyfikacja START z 1996 r.). Nawrót kapilarny nie jest tu wiarygodny.');
+  }
+  if (r.category === 'yellow' && p.injuries.some(t => /^rana (brzucha|cięta boku)/.test(t))) {
+    out.push('Rana brzucha przy prawidłowych parametrach to wg START ŻÓŁTY, ale algorytm nie wykrywa krwawienia, które dopiero narasta. W segregacji wtórnej — pilna ocena chirurgiczna.');
   }
   if (r.steps.some(s => s.id === 'infant-injury')) {
     out.push(`Istotne obrażenia zewnętrzne u niemowlęcia wg JumpSTART: ${INFANT_SIGNIFICANT_INJURIES.join(', ')}.`);
