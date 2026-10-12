@@ -128,7 +128,7 @@ export function DebriefScreen() {
         {score.maxPoints !== undefined && (
           <p className="debrief-note muted">
             Punkty na poszkodowanego: poprawny kolor {POINTS.correct}, zgadnięty {POINTS.guessed}, zawyżony{' '}
-            {POINTS.over} (kolor żywego u zmarłego {POINTS.overDead}), zaniżony lub brak opaski 0, CZARNY u żywego {POINTS.critical}; każda pominięta czynność
+            {POINTS.over} (kolor żywego u zmarłego {POINTS.overDead}), zaniżony lub brak opaski 0, {salt ? 'CZARNY/SZARY' : 'CZARNY'} u żywego {POINTS.critical}; każda pominięta czynność
             ratująca życie {POINTS.missedLifesaving}.{salt && ` SALT: za każdego ocenionego przed pilniejszą grupą sortowania ${POINTS.sortOrder}.`} Czas nie wpływa na wynik.
           </p>
         )}
