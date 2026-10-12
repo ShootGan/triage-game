@@ -431,6 +431,7 @@ export const ARCHETYPES: readonly Archetype[] = [
       'Trzyma dłoń przy oku: „Pomóżcie, piecze jak ogień!"',
     ],
     poses: UPRIGHT,
+    weight: 0.4,
   },
   {
     id: 'g-dym',
