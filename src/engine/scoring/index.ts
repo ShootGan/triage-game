@@ -400,6 +400,9 @@ function teachingNotes(p: ScenarioPatient, r: TriageResult, actions: ExamActionI
   if (r.category === 'yellow' && p.injuries.some(t => /^rana (brzucha|cięta boku)/.test(t))) {
     out.push('Rana brzucha przy prawidłowych parametrach to wg START ŻÓŁTY, ale algorytm nie wykrywa krwawienia, które dopiero narasta. W segregacji wtórnej — pilna ocena chirurgiczna.');
   }
+  if (r.category !== 'black' && p.injuries.some(t => /długo przygniec/.test(t))) {
+    out.push('Długie przygniecenie kończyny: po uwolnieniu grozi zespół zmiażdżenia (hiperkaliemia, zaburzenia rytmu, nagłe zatrzymanie krążenia). Kolor wg START się nie zmienia, ale pacjent wymaga pilnej segregacji wtórnej i obserwacji.');
+  }
   if (r.steps.some(s => s.id === 'infant-injury')) {
     out.push(`Istotne obrażenia zewnętrzne u niemowlęcia wg JumpSTART: ${INFANT_SIGNIFICANT_INJURIES.join(', ')}.`);
   }

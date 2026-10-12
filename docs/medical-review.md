@@ -55,8 +55,13 @@ i pozy; `r-sledziona` nie dla ciężarnych; etykieta „w ciąży” tylko z wid
 kolor żywego u zmarłego 0.
 
 Otwarte: opisy bez cudzysłowu, które pokazują reakcję („otwiera oczy na głos”), nie są liczone jako dowód oddechu;
-część starszych wypowiedzi zdradza wynik badania; brakujące typy: uraz oka, rdzeń szyjny, zatrucie dymem/CO, zespół
-zmiażdżenia.
+część starszych wypowiedzi zdradza wynik badania.
+
+Dodane później (do weryfikacji): `g-oko` (ciało obce / rana powieki / pył / oparzenie spojówek — chodzi), `g-dym`
+(kaszel, ból głowy po dymie — chodzi), `y-rdzen-szyjny` (porażenie kończyn dolnych, ±osłabienie rąk, oddech
+przeponowy; parametry w normie START — ŻÓŁTY), `y-zmiazdzenie-dlugie` (długie przygniecenie kończyny; uwaga w debriefie
+o zespole zmiażdżenia), `r-dym-co` (zatrucie dymem/CO: AVPU V, nie wykonuje poleceń — CZERWONY). [do decyzji]
+`y-rdzen-szyjny`: wstrząs neurogenny (bradykardia, hipotensja) dawałby CZERWONY — tu świadomie wariant bez wstrząsu.
 
 ---
 

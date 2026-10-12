@@ -411,6 +411,40 @@ export const ARCHETYPES: readonly Archetype[] = [
     unique: true,
   },
 
+  {
+    id: 'g-oko',
+    pregnancy: 'ok',
+    category: 'green',
+    criterion: 'chodzi',
+    source: [],
+    ages: ADULTLIKE,
+    mechanisms: ['wybuch', 'komunikacyjny', 'kolejowy', 'zmiazdzenie', 'oparzenie'],
+    vitals: WALKER(),
+    injuries: [[
+      'drobny odłamek szkła w oku prawym, łzawienie, zasłania oko dłonią',
+      'rana powieki lewej, oko zaczerwienione, nie widzi na to oko',
+      { t: 'pył w obu oczach, silne pieczenie i łzawienie', mech: ['wybuch', 'zmiazdzenie'] },
+      { t: 'oparzenie spojówek — oczy zaczerwienione, światłowstręt', mech: ['oparzenie', 'wybuch'] },
+    ]],
+    remarks: [
+      '„Coś mi wpadło do oka… nic nie widzę na to oko!"',
+      'Trzyma dłoń przy oku: „Pomóżcie, piecze jak ogień!"',
+    ],
+    poses: UPRIGHT,
+  },
+  {
+    id: 'g-dym',
+    category: 'green',
+    criterion: 'chodzi',
+    source: [],
+    ages: ADULTLIKE,
+    mechanisms: ['oparzenie', 'wybuch'],
+    vitals: WALKER(),
+    injuries: [['kaszel po wdychaniu dymu, sadza na twarzy', 'ból głowy i nudności po pobycie w zadymionej klatce schodowej']],
+    remarks: ['Kaszle: „Wyszł{em|am} z dymu… głowa mi pęka."'],
+    poses: UPRIGHT,
+  },
+
   // ═════════════════════════ ŻÓŁCI ═════════════════════════
   {
     id: 'y-podudzie',
@@ -841,6 +875,48 @@ export const ARCHETYPES: readonly Archetype[] = [
     poses: ['sitting', 'back'],
   },
 
+  {
+    id: 'y-rdzen-szyjny',
+    category: 'yellow',
+    criterion: 'nie chodzi; oddech, perfuzja i stan świadomości prawidłowe',
+    source: [],
+    ages: ['teen', 'adult', 'elderly'],
+    mechanisms: ['upadek', 'komunikacyjny', 'kolejowy', 'tlum'],
+    vitals: STABLE(),
+    injuries: [
+      ['ból karku, nie rusza nogami i nie czuje dotyku poniżej pasa', 'ból karku, mrowienie i osłabienie obu rąk, nie rusza nogami'],
+      ['tkliwość karku przy delikatnym ucisku', 'oddycha głównie brzuchem, klatka piersiowa słabo się unosi'],
+    ],
+    remarks: [
+      'Leży nieruchomo, przerażon{y|a}: „Nie czuję nóg… Co się ze mną dzieje?"',
+      '„Nie ruszajcie mnie… kark… nie mogę poruszyć nogami."',
+    ],
+    poses: ['back'],
+    weight: 0.6,
+  },
+  {
+    id: 'y-zmiazdzenie-dlugie',
+    category: 'yellow',
+    criterion: 'nie chodzi; parametry prawidłowe (zespół zmiażdżenia — może się gwałtownie pogorszyć)',
+    source: [],
+    ages: ['teen', 'adult', 'elderly'],
+    mechanisms: ['zmiazdzenie', 'wybuch', 'kolejowy'],
+    vitals: STABLE(),
+    injuries: [
+      [
+        'kończyna dolna prawa długo przygniecona gruzem — obrzęk, zasinienie, osłabione czucie',
+        'kończyna dolna lewa długo przygniecona — napięta, obrzęknięta, z pęcherzami',
+        { t: 'obie nogi długo przygniecione fotelem wagonu — obrzęk, brak czucia w stopach', mech: ['kolejowy'] },
+      ],
+    ],
+    remarks: [
+      { t: '„Leżał{em|am} pod tym gruzem chyba od rana… Nogi jakby nie moje."', mech: ['zmiazdzenie', 'wybuch'] },
+      '„Dopiero co mnie wyciągnęli… nie czuję stopy."',
+    ],
+    poses: ['back'],
+    weight: 0.7,
+  },
+
   // ═════════════════════════ CZERWONI — START ═════════════════════════
   {
     id: 'r-tachypnoe',
@@ -1179,6 +1255,23 @@ export const ARCHETYPES: readonly Archetype[] = [
       'Odpycha ratownika, nie rozumie sytuacji: „Muszę iść do pracy, puśćcie mnie!"',
     ],
     poses: ['back', 'sitting'],
+    weight: 0.8,
+  },
+
+  {
+    id: 'r-dym-co',
+    category: 'red',
+    criterion: 'START: nie wykonuje prostych poleceń (zatrucie dymem / tlenkiem węgla)',
+    source: [],
+    ages: ADULTLIKE,
+    mechanisms: ['oparzenie', 'wybuch'],
+    vitals: { walk: false, breathing: 'spontaneous', rate: [16, 26], pulse: true, crt: [1.5, 2], avpu: 'V', obeys: false },
+    injuries: [
+      ['sadza wokół nosa i ust, bez oparzeń skóry', 'okopcona twarz, osmalone ubranie, bez widocznych ran'],
+      ['wymiotował{|a} wg świadków', 'wyniesion{y|a} z zadymionego mieszkania przez sąsiadów'],
+    ],
+    remarks: ['Na głos otwiera oczy, mamrocze i zasypia.', 'Senn{y|a}, na wołanie unosi powieki, nie odpowiada na pytania.'],
+    poses: ['back'],
     weight: 0.8,
   },
 

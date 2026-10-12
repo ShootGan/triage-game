@@ -610,3 +610,10 @@ describe('rana brzucha', () => {
     expect(debriefPatient(p, 'yellow', undefined).notes?.join(' ')).toMatch(/pilna ocena chirurgiczna/);
   });
 });
+
+describe('zespół zmiażdżenia', () => {
+  it('długo przygniecona kończyna → uwaga o segregacji wtórnej', () => {
+    const p = patient('z', {}, { injuries: ['kończyna dolna prawa długo przygniecona gruzem — obrzęk, zasinienie, osłabione czucie'] });
+    expect(debriefPatient(p, 'yellow', undefined).notes?.join(' ')).toMatch(/zespół zmiażdżenia/);
+  });
+});

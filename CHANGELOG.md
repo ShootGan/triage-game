@@ -30,6 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Yellow patients with an abdominal wound get a note about urgent surgical assessment.
 - Casualty texts reviewed: remarks fit every injury variant and pose, fewer texts give away exam
   results, clearer terms (open chest wound, tension pneumothorax). Thigh and lower-leg fractures are rarer.
+- More casualty types: eye injuries and smoke inhalation (walking, green), cervical spinal cord
+  injury and long limb entrapment (yellow; the debrief warns about crush syndrome), smoke /
+  carbon monoxide poisoning with reduced consciousness (red).
 - Random codes have fewer walking-wounded and more patients who need decisions: green 25–40%
   (was 40–55%), yellow 25–35%, red 20–30%, black 4–12%. Existing codes give a different set.
 
