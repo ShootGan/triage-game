@@ -373,6 +373,7 @@ a { color: var(--accent); }
 .missed { color: #ff8a8a; }
 .teaching-note { color: var(--accent); }
 .pd-verdict { display: flex; flex-wrap: wrap; gap: 4px 6px; min-width: 0; }
+.pd-points { font-family: var(--font-head); font-size: 12px; padding: 4px 0; color: var(--muted); white-space: nowrap; }
 .verdict.critical { background: #ff6b6b; color: var(--ink); border-color: #ff6b6b; }
 .debrief-note { margin: 10px 0 0; font-size: 17px; line-height: 1.2; }
 .pd-detail { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; padding: 0 10px 10px; border-top: 2px dashed var(--panel); }

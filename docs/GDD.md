@@ -149,9 +149,14 @@ Czas = rzeczywisty stoper od wjazdu na miejsce (czynności nie doliczają sztucz
 
 ## 7. Ocena i debrief
 
-- Trafność (% poprawnych opasek)
-- **Overtriage** (zawyżenie) i **undertriage** (zaniżenie — cięższy błąd, większa kara)
-- Średni czas na pacjenta (cel: ≤ 30–60 s)
+- **Liczą się ustalenia, nie kolejność**: kolor jest zaliczony, gdy to, co gracz ustalił przed opaską, rozstrzyga go
+  wg algorytmu (np. brak tętna u oddychającego → CZERWONY bez liczenia oddechów). ŻÓŁTY wymaga wykluczenia wszystkich
+  kryteriów czerwonych. Kolor trafiony bez rozstrzygających ustaleń = „zgadnięty". Inna kolejność niż w algorytmie —
+  tylko uwaga dydaktyczna. Silnik: `scoring/findings.ts` (sprawdza wszystkie stany pacjenta zgodne z ustaleniami).
+- **Punkty** na poszkodowanego (`scoring/points.ts`): poprawny 10, zgadnięty 5, zawyżony 3, zaniżony / brak opaski 0,
+  CZARNY u żywego −5; każda pominięta czynność ratująca życie −3. Wynik = % maksimum.
+- Trafność (% poprawnych opasek) — statystyka dodatkowa
+- Średni czas na pacjenta — tylko informacyjnie, **bez wpływu na wynik**
 - Pominięte czynności ratujące życie (niezatamowany krwotok, nieudrożnione drogi oddechowe)
 - Zbędne czynności (np. pełne badanie urazowe w trakcie segregacji)
 - Dla każdego pacjenta: ścieżka gracza vs poprawna ścieżka w algorytmie, z zaznaczonym krokiem błędu

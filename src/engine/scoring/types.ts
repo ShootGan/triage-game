@@ -2,11 +2,9 @@ import type { ExamActionId } from '../exam/types';
 import type { DecisionStep, Protocol, TriageCategory } from '../triage';
 
 /**
- * - `correct`   — właściwy kolor i wymagane kroki algorytmu wykonane przed oznaczeniem;
- * - `procedure` — kolor właściwy, ale przed oznaczeniem pominięto krok algorytmu, który mógł
- *                 zmienić kategorię (np. CZARNY bez udrożnienia dróg oddechowych) — liczony jako błąd;
- *                 also a correct colour without the assessment that decides it, or with major
- *                 bleeding left uncontrolled;
+ * - `correct`   — right colour, and the findings established before the tag settle it (in any order);
+ * - `procedure` — right colour guessed: the findings before the tag were consistent with another colour
+ *                 (e.g. BLACK without opening the airway, YELLOW without checking commands);
  * - `over` / `under` — kolor zawyżony / zaniżony;
  * - `untagged`  — brak opaski.
  */
@@ -45,6 +43,8 @@ export interface PatientDebrief {
   notes?: string[];
   /** Krótkie wyjaśnienie błędu po polsku (puste, gdy poprawnie). */
   explanation: string;
+  /** Points for this patient (see `POINTS`); optional for compatibility with mock scores. */
+  points?: number;
 }
 
 export interface GameScore {
@@ -58,6 +58,11 @@ export interface GameScore {
   under: number;
   untagged: number;
   accuracyPct: number;
+  /** Sum of patient points (may be negative before clamping in `scorePct`). Optional for mock scores. */
+  points?: number;
+  maxPoints?: number;
+  /** Points as % of the maximum, clamped at 0. */
+  scorePct?: number;
   elapsedSec: number;
   avgSecPerPatient: number;
   patients: PatientDebrief[];

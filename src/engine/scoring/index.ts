@@ -5,15 +5,20 @@ import {
   CATEGORY_LABEL,
   INFANT_SIGNIFICANT_INJURIES,
   triage,
+  triageJumpStart,
+  triageStart,
   type DecisionStep,
   type Protocol,
   type TriageCategory,
   type TriageResult,
   type Vitals,
 } from '../triage';
+import { isDetermined, knownFindings } from './findings';
+import { POINTS } from './points';
 import type { GameScore, PatientDebrief, TagEvent, Verdict } from './types';
 
 export type * from './types';
+export { POINTS };
 
 const RANK: Record<Exclude<TriageCategory, 'black'>, number> = { green: 1, yellow: 2, red: 3 };
 
@@ -215,8 +220,8 @@ function procedureGaps(
 }
 
 /**
- * All gaps before the tag: apnoea-branch steps (with their own sentences), uncontrolled major
- * bleeding, then any assessment step that decides the colour but was skipped.
+ * Why a correct colour was a guess: apnoea-branch steps (with their own sentences), then the
+ * algorithm-path assessments that were skipped. Only called when the findings didn't settle the colour.
  */
 function allGaps(
   p: ScenarioPatient,
@@ -226,13 +231,6 @@ function allGaps(
   actionsBefore: ExamActionId[],
 ): ProcedureGap[] {
   const gaps = procedureGaps(p, r, given, atTag, actionsBefore);
-  if (p.majorBleeding && r.category !== 'black' && !atTag.bleedingControlled) {
-    gaps.push({
-      action: 'bleeding',
-      sentence:
-        'Oznaczono bez zatamowania masywnego krwotoku — wg START/JumpSTART tamowanie krwotoku to czynność ratująca życie, wykonywana w trakcie oceny, przed nadaniem kategorii.',
-    });
-  }
   const covered = new Set(gaps.map(g => g.action));
   // Apnoea branch: breaths given before opening the airway have no effect, so they don't count.
   const effective = actionsBefore.filter(a => a !== 'rescue-breaths' || atTag.rescueBreathsGiven);
@@ -243,10 +241,10 @@ function allGaps(
 }
 
 function procedureExplanation(gaps: ProcedureGap[]): string {
+  const guess = 'Kolor zgodny z algorytmem, ale ustalenia sprzed oznaczenia go nie rozstrzygały — trafienie „na ślepo".';
+  if (!gaps.length) return guess;
   const [first, ...rest] = gaps;
-  if (!first.sentence) {
-    return `Kolor zgodny z algorytmem, ale przed oznaczeniem nie wykonano: ${gaps.map(g => ACTION_NOUN[g.action]).join(', ')}. Trafienie bez oceny nie jest zaliczane.`;
-  }
+  if (!first.sentence) return `${guess} Nie wykonano: ${gaps.map(g => ACTION_NOUN[g.action]).join(', ')}.`;
   const parts = [first.sentence];
   if (rest.length) parts.push(`Przed oznaczeniem nie wykonano też: ${rest.map(g => ACTION_NOUN[g.action]).join(', ')}.`);
   parts.push('Kolor zgodny z algorytmem, ale ustalony bez wymaganego kroku.');
@@ -305,10 +303,10 @@ export function debriefPatient(
   let explanation = '';
   const critical = given === 'black' && r.category !== 'black';
   if (verdict === 'correct' && given !== null) {
-    const gaps = allGaps(p, r, given, atTag, actionsBefore);
-    if (gaps.length) {
+    const algorithm = r.protocol === 'START' ? triageStart : triageJumpStart;
+    if (!isDetermined(algorithm, p.vitals, knownFindings(p, actionsBefore), given)) {
       verdict = 'procedure';
-      explanation = procedureExplanation(gaps);
+      explanation = procedureExplanation(allGaps(p, r, given, atTag, actionsBefore));
     }
   } else if (verdict !== 'correct') {
     const last = r.steps[r.steps.length - 1];
@@ -325,6 +323,7 @@ export function debriefPatient(
     }
     explanation = parts.join(' ');
   }
+  const missed = missedLifesaving(p, ex, atTag, given);
   if (critical) {
     explanation = `BŁĄD KRYTYCZNY: CZARNY u poszkodowanego z szansą przeżycia (wg ${r.protocol} ${CATEGORY_LABEL[r.category]}). ${explanation}`;
   }
@@ -345,10 +344,32 @@ export function debriefPatient(
     },
     actionsDone,
     actionsBeforeTag: given === null ? null : tagIdx,
-    missedLifesaving: missedLifesaving(p, ex, atTag, given),
-    notes: teachingNotes(p, r, actionsDone),
+    missedLifesaving: missed,
+    notes: [...orderNote(r, verdict, actionsBefore), ...teachingNotes(p, r, actionsDone)],
     explanation,
+    points: patientPoints(verdict, critical, missed.length),
   };
+}
+
+function patientPoints(verdict: Verdict, critical: boolean, missed: number): number {
+  const base = critical ? POINTS.critical : verdict === 'procedure' ? POINTS.guessed : POINTS[verdict];
+  return base + missed * POINTS.missedLifesaving;
+}
+
+/** Algorithm stage of an assessment action (bleeding control is done whenever found). */
+const STAGE: Partial<Record<ExamActionId, number>> = {
+  breathing: 0, airway: 0, 'rescue-breaths': 0, pulse: 1, crt: 1, commands: 2, avpu: 2,
+};
+
+/** Not an error: the colour counts because the findings settled it, but the algorithm's order is faster. */
+function orderNote(r: TriageResult, verdict: Verdict, actionsBefore: ExamActionId[]): string[] {
+  if (verdict !== 'correct') return [];
+  const stages = actionsBefore.map(a => STAGE[a]).filter((x): x is number => x !== undefined);
+  if (stages.every((x, i) => i === 0 || x >= stages[i - 1])) return [];
+  const mental = r.protocol === 'START' ? 'proste polecenia' : 'AVPU';
+  return [
+    `Kolejność badania inna niż w ${r.protocol} (oddech → perfuzja → ${mental}). Kolor zaliczony, bo ustalenia go rozstrzygały — ale zaczynaj od oddechu: to najszybsza ocena i najczęściej sama rozstrzyga.`,
+  ];
 }
 
 /** Child who may be triaged with either algorithm (JumpSTART age limit differs between sources). */
@@ -392,6 +413,8 @@ export function scoreGame(
   const total = debriefs.length;
   const correct = count('correct');
   const tagged = total - count('untagged');
+  const points = debriefs.reduce((sum, d) => sum + (d.points ?? 0), 0);
+  const maxPoints = total * POINTS.correct;
   return {
     total,
     correct,
@@ -401,6 +424,9 @@ export function scoreGame(
     under: count('under'),
     untagged: count('untagged'),
     accuracyPct: total ? Math.round((correct / total) * 100) : 0,
+    points,
+    maxPoints,
+    scorePct: maxPoints ? Math.round((Math.max(0, points) / maxPoints) * 100) : 0,
     elapsedSec,
     avgSecPerPatient: tagged ? elapsedSec / tagged : 0,
     patients: debriefs,

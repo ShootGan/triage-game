@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Scoring judges what you found out, not the order you did it in: a colour counts when the findings
+  before the tag settle it (e.g. no radial pulse in a breathing patient is RED without counting breaths).
+  A right colour without such findings is "guessed" (was "procedure"); a different order than the
+  algorithm only adds a teaching note.
+- Debrief shows a points score: right 10, guessed 5, over 3, under/untagged 0, BLACK for a survivor −5,
+  each missed life-saving intervention −3. Accuracy stays as a stat; time doesn't affect the score.
+- Uncontrolled major bleeding no longer voids a right colour — it costs points as a missed intervention.
 - Random codes have fewer walking-wounded and more patients who need decisions: green 25–40%
   (was 40–55%), yellow 25–35%, red 20–30%, black 4–12%. Existing codes give a different set.
 

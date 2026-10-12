@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { POINTS } from '../engine/scoring/points';
 import type { PatientDebrief, Verdict } from '../engine/scoring/types';
 import { CATEGORY_LABEL, type TriageCategory } from '../engine/triage';
 import { CATEGORY_COLOR, CATEGORY_ORDER, formatClock } from '../game/constants';
@@ -9,7 +10,7 @@ import './code.css';
 
 const VERDICT_LABEL: Record<Verdict, string> = {
   correct: 'POPRAWNIE',
-  procedure: 'PROCEDURA',
+  procedure: 'ZGADNIĘTY',
   over: 'ZAWYŻONO',
   under: 'ZANIŻONO',
   untagged: 'NIEOZNACZONY',
@@ -17,8 +18,8 @@ const VERDICT_LABEL: Record<Verdict, string> = {
 
 /** Pełne znaczenie werdyktu (legenda, podpowiedź na plakietce). */
 const VERDICT_HINT: Record<Verdict, string> = {
-  correct: 'kolor i kroki algorytmu przed opaską',
-  procedure: 'kolor poprawny, ale bez wymaganej oceny lub czynności (błąd)',
+  correct: 'kolor rozstrzygnięty tym, co ustalono przed opaską (kolejność dowolna)',
+  procedure: 'kolor poprawny, ale ustalenia go nie rozstrzygały — połowa punktów',
   over: 'kolor zawyżony',
   under: 'kolor zaniżony',
   untagged: 'brak opaski',
@@ -83,12 +84,15 @@ export function DebriefScreen() {
 
         <div className="summary">
           <div className="big-stat">
-            <span className="big-num">{Math.round(score.accuracyPct)}%</span>
-            <span className="muted">trafność</span>
+            <span className="big-num">{Math.round(score.scorePct ?? score.accuracyPct)}%</span>
+            <span className="muted">
+              {score.maxPoints ? `wynik · ${score.points} / ${score.maxPoints} pkt` : 'trafność'}
+            </span>
           </div>
           <div className="stats">
             <Stat label="Poprawne" value={`${score.correct} / ${score.total}`} cls="ok" />
-            <Stat label="Kolor OK, niepełna procedura" value={score.procedure ?? 0} cls="procedure" />
+            <Stat label="Trafność" value={`${Math.round(score.accuracyPct)}%`} />
+            <Stat label="Kolor zgadnięty (bez rozstrzygających ustaleń)" value={score.procedure ?? 0} cls="procedure" />
             <Stat label="Błędy krytyczne (CZARNY u żywego)" value={score.critical ?? 0} cls="under" />
             <Stat label="Zawyżone (overtriage)" value={score.over} cls="over" />
             <Stat label="Zaniżone (undertriage)" value={score.under} cls="under" />
@@ -118,6 +122,14 @@ export function DebriefScreen() {
             </span>
           ))}
         </div>
+
+        {score.maxPoints !== undefined && (
+          <p className="debrief-note muted">
+            Punkty na poszkodowanego: poprawny kolor {POINTS.correct}, zgadnięty {POINTS.guessed}, zawyżony{' '}
+            {POINTS.over}, zaniżony lub brak opaski 0, CZARNY u żywego {POINTS.critical}; każda pominięta czynność
+            ratująca życie {POINTS.missedLifesaving}. Czas nie wpływa na wynik.
+          </p>
+        )}
 
         {score.patients.some((p) => p.protocol === 'JumpSTART' || p.alternative) && (
           <p className="debrief-note muted">
@@ -182,6 +194,7 @@ function PatientRow({ p }: { p: PatientDebrief }) {
               KRYTYCZNY
             </span>
           )}
+          {p.points !== undefined && <span className="pd-points">{p.points > 0 ? `+${p.points}` : p.points} pkt</span>}
         </span>
         <span className="toggle">{open ? '▲' : '▼'}</span>
       </div>
@@ -263,7 +276,7 @@ function PatientRow({ p }: { p: PatientDebrief }) {
                   ? 'przed jakąkolwiek czynnością'
                   : tagAt >= p.actionsDone.length
                     ? 'po wszystkich czynnościach'
-                    : `po ${tagAt}. czynności (późniejsze nie liczą się do procedury)`}
+                    : `po ${tagAt}. czynności (późniejsze nie liczą się do oceny)`}
                 .
               </p>
             )}
