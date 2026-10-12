@@ -2,12 +2,12 @@
 
 exports[`determinizm > stała wartość dla znanego kodu (wykrywa przypadkową zmianę generatora) 1`] = `
 "Dziewczynka, ok. 10 lat (mieszkanka kamienicy)|29|-7.5,-0.8
-Nastolatek, ok. 15 lat (mieszkaniec parteru)|32|1,0.7
-Chłopiec, ok. 4 lat|31|1.5,-1.3
+Nastolatek, ok. 15 lat (mieszkaniec kamienicy)|34|1,0.7
+Chłopiec, ok. 4 lat (mieszkaniec kamienicy)|31|1.5,-1.3
 Mężczyzna, ok. 70 lat (mieszkaniec kamienicy)|0|-1,1.2
-Kobieta, ok. 18 lat (mieszkanka parteru)|21|10,4.5
-Dziewczynka, ok. 6 lat|20|4.5,-3.6
-Kobieta, ok. 31 lat (sąsiadka z naprzeciwka)|30|-10,0.5
+Kobieta, ok. 18 lat (sąsiadka z naprzeciwka)|21|10,4.5
+Dziewczynka, ok. 6 lat (mieszkanka kamienicy)|20|4.5,-3.6
+Kobieta, ok. 31 lat (sąsiadka z naprzeciwka)|21|-10,0.5
 Mężczyzna, ok. 56 lat (mieszkaniec III piętra)|21|5.5,4
 Mężczyzna, ok. 21 lat (dozorca)|22|4.5,-1
 Mężczyzna, ok. 65 lat (przechodzień)|17|-1,3.2
@@ -18,15 +18,15 @@ exports[`zderzenie autobusów: ciężarne, dzieci, obsługa > determinizm i odci
 "Dziewczynka, ok. 9 lat|27|-2.2,6.8
 Kobieta w ciąży, ok. 34 lat (ok. 26. tydzień)|19|-11.5,8
 Kobieta w ciąży, ok. 36 lat (ok. 21. tydzień)|20|-5.5,-2.5
-Kobieta w ciąży, ok. 38 lat (ok. 35. tydzień)|27|10,6.5
+Kobieta w ciąży, ok. 38 lat (ok. 35. tydzień)|28|10,6.5
 Mężczyzna, ok. 27 lat (kierowca autobusu szkolnego)|21|1.5,6.5
 Dziewczynka, ok. 8 lat|20|-8.6,-2.4
-Kobieta w ciąży, ok. 32 lat (ok. 26. tydzień)|23|10.5,3
+Kobieta w ciąży, ok. 33 lat (ok. 26. tydzień)|23|10.5,3
 Kobieta w ciąży, ok. 28 lat (ok. 38. tydzień)|24|-8,4.2
 Dziewczynka, ok. 9 lat|27|-1,-7.5
-Mężczyzna, ok. 46 lat (kierowca autokaru)|8|11.5,-4.5
+Mężczyzna, ok. 46 lat (kierowca autokaru)|25|11.5,-4.5
 Chłopiec, ok. 8 lat|0|3,3.2
-Kobieta w ciąży, ok. 38 lat (ok. 38. tydzień)|26|-1.5,4.2
+Kobieta w ciąży, ok. 38 lat (ok. 38. tydzień)|11|-1.5,4.2
 Chłopiec, ok. 7 lat|0|-1.8,-3.8
 Mężczyzna, ok. 53 lat (wychowawca klasy)|20|10.6,0.5
 Chłopiec, ok. 6 lat|11|-7,-4.5
@@ -34,10 +34,10 @@ Kobieta, ok. 43 lat (położna ze szkoły rodzenia)|18|0.5,-4.5
 Dziewczynka, ok. 7 lat|21|-10.8,4.6
 Kobieta w ciąży, ok. 19 lat (ok. 27. tydzień)|23|-11,0.5
 Dziewczynka, ok. 7 lat|29|-9.5,-6.5
-Kobieta w ciąży, ok. 20 lat (ok. 27. tydzień)|18|-4,7.6
-Chłopiec, ok. 6 lat|23|9.6,-7.2
+Kobieta w ciąży, ok. 20 lat (ok. 27. tydzień)|14|-4,7.6
+Chłopiec, ok. 6 lat|20|9.6,-7.2
 Chłopiec, ok. 10 lat|40|8.2,0.4
 Dziewczynka, ok. 8 lat|0|-11,-2.5
 Chłopiec, ok. 7 lat|30|-3.5,2.7
-Dziewczynka, ok. 6 lat|19|-5.2,4.4"
+Dziewczynka, ok. 6 lat|17|-5.2,4.4"
 `;

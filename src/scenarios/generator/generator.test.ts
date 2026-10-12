@@ -447,3 +447,17 @@ describe('autobus: kierowca uwięziony w aucie', () => {
     }
   });
 });
+
+describe('różnorodność obrażeń', () => {
+  it.each(LAYOUTS.map((l) => [l.id] as const))('%s: żaden niezielony archetyp nie pojawia się więcej niż 2 razy w jednym kodzie', (id) => {
+    const rng = createRng(`diversity|${id}`);
+    for (let i = 0; i < 100; i++) {
+      const code = randomCode(id, () => rng.next());
+      const counts = new Map<string, number>();
+      for (const a of generateDetailed(id, code).archetypeIds ?? []) {
+        if (archetypeById(a)!.category !== 'green') counts.set(a, (counts.get(a) ?? 0) + 1);
+      }
+      for (const [a, n] of counts) expect(n, `${code} ${a}`).toBeLessThanOrEqual(2);
+    }
+  });
+});

@@ -28,6 +28,30 @@ Wniosek dodany do debriefu: JumpSTART często zaniża kategorię u ciężko rann
 
 ---
 
+## 0a. Zmiany po przeglądzie (2026-10-12) — do weryfikacji
+
+**Punktacja (zastępuje S3, S4):** kolor jest zaliczony, gdy ustalenia sprzed opaski go rozstrzygają — w dowolnej kolejności
+(np. brak tętna promieniowego u oddychającego → CZERWONY bez liczenia oddechów; tętno promieniowe obecne albo CRT ≤ 2 s
+zamiennie). Kolor bez rozstrzygających ustaleń = „zgadnięty” (połowa punktów). Niezatamowany masywny krwotok nie
+unieważnia koloru, tylko kosztuje punkty jako pominięta czynność ratująca życie. Czas nie wpływa na wynik.
+
+**Nowe archetypy (teksty i widełki do sprawdzenia):**
+- ŻÓŁCI: `y-kostka` (złamanie stawu skokowego), `y-kolano` (zwichnięcie kolana / rzepki), `y-biodro-zwichniete`
+  (tylne zwichnięcie biodra — „deska rozdzielcza”), `y-piety` (złamanie kości piętowych + ból lędźwiowy po upadku na nogi),
+  `y-odlamek-uda` (ciało obce wbite w kończynę), `y-rana-brzucha` (rana powłok, brzuch miękki), `y-oparzenia-stop`,
+  `y-wstrzasnienie` (wymioty, zawroty; A, wykonuje polecenia), dzieci: `y-dziecko-oparzenie`, `y-dziecko-noga`.
+- CZERWONI START: `r-odma` (odma prężna, oddech > 30), `r-rana-ssaca` (otwarta odma, oddech > 30),
+  `r-oparzenie-drog-oddechowych` (oddech > 30), `r-sledziona` (krwawienie do jamy brzusznej — brak tętna promieniowego,
+  CRT > 2 s), `r-amputacja` (amputacja urazowa z masywnym krwotokiem), `r-splatany` (przytomny „A”, ale splątany —
+  nie wykonuje poleceń). Masywny krwotok (`r-krwotok`, `r-krwotok-V`) ma teraz też lokalizacje: ramię, podudzie,
+  przedramię, dół podkolanowy.
+- CZARNI: `b-zmiazdzenie-tulowia`, `b-wyrzucony`, `b-oparzenia` (bezdech mimo udrożnienia).
+
+[do decyzji] `y-rana-brzucha` — rana penetrująca brzucha przy prawidłowych parametrach jest wg START ŻÓŁTA; w segregacji
+wtórnej wymaga pilnej oceny chirurgicznej. `r-amputacja` — zakładamy brak tętna promieniowego (wstrząs krwotoczny).
+
+---
+
 ## 1. Podsumowanie — 5 najważniejszych problemów
 
 1. **KRYTYCZNY — CZARNY bez wykonania procedury liczy się jako „POPRAWNIE”** (`scoring/index.ts:10–17`). Potwierdzone w grze: kierowca z bezdechem (z17) oznaczony jako CZARNY bez udrożnienia dróg oddechowych dostaje „POPRAWNIE” i tylko ostrzeżenie. Prawidłowa reguła jest w sekcji 3 (S1). Ten błąd poprawia już równoległy agent.

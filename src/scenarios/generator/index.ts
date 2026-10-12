@@ -525,9 +525,12 @@ function tryGenerate(layout: ScenarioLayout, code: string, rng: Rng): Generated 
       if (groups.length === 0) return null;
       group = rng.weighted(groups, (grp) => layout.ageWeights[grp] ?? 0);
     }
-    const cands = candidatesFor(group);
-    if (cands.length === 0) return null;
-    const arch = rng.weighted(cands, (a) => (a.weight ?? 1) * Math.pow(0.3, used.get(a.id) ?? 0));
+    const all = candidatesFor(group);
+    if (all.length === 0) return null;
+    // Never a third copy of the same casualty while any alternative remains.
+    const fresh = all.filter((a) => (used.get(a.id) ?? 0) < 2);
+    const cands = fresh.length ? fresh : all;
+    const arch = rng.weighted(cands, (a) => (a.weight ?? 1) * Math.pow(0.15, used.get(a.id) ?? 0));
     used.set(arch.id, (used.get(arch.id) ?? 0) + 1);
     if (group === 'infant') infants++;
 
