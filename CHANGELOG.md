@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Random codes have fewer walking-wounded and more patients who need decisions: green 25–40%
+  (was 40–55%), yellow 25–35%, red 20–30%, black 4–12%. Existing codes give a different set.
+
 ## [0.4.1] - 2026-10-11
 
 ### Changed

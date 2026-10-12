@@ -39,12 +39,16 @@ export const CODE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
 export const CODE_LENGTH = 4;
 export const TEMPLATE_SUFFIX = 'WZOR';
 
-/** Realistyczny rozkład kategorii w zdarzeniu masowym (ułamki liczby poszkodowanych). */
+/**
+ * Category mix in random codes (fractions of the casualty count). Deliberately heavier than a typical
+ * real incident (where most casualties walk): green patients need no decisions beyond "walkers to me",
+ * so the training value is in yellow/red/black.
+ */
 export const CATEGORY_MIX: Record<TriageCategory, Range> = {
-  green: [0.4, 0.55],
-  yellow: [0.2, 0.3],
-  red: [0.15, 0.25],
-  black: [0, 0.1],
+  green: [0.25, 0.4],
+  yellow: [0.25, 0.35],
+  red: [0.2, 0.3],
+  black: [0.04, 0.12],
 };
 /** Minimum chodzących zielonych (polecenie „kto może iść…" ma sens) i czerwonych. */
 export const MIN_WALKING_GREEN = 2;
