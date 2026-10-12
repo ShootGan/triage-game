@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { CATEGORY_COLOR, CATEGORY_ORDER, formatClock } from '../game/constants';
-import { MODE_LABEL, timeLimitEnforced, useGame } from '../game/store';
+import { CATEGORY_COLOR, categoriesFor, formatClock } from '../game/constants';
+import { gameProtocol, MODE_LABEL, timeLimitEnforced, useGame } from '../game/store';
 import { CATEGORY_LABEL, type TriageCategory } from '../engine/triage';
 
 export function Hud() {
@@ -12,6 +12,10 @@ export function Hud() {
   const walkersGroupTagged = useGame((s) => s.walkersGroupTagged);
   const callWalkers = useGame((s) => s.callWalkers);
   const tagWalkersGreen = useGame((s) => s.tagWalkersGreen);
+  const waversCalled = useGame((s) => s.waversCalled);
+  const callWavers = useGame((s) => s.callWavers);
+  const protocol = useGame(gameProtocol);
+  const salt = protocol === 'SALT';
   const endTriage = useGame((s) => s.endTriage);
 
   const counts: Record<TriageCategory, number> = { red: 0, yellow: 0, green: 0, black: 0, grey: 0 };
@@ -36,7 +40,7 @@ export function Hud() {
       </div>
 
       <div className="hud-counts">
-        {CATEGORY_ORDER.map((c) => (
+        {categoriesFor(protocol).map((c) => (
           <span key={c.id} className="count" title={CATEGORY_LABEL[c.id]}>
             <span className={`chip chip-${c.id}`} style={{ background: CATEGORY_COLOR[c.id] }}>
               {c.short}
@@ -51,7 +55,10 @@ export function Hud() {
         </span>
       </div>
 
-      <div className="hud-mode">{MODE_LABEL[mode]}</div>
+      <div className="hud-mode">
+        {MODE_LABEL[mode]}
+        {salt && ' · SALT'}
+      </div>
 
       <div className="hud-actions">
         {!walkersCalled ? (
@@ -59,6 +66,19 @@ export function Hud() {
             <span className="lbl-long">Kto może chodzić — do mnie!</span>
             <span className="lbl-short">Chodzący — do mnie!</span>
           </button>
+        ) : salt ? (
+          // SALT sort: walkers are assessed last, one by one; then the still ones are found by "wave".
+          !waversCalled ? (
+            <button className="btn" onClick={callWavers} title="Kto mnie słyszy — pomachaj ręką!">
+              <span className="lbl-long">Kto mnie słyszy — pomachaj ręką!</span>
+              <span className="lbl-short">Pomachaj ręką!</span>
+            </button>
+          ) : (
+            <span className="hud-note">
+              <span className="lbl-long">Sortowanie: nieruchomi (1) → machający (2) → chodzący (3)</span>
+              <span className="lbl-short">Sortowanie ✓</span>
+            </span>
+          )
         ) : !walkersGroupTagged ? (
           <button className="btn green" onClick={tagWalkersGreen} title="Oznacz grupę jako ZIELONI">
             <span className="lbl-long">Oznacz grupę jako ZIELONI</span>

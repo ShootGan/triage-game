@@ -34,6 +34,8 @@ export interface IGameView {
   onFrame(cb: () => void): void;
   /** Komenda „Kto może chodzić — do mnie!": chodzący (vitals.canWalk) wstają i idą do punktu zbiórki. */
   sendWalkersToCollectionPoint(): void;
+  /** SALT sort: these casualties raise an arm and wave (they can hear and move purposefully). */
+  wave(ids: string[]): void;
   /** Zatamowany krwotok: kałuża przestaje rosnąć, na kończynie pojawia się opaska uciskowa. */
   setBleedingControlled(id: string): void;
   /** Opcjonalne podświetlenie kategorii na postaci (np. kolorowa opaska na ramieniu). */

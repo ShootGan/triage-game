@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useGame } from '../game/store';
+import { gameProtocol, useGame } from '../game/store';
 import { AlgorithmHint } from './AlgorithmHint';
 
 /**
@@ -12,6 +12,7 @@ export function HintPanel() {
   const toggle = useGame((s) => s.toggleHint);
   const patient = useGame((s) => s.scenario?.patients.find((p) => p.id === (s.selectedId ?? s.approachingId)) ?? null);
   const exam = useGame((s) => (patient ? s.exams[patient.id] : undefined));
+  const salt = useGame((s) => gameProtocol(s) === 'SALT');
 
   useEffect(() => {
     if (mode !== 'learn') return;
@@ -32,7 +33,7 @@ export function HintPanel() {
       </button>
       {open && (
         <div className="hint-body">
-          <AlgorithmHint patient={patient} exam={exam} />
+          <AlgorithmHint patient={patient} exam={exam} salt={salt} />
         </div>
       )}
     </aside>

@@ -34,3 +34,21 @@ describe('walidator scenariuszy', () => {
     expect(scenarioIssues(broken).some((i) => i.includes('tętno obecne, ale CRT > 2 s'))).toBe(true);
   });
 });
+
+describe('SALT: szybki oddech u chodzących', () => {
+  it('chodzący z oddechem poza normą ma jawną decyzję o duszności (np. hiperwentylacja → salt.distress = false)', async () => {
+    const { respiratoryDistress } = await import('../engine/triage');
+    const { ARCHETYPES } = await import('./generator/archetypes');
+    for (const a of ARCHETYPES.filter((x) => x.vitals.walk)) {
+      const r = a.vitals.rate;
+      const fast = Array.isArray(r) && (r[1] > 30 || r[0] < 10);
+      if (fast) expect(a.salt?.distress, a.id).toBeDefined();
+    }
+    const { LAYOUTS } = await import('./generator/layouts');
+    for (const l of LAYOUTS) {
+      for (const p of l.template.patients) {
+        if (p.vitals.canWalk && respiratoryDistress(p.vitals, p.appearsChild)) expect(p.salt?.distress, `${l.id} ${p.id}`).toBeDefined();
+      }
+    }
+  });
+});

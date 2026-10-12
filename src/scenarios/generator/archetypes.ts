@@ -268,6 +268,8 @@ export const ARCHETYPES: readonly Archetype[] = [
     ages: ['teen', 'adult'],
     mechanisms: ['tlum', 'wybuch', 'komunikacyjny'],
     vitals: { ...WALKER([32, 40]), crt: [1, 1.5] },
+    // SALT: panic hyperventilation is fast breathing, not respiratory distress.
+    salt: { distress: false },
     injuries: [['mrowienie dłoni i okolicy ust']],
     extraInjuries: ['drobne otarcia przedramion', 'otarcie kolana prawego'],
     remarks: [

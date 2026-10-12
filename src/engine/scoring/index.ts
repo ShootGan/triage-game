@@ -87,7 +87,7 @@ function actionsForStep(step: DecisionStep, protocol: Protocol, v: Vitals, who: 
       if (v.breathing.spontaneous) return ['breathing'];
       return v.breathing.afterAirway || !who.appearsChild ? ['airway'] : ['airway', 'rescue-breaths'];
     case 'salt-criteria':
-      return ['breathing', 'pulse', who.ageYears < 3 ? 'avpu' : 'commands'];
+      return ['breathing', 'pulse', 'commands'];
   }
 }
 
@@ -121,18 +121,19 @@ function assessmentActions(r: TriageResult, v: Vitals, done: ExamActionId[], col
 function saltFinding(p: ScenarioPatient, category: TriageCategory, last: DecisionStep): string {
   const v = p.vitals;
   const cat = CATEGORY_LABEL[category];
+  const moves = p.ageYears < 3 ? 'Celowe ruchy' : 'Wykonuje polecenia';
   switch (last.id) {
     case 'salt-breathing':
       return `Nie oddycha mimo udrożnienia dróg oddechowych${p.appearsChild ? ' i 2 oddechów ratowniczych' : ''} → ${cat}`;
     case 'salt-minor':
       return category === 'green'
-        ? `Wykonuje polecenia, tętno obecne, bez duszności, tylko drobne obrażenia → ${cat}`
-        : `Wykonuje polecenia, tętno obecne, bez duszności, ale obrażenia nie tylko drobne${v.canWalk ? ' (chodzi, a mimo to)' : ''} → ${cat}`;
+        ? `${moves}, tętno obecne, bez duszności, tylko drobne obrażenia → ${cat}`
+        : `${moves}, tętno obecne, bez duszności, ale obrażenia nie tylko drobne${v.canWalk ? ' (chodzi, a mimo to)' : ''} → ${cat}`;
     case 'salt-survive': {
       const why: string[] = [];
       if (!purposeful(v, p.ageYears)) why.push(p.ageYears < 3 ? 'brak celowych ruchów' : 'nie wykonuje poleceń');
       if (!v.peripheralPulse) why.push('brak tętna obwodowego');
-      if (respiratoryDistress(v, p.appearsChild)) why.push(`duszność (${v.breathing.rate}/min)`);
+      if (p.salt?.distress ?? respiratoryDistress(v, p.appearsChild)) why.push(`duszność (${v.breathing.rate}/min)`);
       const reason = why.join(', ');
       return category === 'grey' ? `${reason}; przy dostępnych siłach i środkach nie przeżyje → ${cat}` : `${reason[0].toUpperCase()}${reason.slice(1)} → ${cat}`;
     }
@@ -386,7 +387,7 @@ export function debriefPatient(
   const critical = isGiveUp(given) && !isGiveUp(r.category);
   if (verdict === 'correct' && given !== null) {
     const algorithm = algorithmFor(mode, p, r.protocol);
-    if (!isDetermined(algorithm, p.vitals, knownFindings(p, actionsBefore), given)) {
+    if (!isDetermined(algorithm, p.vitals, knownFindings(p, actionsBefore, mode), given)) {
       verdict = 'procedure';
       explanation = procedureExplanation(allGaps(p, r, given, atTag, actionsBefore), mode);
     }

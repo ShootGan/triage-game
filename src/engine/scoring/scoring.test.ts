@@ -706,3 +706,18 @@ describe('SALT — ocena', () => {
     expect(scoreGame([patient('y')], { y: 'yellow' }, {}, 10).protocol).toBe('START');
   });
 });
+
+describe('SALT — dziecko < 3 lat: celowe ruchy zamiast poleceń', () => {
+  const examSalt = (p: ScenarioPatient, actions: ExamActionId[]) =>
+    actions.reduce((s, a) => performAction(p, s, a, 'SALT').state, initialExamState());
+  it('„Proste polecenie" pokazuje celowe ruchy i rozstrzyga kryterium', () => {
+    const inf = { ...patient('i', { nonAmbulatoryByAge: true, obeysCommands: false, avpu: 'A', breathing: { rate: 34 } }), appearsChild: true, ageYears: 0.75 };
+    const ex = examSalt(inf, ['breathing', 'pulse', 'commands']);
+    expect(ex.log[2].text).toBe('Za małe na polecenia — celowe ruchy: wodzi wzrokiem, sięga rączkami');
+    const d = debriefPatient(inf, 'green', ex, undefined, 'SALT');
+    expect(d).toMatchObject({ expected: 'green', verdict: 'correct' });
+    const still = { ...inf, vitals: { ...inf.vitals, avpu: 'P' as const, painResponseAppropriate: false } };
+    const e2 = debriefPatient(still, 'yellow', examSalt(still, ['breathing', 'pulse', 'commands']), undefined, 'SALT');
+    expect(e2.explanation).toMatch(/^Brak celowych ruchów → CZERWONY/);
+  });
+});

@@ -93,13 +93,23 @@ Masywny krwotok w obu algorytmach tamuje się **od razu, gdy się go zauważy** 
 6. W przeciwnym razie → **ŻÓŁTY**
    - Niemowlę/dziecko niechodzące rozwojowo, bez istotnych urazów zewnętrznych → **ZIELONY**
 
-### SALT (etap 2)
+### SALT (wdrożony — tryb w menu, kod z sufiksem `-SALT`)
 - **Sort**: chodzi → ocena na końcu; macha/celowe ruchy → druga kolejność; nieruchomy / oczywiste zagrożenie życia → pierwszy.
 - **Assess** — czynności ratujące życie: tamowanie krwotoku, udrożnienie dróg oddechowych (dziecko: 2 oddechy ratownicze), odbarczenie odmy, autostrzykawka z antidotum.
 - Nie oddycha → **NIEŻYJĄCY (czarny)**
 - Wszystkie TAK: wykonuje polecenia/celowe ruchy, ma tętno obwodowe, brak duszności, krwotok opanowany →
   - tylko drobne obrażenia → **MINIMALNY (zielony)**, inaczej → **ODROCZONY (żółty)**
 - Którekolwiek NIE → prawdopodobnie przeżyje przy dostępnych siłach i środkach? Tak → **NATYCHMIASTOWY (czerwony)**, Nie → **OCZEKUJĄCY (szary)**
+
+Decyzje implementacyjne (do weryfikacji merytorycznej):
+- **Duszność** (bez progów w SALT) — gra czyta ją z parametrów: dorosły > 30 lub < 10/min, dziecko < 15 lub > 45/min albo
+  nieregularny; nadpisywana w opisie pacjenta (`salt.distress`, np. hiperwentylacja z paniki = bez duszności).
+- **Celowe ruchy** — u dziecka < 3 lat zamiast poleceń (AVPU A/V albo P z adekwatną reakcją); splątany dorosły, który nie
+  wykonuje poleceń, wychodzi CZERWONY.
+- **Tylko drobne obrażenia** — domyślnie: zielony wg START/JumpSTART; nadpisywane w archetypie (`salt.minorOnly`).
+- **Szary** — infrastruktura gotowa (`salt.expectant`), reguła (zasoby w odprawie a archetypy) do decyzji.
+- Bez autostrzykawki (brak scenariusza CBRN) i bez tlenu (nie jest czynnością ratującą życie w SALT).
+- **Ocena kolejności** — −1 pkt za każdego ocenionego, gdy z pilniejszej grupy (wg wydanych komend) ktoś czekał nietknięty.
 
 > Do weryfikacji przez osobę z uprawnieniami merytorycznymi przed użyciem dydaktycznym.
 

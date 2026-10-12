@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import type { ExamActionId, PatientExamState } from '../engine/exam/types';
 import type { GameScore, TagEvent } from '../engine/scoring/types';
-import type { TriageCategory } from '../engine/triage';
+import { saltSortGroup, type ProtocolMode, type TriageCategory } from '../engine/triage';
+import { codeProtocol, withProtocol } from '../scenarios/protocolCode';
 import type { IGameView } from '../render/types';
 import type { Scenario, ScenarioPatient } from '../scenarios/types';
 import { getDeps } from './deps';
@@ -30,6 +31,8 @@ export interface GameState {
   variant: ScenarioVariant;
   /** Kod wczytany w menu — ma pierwszeństwo przed `variant`, dopóki gracz go nie usunie / nie zmieni scenariusza. */
   loadedCode: string | null;
+  /** Algorithm chosen in the menu for new codes (a loaded code carries its own). */
+  protocolMode: ProtocolMode;
 
   /** Rzeczywisty czas segregacji w sekundach (stoper od wjazdu na miejsce). */
   clockSec: number;
@@ -46,11 +49,16 @@ export interface GameState {
   exams: Record<string, PatientExamState | undefined>;
   walkersCalled: boolean;
   walkersGroupTagged: boolean;
+  /** SALT: "Kto mnie słyszy — pomachaj ręką!" given. */
+  waversCalled: boolean;
+  /** Patients in the order the player walked up to them (SALT sort scoring). */
+  approachOrder: string[];
   score: GameScore | null;
 
   setMode(mode: GameMode): void;
   setScenario(id: string): void;
   setVariant(v: ScenarioVariant): void;
+  setProtocol(mode: ProtocolMode): void;
   /** Wczytuje kod wpisany przez gracza; zwraca komunikat błędu albo null. */
   loadCode(input: string): string | null;
   clearLoadedCode(): void;
@@ -66,6 +74,8 @@ export interface GameState {
   tagPatient(id: string, cat: TriageCategory): void;
   toggleHint(): void;
   callWalkers(): void;
+  /** SALT: everyone who can hear — wave (still ones are assessed first). */
+  callWavers(): void;
   tagWalkersGreen(): void;
   endTriage(): void;
   restart(): void;
@@ -100,8 +110,15 @@ const freshRound = {
   exams: {},
   walkersCalled: false,
   walkersGroupTagged: false,
+  waversCalled: false,
+  approachOrder: [] as string[],
   score: null,
 } satisfies Partial<GameState>;
+
+/** Algorithm of the game being played. */
+export function gameProtocol(s: Pick<GameState, 'scenario'>): ProtocolMode {
+  return s.scenario?.protocol ?? 'START';
+}
 
 // ---- Stoper: rzeczywisty czas od wjazdu na miejsce ----
 let clockTimer: ReturnType<typeof setInterval> | null = null;
@@ -134,6 +151,7 @@ export const useGame = create<GameState>()((set, get) => {
     scenario: null,
     variant: 'random',
     loadedCode: null,
+    protocolMode: 'START',
     hintOpen: false,
     ...freshRound,
 
@@ -151,10 +169,15 @@ export const useGame = create<GameState>()((set, get) => {
       set({ variant, loadedCode: null });
     },
 
+    setProtocol(protocolMode) {
+      const { loadedCode } = get();
+      set({ protocolMode, loadedCode: loadedCode && withProtocol(loadedCode, protocolMode) });
+    },
+
     loadCode(input) {
       const p = getDeps().codes.parseCode(input);
       if ('error' in p) return p.error;
-      set({ scenarioId: p.scenarioId, loadedCode: p.code });
+      set({ scenarioId: p.scenarioId, loadedCode: p.code, protocolMode: codeProtocol(p.code) });
       return null;
     },
 
@@ -168,7 +191,7 @@ export const useGame = create<GameState>()((set, get) => {
       if (s.loadedCode) return get().playCode(s.loadedCode);
       const id = s.scenarioId ?? scenarios[0]?.id;
       if (!id || !scenarios.some((x) => x.id === id)) return;
-      get().playCode(s.variant === 'template' ? codes.templateCode(id) : codes.randomCode(id));
+      get().playCode(withProtocol(s.variant === 'template' ? codes.templateCode(id) : codes.randomCode(id), s.protocolMode));
     },
 
     playCode(code) {
@@ -184,7 +207,7 @@ export const useGame = create<GameState>()((set, get) => {
     newRandom() {
       const id = get().scenario?.id ?? get().scenarioId;
       if (!id) return;
-      get().playCode(getDeps().codes.randomCode(id));
+      get().playCode(withProtocol(getDeps().codes.randomCode(id), get().scenario?.protocol ?? get().protocolMode));
     },
 
     startPlaying() {
@@ -207,7 +230,7 @@ export const useGame = create<GameState>()((set, get) => {
         return;
       }
       if (!findPatient(s, id)) return;
-      set({ selectedId: null, approachingId: id, lastVisitedId: id });
+      set({ selectedId: null, approachingId: id, lastVisitedId: id, approachOrder: [...s.approachOrder, id] });
       const arrive = () => {
         const now = get();
         if (now.phase === 'playing' && now.approachingId === id) set({ selectedId: id, approachingId: null });
@@ -223,7 +246,7 @@ export const useGame = create<GameState>()((set, get) => {
       if (!p) return;
       const d = getDeps();
       const prev = s.exams[p.id] ?? d.initialExamState();
-      const { state } = d.performAction(p, prev, action);
+      const { state } = d.performAction(p, prev, action, gameProtocol(s));
       set({ exams: { ...s.exams, [p.id]: state } });
       if (action === 'bleeding' && state.bleedingControlled && !prev.bleedingControlled) {
         view?.setBleedingControlled(p.id);
@@ -249,9 +272,17 @@ export const useGame = create<GameState>()((set, get) => {
       view?.sendWalkersToCollectionPoint();
     },
 
+    callWavers() {
+      const s = get();
+      if (s.phase !== 'playing' || !s.walkersCalled || s.waversCalled || !s.scenario || gameProtocol(s) !== 'SALT') return;
+      set({ waversCalled: true });
+      view?.wave(s.scenario.patients.filter((p) => saltSortGroup(p) === 2).map((p) => p.id));
+    },
+
     tagWalkersGreen() {
       const s = get();
-      if (s.phase !== 'playing' || !s.walkersCalled || s.walkersGroupTagged || !s.scenario) return;
+      // SALT: walkers are assessed one by one (they may be DELAYED), never tagged as a group.
+      if (s.phase !== 'playing' || !s.walkersCalled || s.walkersGroupTagged || !s.scenario || gameProtocol(s) === 'SALT') return;
       const tags = { ...s.tags };
       const tagEvents = { ...s.tagEvents };
       for (const p of s.scenario.patients) {
@@ -271,7 +302,10 @@ export const useGame = create<GameState>()((set, get) => {
       stopClock();
       const now = Math.round(elapsedNow());
       const elapsed = timeLimitEnforced(s.mode) ? Math.min(now, s.scenario.timeLimitSec) : now;
-      const score = getDeps().scoreGame(s.scenario.patients, s.tags, s.exams, elapsed, s.tagEvents);
+      const score = getDeps().scoreGame(s.scenario.patients, s.tags, s.exams, elapsed, s.tagEvents, {
+        mode: gameProtocol(s),
+        sort: { walkersCalled: s.walkersCalled, waversCalled: s.waversCalled, approachOrder: s.approachOrder },
+      });
       view?.focusPatient(null);
       set({ score, selectedId: null, approachingId: null, phase: 'debrief' });
     },

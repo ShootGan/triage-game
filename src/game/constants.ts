@@ -11,6 +11,7 @@ export const ACTION_ORDER: { id: ExamActionId; key: string }[] = [
   { id: 'commands', key: 'Y' },
   { id: 'avpu', key: 'U' },
   { id: 'bleeding', key: 'I' },
+  { id: 'decompression', key: 'O' },
 ];
 
 /** Kolejność kategorii (R/Ż/Z/C) + skróty 1–4. */

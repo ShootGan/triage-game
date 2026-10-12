@@ -107,7 +107,12 @@ interface PatientEntity {
   tag: THREE.Mesh | null;
   walk: WalkState | null;
   walked: boolean;
+  /** SALT sort: waving arm (seconds since the command, shoulder/elbow rest pose to restore). */
+  wave: { t: number; delay: number; shX: number; shY: number; shZ: number; elX: number } | null;
 }
+
+/** How long casualties wave after "Kto mnie słyszy — pomachaj ręką!". */
+const WAVE_SECONDS = 6;
 
 /** Deterministyczny pseudolosowy [0,1) z id pacjenta — wariacje pozy. */
 function hash01(s: string): number {
@@ -350,6 +355,7 @@ export class GameView implements IGameView {
       tag: null,
       walk: null,
       walked: false,
+      wave: null,
     };
 
     if (p.majorBleeding && look.bleed) {
@@ -751,6 +757,38 @@ export class GameView implements IGameView {
     this.frameCbs.push(cb);
   }
 
+  wave(ids: string[]): void {
+    for (const id of ids) {
+      const e = this.patients.get(id);
+      if (!e || e.walked || e.wave) continue;
+      // the right arm (arms[0]) — a bleeding right arm gets a tourniquet later, so wave with the left then
+      const arm = e.human.arms[e.look.bleed?.segment === 'arm' || e.look.bleed?.segment === 'forearm' ? 1 : 0];
+      e.wave = { t: 0, delay: hash01(id + '#w') * 0.8, shX: arm.sh.rotation.x, shY: arm.sh.rotation.y, shZ: arm.sh.rotation.z, elX: arm.el.rotation.x };
+    }
+  }
+
+  /** Arm up toward the sky (lying on the back: forward; sitting/standing: overhead; prone: sideways) and waving. */
+  private stepWave(e: PatientEntity, w: NonNullable<PatientEntity['wave']>, dt: number): void {
+    w.t += dt;
+    const arm = e.human.arms[e.look.bleed?.segment === 'arm' || e.look.bleed?.segment === 'forearm' ? 1 : 0];
+    const side = arm === e.human.arms[0] ? -1 : 1;
+    const k = Math.min(1, Math.max(0, (w.t - w.delay) / 0.4)) * Math.min(1, Math.max(0, (WAVE_SECONDS - w.t) / 0.5));
+    const swing = Math.sin((w.t - w.delay) * 9) * 0.6 * k;
+    const pose = e.data.pose;
+    if (pose === 'front') {
+      arm.sh.rotation.set(w.shX, w.shY, w.shZ + side * 1.3 * k + swing);
+    } else {
+      const lift = pose === 'back' ? -1.55 : -2.7;
+      arm.sh.rotation.set(w.shX + lift * k, w.shY, w.shZ + swing);
+    }
+    arm.el.rotation.x = w.elX - 0.5 * k;
+    if (w.t >= WAVE_SECONDS) {
+      arm.sh.rotation.set(w.shX, w.shY, w.shZ);
+      arm.el.rotation.x = w.elX;
+      e.wave = null;
+    }
+  }
+
   sendWalkersToCollectionPoint(): void {
     const walkers = [...this.patients.values()].filter((e) => e.data.vitals.canWalk && !e.walked);
     if (walkers.length === 0) return;
@@ -858,6 +896,7 @@ export class GameView implements IGameView {
       }
       if (e.walk) this.stepWalk(e, e.walk, dt);
       if (e.bleed) this.stepBleed(e, e.bleed, dt);
+      if (e.wave) this.stepWave(e, e.wave, dt);
     }
     if (this.medicMove) this.stepMedic(this.medicMove, dt);
 

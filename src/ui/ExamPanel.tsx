@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { pulseLabel } from '../engine/exam';
+import { actionsFor, pulseLabel } from '../engine/exam';
 import { CATEGORY_LABEL } from '../engine/triage';
-import { ACTION_ORDER, CATEGORY_COLOR, CATEGORY_ORDER } from '../game/constants';
+import { ACTION_ORDER, CATEGORY_COLOR, categoriesFor } from '../game/constants';
 import { getDeps } from '../game/deps';
-import { useGame } from '../game/store';
+import { gameProtocol, useGame } from '../game/store';
 
 export function ExamPanel() {
   const selectedId = useGame((s) => s.selectedId);
@@ -15,7 +15,13 @@ export function ExamPanel() {
   const tagPatient = useGame((s) => s.tagPatient);
   const selectPatient = useGame((s) => s.selectPatient);
   const special = useGame((s) => !!s.scenario?.special);
+  const mode = useGame(gameProtocol);
   const { ACTION_LABEL } = getDeps();
+  // SALT: no CRT/AVPU, adds needle decompression, GREY tag; 2 (not 5) rescue breaths.
+  const actions = ACTION_ORDER.filter((a) => actionsFor(mode).includes(a.id));
+  const categories = categoriesFor(mode);
+  const label = (id: (typeof ACTION_ORDER)[number]['id']) =>
+    id === 'pulse' && patient ? pulseLabel(patient.appearsChild, patient.ageYears) : id === 'rescue-breaths' && mode === 'SALT' ? '2 oddechy ratownicze' : ACTION_LABEL[id];
 
   // Easter egg (scenariusz specjalny): „ratunkowe cięcie cesarskie" → komunikat; bez wpływu na ocenę.
   const [egg, setEgg] = useState(false);
@@ -48,13 +54,13 @@ export function ExamPanel() {
         return;
       }
       const k = e.key.toUpperCase();
-      const act = ACTION_ORDER.find((a) => a.key === k);
+      const act = actions.find((a) => a.key === k);
       if (act) {
         e.preventDefault();
         doAction(act.id);
         return;
       }
-      const cat = CATEGORY_ORDER.find((c) => c.key === e.key);
+      const cat = categories.find((c) => c.key === e.key);
       if (cat) {
         e.preventDefault();
         tagPatient(selectedId, cat.id);
@@ -62,7 +68,7 @@ export function ExamPanel() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [selectedId, doAction, tagPatient, selectPatient]);
+  }, [selectedId, doAction, tagPatient, selectPatient, actions, categories]);
 
   if (!patient) {
     if (!approaching) return null;
@@ -93,12 +99,10 @@ export function ExamPanel() {
       <section className="exam-actions">
         <div className="h-small">Czynności</div>
         <div className="actions-grid">
-          {ACTION_ORDER.map((a) => (
+          {actions.map((a) => (
             <button key={a.id} className="btn action" onClick={() => doAction(a.id)}>
               <span className="key">{a.key}</span>
-              <span className="action-label">
-                {a.id === 'pulse' ? pulseLabel(patient.appearsChild, patient.ageYears) : ACTION_LABEL[a.id]}
-              </span>
+              <span className="action-label">{label(a.id)}</span>
             </button>
           ))}
           {special && patient.appearance.pregnant && (
@@ -159,7 +163,7 @@ export function ExamPanel() {
           Kategoria triage {tag && <span className="current-tag">— obecnie: {CATEGORY_LABEL[tag]}</span>}
         </div>
         <div className="tags-row">
-          {CATEGORY_ORDER.map((c) => (
+          {categories.map((c) => (
             <button
               key={c.id}
               className={`btn tag tag-${c.id} ${tag === c.id ? 'active' : ''}`}

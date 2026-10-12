@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import type { ProtocolMode } from '../engine/triage';
 import { getDeps } from '../game/deps';
 import { MODE_LABEL, VARIANT_LABEL, useGame, type GameMode, type ScenarioVariant } from '../game/store';
 import './code.css';
@@ -6,6 +7,12 @@ import './code.css';
 const MODE_DESC: Record<GameMode, string> = {
   learn: 'Panel z algorytmem (klawisz H), stoper bez limitu czasu.',
   practice: 'Bez podpowiedzi, limit czasu scenariusza, pełny debrief.',
+};
+
+const PROTOCOL_NAME: Record<ProtocolMode, string> = { START: 'START · JumpSTART', SALT: 'SALT' };
+const PROTOCOL_DESC: Record<ProtocolMode, string> = {
+  START: 'Dorośli START, dzieci JumpSTART. Chodzący → ZIELONI grupowo.',
+  SALT: 'Sortowanie komendami, czynności ratujące życie, kategoria SZARA. Chodzących ocenia się na końcu.',
 };
 
 const VARIANT_DESC: Record<ScenarioVariant, string> = {
@@ -21,6 +28,8 @@ export function MenuScreen() {
   const setMode = useGame((s) => s.setMode);
   const setScenario = useGame((s) => s.setScenario);
   const setVariant = useGame((s) => s.setVariant);
+  const protocolMode = useGame((s) => s.protocolMode);
+  const setProtocol = useGame((s) => s.setProtocol);
   const loadCode = useGame((s) => s.loadCode);
   const clearLoadedCode = useGame((s) => s.clearLoadedCode);
   const goToBriefing = useGame((s) => s.goToBriefing);
@@ -57,6 +66,22 @@ export function MenuScreen() {
             <button key={m} className={`choice ${mode === m ? 'active' : ''}`} onClick={() => setMode(m)}>
               <span className="choice-name">{MODE_LABEL[m]}</span>
               <span className="choice-desc">{MODE_DESC[m]}</span>
+            </button>
+          ))}
+        </div>
+
+        <h2 className="h-small">Algorytm</h2>
+        <div className="variant-row" role="radiogroup" aria-label="Algorytm">
+          {(['START', 'SALT'] as ProtocolMode[]).map((m) => (
+            <button
+              key={m}
+              role="radio"
+              aria-checked={protocolMode === m}
+              className={`choice ${protocolMode === m ? 'active' : ''}`}
+              onClick={() => setProtocol(m)}
+            >
+              <span className="choice-name">{PROTOCOL_NAME[m]}</span>
+              <span className="choice-desc">{PROTOCOL_DESC[m]}</span>
             </button>
           ))}
         </div>

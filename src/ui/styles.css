@@ -202,6 +202,7 @@ a { color: var(--accent); }
   font-family: var(--font-head); font-size: 13px; color: var(--text);
 }
 .chip-yellow { color: var(--ink) !important; }
+.chip-grey { color: var(--ink) !important; }
 .chip-pending { background: var(--pending); }
 .hud-mode { font-family: var(--font-head); font-size: 13px; color: var(--yellow); border: 2px solid var(--yellow); padding: 4px 6px; }
 .hud-actions { margin-left: auto; display: flex; gap: 12px; align-items: center; }
@@ -228,6 +229,11 @@ a { color: var(--accent); }
 .mk-yellow { background: var(--yellow); color: var(--ink); }
 .mk-green { background: var(--green); }
 .mk-black { background: var(--black); }
+.mk-grey { background: #8a8f98; color: var(--ink); }
+/* SALT sort groups before tagging: 1 still (first), 2 waving, 3 walking (last) */
+.mk-sort1 { background: #c0392b; }
+.mk-sort2 { background: #b9770e; }
+.mk-sort3 { background: #2e7d4f; }
 .mk:hover { box-shadow: 0 0 0 2px var(--yellow), 2px 3px 0 2px rgba(0, 0, 0, 0.35); }
 .mk-selected { box-shadow: 0 0 0 2px var(--yellow), 0 0 0 5px var(--ink), 0 0 0 7px var(--yellow); z-index: 1; }
 @keyframes pulse { 50% { box-shadow: 0 0 0 2px var(--text), 0 0 0 5px rgba(244, 244, 244, 0.4); } }
@@ -292,8 +298,7 @@ a { color: var(--accent); }
   justify-content: center; flex-direction: column; gap: 4px; padding: 6px 2px;
   font-family: var(--font-head); font-size: 13px; color: var(--text);
 }
-.btn.tag .key { font-family: var(--font-body); }
-.btn.tag-yellow { color: var(--ink); }
+.btn.tag-yellow, .btn.tag-grey { color: var(--ink); }
 .btn.tag-black { box-shadow: 0 0 0 2px var(--text), 3px 3px 0 2px rgba(0,0,0,.5); }
 .btn.tag.active { outline: 3px solid var(--text); outline-offset: 3px; }
 .current-tag { color: var(--text); text-transform: none; }
@@ -376,6 +381,8 @@ a { color: var(--accent); }
 .pd-points { font-family: var(--font-head); font-size: 12px; padding: 4px 0; color: var(--muted); white-space: nowrap; }
 .verdict.critical { background: #ff6b6b; color: var(--ink); border-color: #ff6b6b; }
 .debrief-note { margin: 10px 0 0; font-size: 17px; line-height: 1.2; }
+.sort-summary { margin: 12px 0 0; padding: 8px 10px; border-left: 4px solid var(--orange); background: var(--panel-2); }
+.sort-summary p { margin: 4px 0 0; font-size: 17px; }
 .pd-detail { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; padding: 0 10px 10px; border-top: 2px dashed var(--panel); }
 .steps { margin: 0; padding-left: 24px; font-size: 18px; }
 .steps li { margin: 3px 0; }

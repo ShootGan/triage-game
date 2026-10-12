@@ -1,3 +1,4 @@
+import { baseCode, codeProtocol, SALT_SUFFIX } from '../protocolCode';
 import { triage, type StartCategory, type TriageCategory, type Vitals } from '../../engine/triage';
 import type { PatientAppearance, PatientPose, Scenario, ScenarioPatient } from '../types';
 import { scenarioIssues } from '../validate';
@@ -104,9 +105,16 @@ const PREFIX_LIST = () => LAYOUTS.map((l) => l.prefix).join(', ');
  * Zwraca znormalizowany kod albo komunikat błędu po polsku.
  */
 export function parseCode(input: string): ParsedCode {
-  const raw = (input ?? '').trim().toUpperCase().replace(/[\s_–—]+/g, (m) => (/[_–—]/.test(m) ? '-' : ''));
+  let raw = (input ?? '').trim().toUpperCase().replace(/[\s_–—]+/g, (m) => (/[_–—]/.test(m) ? '-' : ''));
   if (!raw) return { error: 'Wpisz kod zadania, np. KAMIENICA-4F7K.' };
+  // Protocol suffix: KAMIENICA-4F7K-SALT (also typed without the dash).
+  const salt = /-?SALT$/.test(raw) && raw.replace(/-?SALT$/, '').length > 0;
+  if (salt) raw = raw.replace(/-?SALT$/, '');
+  const parsed = parseBaseCode(raw, input);
+  return salt && !('error' in parsed) ? { ...parsed, code: `${parsed.code}${SALT_SUFFIX}` } : parsed;
+}
 
+function parseBaseCode(raw: string, input: string): ParsedCode {
   let prefix: string;
   let suffix: string;
   const dash = raw.lastIndexOf('-');
@@ -167,15 +175,22 @@ export function generateScenario(scenarioId: string, code: string): Scenario {
 export function generateDetailed(scenarioId: string, code: string): Generated & { attempts: number } {
   const layout = layoutById(scenarioId);
   if (!layout) throw new Error(`Nieznany scenariusz: ${scenarioId}`);
-  const norm = code.trim().toUpperCase();
+  const full = code.trim().toUpperCase();
+  // The protocol suffix doesn't change the casualties: the base code seeds them.
+  const norm = baseCode(full);
   if (!norm.startsWith(`${layout.prefix}-`)) throw new Error(`Kod ${code} nie pasuje do scenariusza ${scenarioId}`);
-  const template = (): Generated => ({ scenario: { ...structuredCloneScenario(layout.template), code: norm }, archetypeIds: null });
+  const tag = (g: Generated): Generated => {
+    g.scenario.code = full;
+    if (codeProtocol(full) === 'SALT') g.scenario.protocol = 'SALT';
+    return g;
+  };
+  const template = (): Generated => tag({ scenario: { ...structuredCloneScenario(layout.template), code: norm }, archetypeIds: null });
   if (norm.endsWith(`-${TEMPLATE_SUFFIX}`)) return { ...template(), attempts: 0 };
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const rng = createRng(`v${GENERATOR_VERSION}|${norm}|${attempt}`);
     const g = tryGenerate(layout, norm, rng);
-    if (g) return { ...g, attempts: attempt + 1 };
+    if (g) return { ...tag(g), attempts: attempt + 1 };
   }
   // Nie powinno się zdarzyć (pokrywa to test właściwości) — bezpieczny powrót do wzorca.
   return { ...template(), attempts: MAX_ATTEMPTS };

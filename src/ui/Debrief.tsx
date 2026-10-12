@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { POINTS } from '../engine/scoring/points';
 import type { PatientDebrief, Verdict } from '../engine/scoring/types';
 import { CATEGORY_LABEL, type TriageCategory } from '../engine/triage';
-import { CATEGORY_COLOR, CATEGORY_ORDER, formatClock } from '../game/constants';
+import { CATEGORY_COLOR, categoriesFor, formatClock } from '../game/constants';
 import { getDeps } from '../game/deps';
 import { MODE_LABEL, useGame } from '../game/store';
 import { CodeBadge } from './Briefing';
@@ -47,7 +47,8 @@ export function DebriefScreen() {
 
   if (!score) return null;
 
-  const report = CATEGORY_ORDER.map((c) => ({
+  const salt = score.protocol === 'SALT';
+  const report = categoriesFor(score.protocol ?? 'START').map((c) => ({
     ...c,
     n: Object.values(tags).filter((t) => t === c.id).length,
   }));
@@ -93,7 +94,7 @@ export function DebriefScreen() {
             <Stat label="Poprawne" value={`${score.correct} / ${score.total}`} cls="ok" />
             <Stat label="Trafność" value={`${Math.round(score.accuracyPct)}%`} />
             <Stat label="Kolor zgadnięty (bez rozstrzygających ustaleń)" value={score.procedure ?? 0} cls="procedure" />
-            <Stat label="Błędy krytyczne (CZARNY u żywego)" value={score.critical ?? 0} cls="under" />
+            <Stat label={salt ? 'Błędy krytyczne (CZARNY/SZARY u żywego)' : 'Błędy krytyczne (CZARNY u żywego)'} value={score.critical ?? 0} cls="under" />
             <Stat label="Zawyżone (overtriage)" value={score.over} cls="over" />
             <Stat label="Zaniżone (undertriage)" value={score.under} cls="under" />
             <Stat label="Nieoznaczone" value={score.untagged} />
@@ -127,8 +128,23 @@ export function DebriefScreen() {
           <p className="debrief-note muted">
             Punkty na poszkodowanego: poprawny kolor {POINTS.correct}, zgadnięty {POINTS.guessed}, zawyżony{' '}
             {POINTS.over} (kolor żywego u zmarłego {POINTS.overDead}), zaniżony lub brak opaski 0, CZARNY u żywego {POINTS.critical}; każda pominięta czynność
-            ratująca życie {POINTS.missedLifesaving}. Czas nie wpływa na wynik.
+            ratująca życie {POINTS.missedLifesaving}.{salt && ` SALT: za każdego ocenionego przed pilniejszą grupą sortowania ${POINTS.sortOrder}.`} Czas nie wpływa na wynik.
           </p>
+        )}
+
+        {salt && (
+          <div className="sort-summary">
+            <div className="h-small">Sortowanie SALT</div>
+            {(score.sortNotes?.length ?? 0) === 0 ? (
+              <p className="muted">Komendy wydane, kolejność oceny prawidłowa: nieruchomi → machający → chodzący.</p>
+            ) : (
+              score.sortNotes!.map((n, i) => (
+                <p key={i} className="procedure-note">
+                  {n}
+                </p>
+              ))
+            )}
+          </div>
         )}
 
         {score.patients.some((p) => p.protocol === 'JumpSTART' || p.alternative) && (
@@ -263,7 +279,7 @@ function PatientRow({ p }: { p: PatientDebrief }) {
               <ol className="steps">
                 {p.actionsDone.map((a, i) => (
                   <li key={i} className={tagAt !== null && i >= tagAt ? 'after-tag' : undefined}>
-                    {a === 'pulse' && child ? 'Tętno obwodowe' : ACTION_LABEL[a]}
+                    {a === 'pulse' && child ? 'Tętno obwodowe' : a === 'rescue-breaths' && p.protocol === 'SALT' ? '2 oddechy ratownicze' : ACTION_LABEL[a]}
                     {tagAt !== null && i >= tagAt && ' · po opasce'}
                   </li>
                 ))}

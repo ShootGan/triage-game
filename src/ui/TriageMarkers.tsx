@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { CATEGORY_LABEL } from '../engine/triage';
-import { useGame } from '../game/store';
+import { CATEGORY_LABEL, saltSortGroup } from '../engine/triage';
+import { gameProtocol, useGame } from '../game/store';
 import { useGameView } from './GameCanvas';
 
 const MARKER_OFFSET = { x: 24, y: -20 };
@@ -15,6 +15,9 @@ export function TriageMarkers() {
   const tags = useGame((s) => s.tags);
   const selectedId = useGame((s) => s.selectedId);
   const selectPatient = useGame((s) => s.selectPatient);
+  const salt = useGame((s) => gameProtocol(s) === 'SALT');
+  const walkersCalled = useGame((s) => s.walkersCalled);
+  const waversCalled = useGame((s) => s.waversCalled);
   const els = useRef(new Map<string, HTMLButtonElement>());
   const mounted = useRef(true);
 
@@ -50,7 +53,10 @@ export function TriageMarkers() {
     <div className="markers">
       {patients.map((p) => {
         const tag = tags[p.id];
-        const cls = tag ? `mk mk-${tag}` : 'mk mk-pending';
+        // SALT sort group as far as the commands revealed it: walkers 3, then wavers 2, still ones 1.
+        const g = salt ? saltSortGroup(p) : 0;
+        const group = !salt || !walkersCalled ? null : g === 3 ? 3 : waversCalled ? g : null;
+        const cls = tag ? `mk mk-${tag}` : group ? `mk mk-pending mk-sort${group}` : 'mk mk-pending';
         return (
           <button
             key={p.id}
@@ -60,10 +66,10 @@ export function TriageMarkers() {
             }}
             className={`${cls} ${selectedId === p.id ? 'mk-selected' : ''}`}
             style={{ display: 'none' }}
-            title={`${p.label}${tag ? ' — ' + CATEGORY_LABEL[tag] : ' — niezbadany'}`}
+            title={`${p.label}${tag ? ' — ' + CATEGORY_LABEL[tag] : group ? ` — grupa sortowania ${group}` : ' — niezbadany'}`}
             onClick={() => selectPatient(p.id)}
           >
-            {tag === 'black' ? '✝' : tag ? '' : '?'}
+            {tag === 'black' ? '✝' : tag ? '' : group ?? '?'}
           </button>
         );
       })}

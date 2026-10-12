@@ -67,7 +67,7 @@ export function triageSalt(v: Vitals, p: SaltPatient): TriageResult {
 
   const moves = purposeful(v, p.ageYears);
   const pulse = v.peripheralPulse;
-  const distress = respiratoryDistress(v, child);
+  const distress = p.salt.distress ?? respiratoryDistress(v, child);
   // Every massive bleed in the game can be controlled with a tourniquet (an LSI above).
   const ok = moves && pulse && !distress;
   steps.push({

@@ -98,6 +98,7 @@ export function createStubGameView(canvas: HTMLCanvasElement, scenario: Scenario
     focusPatient(id, onArrive) { focused = id; if (id) setTimeout(() => { if (focused === id) onArrive?.(); }, 400); },
     onPatientClick(cb) { clickCbs.push(cb); },
     onFrame(cb) { frameCbs.push(cb); },
+    wave() {},
     sendWalkersToCollectionPoint() {
       let i = 0;
       for (const p of scenario.patients) {

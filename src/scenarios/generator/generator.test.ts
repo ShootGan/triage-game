@@ -473,3 +473,22 @@ describe('ciąża', () => {
     }
   });
 });
+
+describe('kod z protokołem SALT', () => {
+  it('parseCode: sufiks -SALT (też bez myślnika, małymi literami)', () => {
+    expect(parseCode('kamienica-4f7k-salt')).toEqual({ scenarioId: 'tenement', code: 'KAMIENICA-4F7K-SALT' });
+    expect(parseCode('KAMIENICA4F7KSALT')).toEqual({ scenarioId: 'tenement', code: 'KAMIENICA-4F7K-SALT' });
+    expect(parseCode('KAMIENICA-WZOR-SALT')).toEqual({ scenarioId: 'tenement', code: 'KAMIENICA-WZOR-SALT' });
+    expect('error' in parseCode('KAMIENICA-4F7-SALT')).toBe(true);
+  });
+
+  it('ten sam rdzeń kodu → ci sami poszkodowani; protokół SALT w scenariuszu', () => {
+    const start = generateScenario('tenement', 'KAMIENICA-4F7K');
+    const salt = generateScenario('tenement', 'KAMIENICA-4F7K-SALT');
+    expect(salt.patients).toEqual(start.patients);
+    expect(salt).toMatchObject({ code: 'KAMIENICA-4F7K-SALT', protocol: 'SALT' });
+    expect(start.protocol).toBeUndefined();
+    const tpl = generateScenario('tenement', 'KAMIENICA-WZOR-SALT');
+    expect(tpl).toMatchObject({ code: 'KAMIENICA-WZOR-SALT', protocol: 'SALT' });
+  });
+});

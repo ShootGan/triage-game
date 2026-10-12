@@ -40,6 +40,8 @@ export const concertScenario: Scenario = {
       label: 'Kobieta, ok. 19 lat',
       ageYears: 19,
       appearsChild: false,
+      // SALT: panic hyperventilation is fast breathing, not respiratory distress → MINIMAL.
+      salt: { distress: false },
       vitals: {
         canWalk: true,
         breathing: { spontaneous: true, afterAirway: true, rate: 36 },

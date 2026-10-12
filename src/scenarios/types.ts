@@ -1,4 +1,4 @@
-import type { SaltInfo, Vitals } from '../engine/triage';
+import type { ProtocolMode, SaltInfo, Vitals } from '../engine/triage';
 import type { PropKind } from './propSizes';
 
 export type { PropKind } from './propSizes';
@@ -103,6 +103,8 @@ export interface Scenario {
   terrain?: TerrainKind;
   /** Half-extents [x, z] of the area patients may occupy; default [12, 9] (validate.ts). Larger for big scenes. */
   bounds?: [number, number];
+  /** Algorithm the game is scored with; from the code suffix (KAMIENICA-4F7K-SALT). Default START. */
+  protocol?: ProtocolMode;
   /** Punkt zbiórki dla chodzących (x, z). */
   collectionPoint: [number, number];
   props: ScenarioProp[];

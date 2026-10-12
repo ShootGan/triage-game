@@ -39,6 +39,17 @@ const JUMPSTART: Criterion[] = [
   },
 ];
 
+const SALT: Criterion[] = [
+  { text: 'Sortowanie: „Kto może chodzić — do mnie!" (ocena na końcu), „Kto mnie słyszy — pomachaj!" (druga kolejność); nieruchomi — oceniaj pierwszych', needs: [] },
+  BLEEDING,
+  { text: 'Bezdech → udrożnij drogi oddechowe; dziecko nadal bez oddechu → 2 oddechy ratownicze', needs: ['airway', 'rescue-breaths'] },
+  { text: 'Odma prężna (jednostronnie słaby ruch klatki, poszerzone żyły szyjne) → odbarcz igłą', needs: ['decompression'] },
+  { text: 'Nie oddycha mimo tych czynności → CZARNY', needs: ['breathing', 'airway'] },
+  { text: 'Wykonuje polecenia lub celowe ruchy? Tętno obwodowe? Bez duszności? Krwotok opanowany?', needs: ['commands', 'pulse', 'breathing'] },
+  { text: 'Wszystkie TAK: tylko drobne obrażenia → ZIELONY, inaczej → ŻÓŁTY (także u chodzących)', needs: [] },
+  { text: 'Którekolwiek NIE: przeżyje przy dostępnych siłach i środkach → CZERWONY, nie → SZARY', needs: [] },
+];
+
 function CriteriaList({ list, done }: { list: Criterion[]; done: Set<ExamActionId> }) {
   return (
     <ol className="hint-list">
@@ -59,7 +70,19 @@ function CriteriaList({ list, done }: { list: Criterion[]; done: Set<ExamActionI
  * Podpowiedź w trybie Nauka: lista kryteriów algorytmu, bez podawania odpowiedzi.
  * Z pacjentem — jego algorytm (✓ przy wykonanych czynnościach); bez pacjenta — oba algorytmy.
  */
-export function AlgorithmHint({ patient, exam }: { patient: ScenarioPatient | null; exam?: PatientExamState }) {
+export function AlgorithmHint({ patient, exam, salt = false }: { patient: ScenarioPatient | null; exam?: PatientExamState; salt?: boolean }) {
+  if (salt) {
+    const done = new Set(exam?.log.map((r) => r.action) ?? []);
+    return (
+      <div className="hint">
+        <div className="h-small">SALT · dorośli i dzieci</div>
+        <CriteriaList list={SALT} done={done} />
+        {patient?.majorBleeding && !exam?.bleedingControlled && (
+          <p className="hint-warn">Widoczny masywny krwotok — czynność ratująca życie.</p>
+        )}
+      </div>
+    );
+  }
   if (!patient) {
     const none = new Set<ExamActionId>();
     return (

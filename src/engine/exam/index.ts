@@ -81,7 +81,11 @@ type Outcome = { text: string; seconds?: number; patch?: Partial<PatientExamStat
 
 /** SALT reads breathing as "respiratory distress", not as a rate threshold. */
 function distressText(p: ScenarioPatient, mode: ProtocolMode): string {
-  return mode === 'SALT' ? (respiratoryDistress(p.vitals, p.appearsChild) ? ' — duszność' : ' — bez duszności') : '';
+  if (mode !== 'SALT') return '';
+  const fast = respiratoryDistress(p.vitals, p.appearsChild);
+  const distress = p.salt?.distress ?? fast;
+  if (fast && !distress) return ' — szybko, ale mówi pełnymi zdaniami, bez cech duszności';
+  return distress ? ' — duszność' : ' — bez duszności';
 }
 
 function breathingResult(p: ScenarioPatient, s: PatientExamState): Outcome {
@@ -124,6 +128,15 @@ function rescueBreathsResult(p: ScenarioPatient, s: PatientExamState, mode: Prot
     ? `Po ${n} oddechach ratowniczych pojawił się oddech własny${rateText(b)}`
     : `Brak oddechu po ${n} oddechach ratowniczych`;
   return { text: text + note, patch: { rescueBreathsGiven: true } };
+}
+
+/** SALT, under 3 years: no commands — the rescuer looks for purposeful movement instead. */
+function purposefulResult(p: ScenarioPatient): Outcome {
+  const v = p.vitals;
+  if (v.avpu === 'A') return { text: 'Za małe na polecenia — celowe ruchy: wodzi wzrokiem, sięga rączkami' };
+  if (v.avpu === 'V') return { text: 'Za małe na polecenia — celowe ruchy: reaguje na głos, odwraca głowę' };
+  if (v.avpu === 'P' && v.painResponseAppropriate) return { text: 'Za małe na polecenia — celowe ruchy: odsuwa bodziec bólowy' };
+  return { text: 'Za małe na polecenia — brak celowych ruchów' };
 }
 
 function commandsResult(p: ScenarioPatient): Outcome {
@@ -201,7 +214,7 @@ function outcome(p: ScenarioPatient, s: PatientExamState, action: ExamActionId, 
       return { text: `Nawrót kapilarny: ${num(v.crtSeconds)} s${note}` };
     }
     case 'commands':
-      return commandsResult(p);
+      return mode === 'SALT' && p.ageYears < 3 ? purposefulResult(p) : commandsResult(p);
     case 'avpu':
       return avpuResult(v);
     case 'bleeding':

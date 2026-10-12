@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- SALT mode: choose the algorithm in the menu (START/JumpSTART or SALT); a SALT code ends with
+  `-SALT` and has the same casualties as the code without it. The sort phase uses two commands —
+  "walkers to me" and "wave your hand" (casualties raise and wave an arm); markers then show the
+  sort group (1 still, 2 waving, 3 walking) and the debrief scores the order of assessment
+  (−1 per casualty assessed while someone from a more urgent group waited). Walkers are assessed one
+  by one and may be DELAYED. Life-saving interventions include needle decompression and, in children,
+  2 rescue breaths; respiratory distress replaces the rate thresholds, CRT and AVPU are not used;
+  under 3 years "simple command" shows purposeful movement. New GREY (expectant) tag on key 5;
+  GREY or BLACK for a survivor is a critical error. The rule for when a casualty is expectant is
+  still open (no casualty is expectant yet).
+
 ## [0.4.2] - 2026-10-12
 
 ### Added

@@ -281,6 +281,7 @@ function renderBar(): void {
   if (sceneKind === 'injuries') {
     for (const p of scenario.patients) button(`🔍 ${p.id}`, () => view.lookAt(p.position[0], p.position[1], 1.4, 40));
     button('Zatamuj wszystkie', () => scenario.patients.forEach((p) => p.majorBleeding && view.setBleedingControlled(p.id)));
+    button('Pomachaj (SALT)', () => view.wave(scenario.patients.map((p) => p.id)));
   }
   if (sceneKind === 'crash') {
     button('Zatamuj krwotok', () => view.setBleedingControlled('p1'));

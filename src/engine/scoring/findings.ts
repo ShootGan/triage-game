@@ -1,7 +1,7 @@
 import type { ScenarioPatient } from '../../scenarios/types';
 import { initialExamState, performAction } from '../exam';
 import type { ExamActionId, PatientExamState } from '../exam/types';
-import type { Avpu, TriageCategory, TriageResult, Vitals } from '../triage';
+import type { Avpu, ProtocolMode, TriageCategory, TriageResult, Vitals } from '../triage';
 
 /**
  * What the player has established about a patient before tagging. Unset field = unknown.
@@ -22,7 +22,7 @@ export interface Findings {
 }
 
 /** Findings revealed by one action, given the exam state before it. */
-function reveal(p: ScenarioPatient, s: PatientExamState, action: ExamActionId, f: Findings): void {
+function reveal(p: ScenarioPatient, s: PatientExamState, action: ExamActionId, f: Findings, mode: ProtocolMode): void {
   const v = p.vitals;
   const b = v.breathing;
   const rate = () => {
@@ -76,6 +76,12 @@ function reveal(p: ScenarioPatient, s: PatientExamState, action: ExamActionId, f
       if (!p.cold) f.crtSeconds = v.crtSeconds;
       return;
     case 'commands':
+      // SALT under 3: the result tells whether movements are purposeful (the whole AVPU picture).
+      if (mode === 'SALT' && p.ageYears < 3) {
+        f.avpu = v.avpu;
+        if (v.avpu === 'P') f.painAppropriate = !!v.painResponseAppropriate;
+        return;
+      }
       // Infant: too young for commands — only shows it is alert.
       if (p.ageYears < 2 && v.avpu === 'A') {
         f.avpu = 'A';
@@ -94,14 +100,14 @@ function reveal(p: ScenarioPatient, s: PatientExamState, action: ExamActionId, f
 }
 
 /** Findings from the actions logged before the tag (replayed in order, each with the state it was done in). */
-export function knownFindings(p: ScenarioPatient, actionsBefore: ExamActionId[]): Findings {
+export function knownFindings(p: ScenarioPatient, actionsBefore: ExamActionId[], mode: ProtocolMode = 'START'): Findings {
   const f: Findings = {};
   // A patient who speaks (remark with a quote, as the exam panel shows it) is visibly breathing.
   if (p.remark && /[„"“”]/.test(p.remark) && p.vitals.breathing.spontaneous) f.spontaneous = true;
   let s = initialExamState();
   for (const a of actionsBefore) {
-    reveal(p, s, a, f);
-    s = performAction(p, s, a).state;
+    reveal(p, s, a, f, mode);
+    s = performAction(p, s, a, mode).state;
   }
   return f;
 }

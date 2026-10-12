@@ -62,7 +62,11 @@ export function BriefingOverlay() {
   const scenario = useGame((s) => s.scenario)!;
   const mode = useGame((s) => s.mode);
   const startPlaying = useGame((s) => s.startPlaying);
-  const text = scenario.briefing;
+  const text =
+    scenario.protocol === 'SALT'
+      ? `${scenario.briefing}
+Segregacja wg SALT: najpierw sortowanie komendami, potem ocena — nieruchomi, machający, chodzący.`
+      : scenario.briefing;
   const [shown, setShown] = useState(0);
 
   useEffect(() => {
@@ -90,7 +94,7 @@ export function BriefingOverlay() {
         <div className="radio-meta">
           <span>Zdarzenie: {scenario.title}</span>
           <span>
-            Tryb: {MODE_LABEL[mode]} · Limit:{' '}
+            Tryb: {MODE_LABEL[mode]} · Algorytm: {scenario.protocol === 'SALT' ? 'SALT' : 'START/JumpSTART'} · Limit:{' '}
             {timeLimitEnforced(mode) ? formatClock(scenario.timeLimitSec) : 'brak'}
           </span>
         </div>

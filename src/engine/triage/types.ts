@@ -17,6 +17,11 @@ export interface SaltInfo {
   expectant?: boolean;
   /** Tension pneumothorax: needle decompression is a life-saving intervention in SALT. */
   tensionPneumothorax?: boolean;
+  /**
+   * Overrides the rate-based reading of respiratory distress — e.g. panic hyperventilation: fast,
+   * but talking in full sentences without signs of distress (false).
+   */
+  distress?: boolean;
 }
 
 export type Avpu = 'A' | 'V' | 'P' | 'U';
