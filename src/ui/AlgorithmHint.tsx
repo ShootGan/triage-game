@@ -8,16 +8,21 @@ interface Criterion {
   needs: ExamActionId[];
 }
 
+/** Life-saving and done the moment it's seen — before any further assessment, not at the perfusion step. */
+const BLEEDING: Criterion = { text: 'Masywny krwotok → tamuj od razu (opaska uciskowa), przed dalszą oceną', needs: ['bleeding'] };
+
 const START: Criterion[] = [
+  BLEEDING,
   { text: 'Chodzi? → ZIELONY', needs: [] },
   { text: 'Nie oddycha → udrożnij drogi oddechowe: oddycha → CZERWONY, nie → CZARNY', needs: ['breathing', 'airway'] },
   { text: 'Oddechy > 30/min → CZERWONY', needs: ['breathing'] },
-  { text: 'Brak tętna promieniowego lub CRT > 2 s → CZERWONY (tamuj krwotok!)', needs: ['pulse', 'crt'] },
+  { text: 'Brak tętna promieniowego lub CRT > 2 s → CZERWONY', needs: ['pulse', 'crt'] },
   { text: 'Nie wykonuje prostych poleceń → CZERWONY', needs: ['commands'] },
   { text: 'W przeciwnym razie → ŻÓŁTY', needs: [] },
 ];
 
 const JUMPSTART: Criterion[] = [
+  BLEEDING,
   { text: 'Chodzi? → ZIELONY (niechodzący z powodu wieku → pełna ocena)', needs: [] },
   { text: 'Nie oddycha → udrożnij drogi oddechowe: oddycha → CZERWONY', needs: ['breathing', 'airway'] },
   {

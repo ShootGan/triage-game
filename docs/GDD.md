@@ -73,11 +73,13 @@ Każda czynność kosztuje czas gry (np. tętno 5 s, oddech 15 s, opaska 3 s).
 
 Silnik liczy poprawną kategorię z parametrów pacjenta — scenariusze **nie** zawierają ręcznie wpisanych odpowiedzi. Silnik zwraca też ścieżkę decyzji (do debriefu).
 
+Masywny krwotok w obu algorytmach tamuje się **od razu, gdy się go zauważy** — przed dalszą oceną, nie dopiero przy perfuzji.
+
 ### START (dorośli)
 1. Chodzi → **ZIELONY**
 2. Oddycha? Nie → udrożnij drogi oddechowe → oddycha? Tak → **CZERWONY**, Nie → **CZARNY**
 3. Oddechy > 30/min → **CZERWONY**
-4. Brak tętna promieniowego lub CRT > 2 s → **CZERWONY** (tamuj krwotok)
+4. Brak tętna promieniowego lub CRT > 2 s → **CZERWONY**
 5. Nie wykonuje prostych poleceń → **CZERWONY**
 6. W przeciwnym razie → **ŻÓŁTY**
 

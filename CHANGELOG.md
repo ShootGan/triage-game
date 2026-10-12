@@ -30,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ruptured spleen, traumatic amputation, confused-but-alert head injury; three new dead) and more
   bleeding sites than the thigh. The same casualty type never appears a third time in one code while
   alternatives exist. Existing codes give a different set.
+- Algorithm panel (Learn mode): "control massive bleeding at once" is the first step of START and
+  JumpSTART instead of a note at the perfusion step.
 - Ages 9–12: BLACK no longer counts when either algorithm gives a living colour (apnoea with a pulse
   needs 5 rescue breaths per JumpSTART).
 - Breathing that returns after rescue breaths settles RED without a pulse check; the order note no
