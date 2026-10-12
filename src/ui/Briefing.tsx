@@ -64,7 +64,7 @@ export function BriefingOverlay() {
   const startPlaying = useGame((s) => s.startPlaying);
   const text =
     scenario.protocol === 'SALT'
-      ? `${scenario.briefing}
+      ? `${scenario.briefing.replace('(START / JumpSTART)', '(SALT)')}
 Segregacja wg SALT: najpierw sortowanie komendami, potem ocena — nieruchomi, machający, chodzący.`
       : scenario.briefing;
   const [shown, setShown] = useState(0);

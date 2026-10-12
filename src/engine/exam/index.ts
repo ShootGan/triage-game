@@ -107,7 +107,7 @@ export function breathingSigns(p: ScenarioPatient): string {
       : pick(p.id, ['oddech szybki i płytki, wyraźny wysiłek oddechowy, sinica warg', 'oddycha z trudem, zaciąganie międzyżebrowe, sinica warg']);
   }
   if (respiratoryDistress(v, p.appearsChild)) return 'oddycha szybko, ale mówi pełnymi zdaniami, bez wysiłku oddechowego';
-  return speaks ? 'oddech spokojny, mówi swobodnie' : 'oddech spokojny, bez wysiłku';
+  return speaks && v.obeysCommands ? 'oddech spokojny, mówi swobodnie' : 'oddech spokojny, bez wysiłku';
 }
 
 function distressText(p: ScenarioPatient, mode: ProtocolMode): string {

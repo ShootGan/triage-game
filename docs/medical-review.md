@@ -58,8 +58,8 @@ Otwarte: opisy bez cudzysłowu, które pokazują reakcję („otwiera oczy na g�
 część starszych wypowiedzi zdradza wynik badania.
 
 Dodane później (do weryfikacji): `g-oko` (ciało obce / rana powieki / pył / oparzenie spojówek — chodzi), `g-dym`
-(kaszel, ból głowy po dymie — chodzi), `y-rdzen-szyjny` (porażenie kończyn dolnych, ±osłabienie rąk, oddech
-przeponowy; parametry w normie START — ŻÓŁTY), `y-zmiazdzenie-dlugie` (długie przygniecenie kończyny; uwaga w debriefie
+(kaszel, ból głowy po dymie — chodzi), `y-rdzen-szyjny` (porażenie kończyn dolnych, ±osłabienie rąk, brak czucia w nogach;
+parametry w normie START — ŻÓŁTY), `y-zmiazdzenie-dlugie` (długie przygniecenie kończyny; uwaga w debriefie
 o zespole zmiażdżenia), `r-dym-co` (zatrucie dymem/CO: AVPU V, nie wykonuje poleceń — CZERWONY). [do decyzji]
 `y-rdzen-szyjny`: wstrząs neurogenny (bradykardia, hipotensja) dawałby CZERWONY — tu świadomie wariant bez wstrząsu.
 

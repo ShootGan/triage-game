@@ -919,7 +919,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     vitals: STABLE(),
     injuries: [
       ['ból karku, nie rusza nogami i nie czuje dotyku poniżej pasa', 'ból karku, mrowienie i osłabienie obu rąk, nie rusza nogami'],
-      ['tkliwość karku przy delikatnym ucisku', 'oddycha głównie brzuchem, klatka piersiowa słabo się unosi'],
+      ['tkliwość karku przy delikatnym ucisku', 'brak czucia w nogach przy dotyku'],
     ],
     remarks: [
       'Leży nieruchomo, przerażon{y|a}: „Nie czuję nóg… Co się ze mną dzieje?"',
