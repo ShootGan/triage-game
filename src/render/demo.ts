@@ -163,6 +163,34 @@ const modelsScenario: Scenario = {
   ],
 };
 
+/** Injury visuals read from the injury texts (src/scenarios/injuryLook.ts): bleeding sites, amputations, burns, soot, dust, impaled objects. */
+const inj = (id: string, x: number, injuries: string[], o: Partial<ScenarioPatient> = {}, shirt = '#3b5dc9'): ScenarioPatient =>
+  pt({ id, ageYears: 35, vitals: vitals(), appearance: look(shirt), pose: 'back', position: [x, 0], rotation: Math.PI / 2, injuries, ...o });
+const injuriesScenario: Scenario = {
+  id: 'demo-injuries',
+  title: 'Demo obrażeń',
+  briefing: 'Wygląd obrażeń.',
+  timeLimitSec: 600,
+  collectionPoint: [14, 8],
+  props: [],
+  patients: [
+    inj('udo-L', -12, ['rana szarpana uda lewego z obfitym, pulsującym krwawieniem — kałuża krwi'], { majorBleeding: true }),
+    inj('podudzie', -9, ['rana szarpana podudzia lewego z obfitym krwawieniem — przesiąknięta nogawka'], { majorBleeding: true }),
+    inj('ramie', -6, ['głęboka rana ramienia prawego z tryskającym krwawieniem — kałuża krwi'], { majorBleeding: true }),
+    inj('przedramie', -3, ['rana cięta przedramienia od szkła, krew tryska strumieniem'], { majorBleeding: true }, '#e0d050'),
+    inj('amp-stopa', 0, ['amputacja urazowa stopy prawej, obfite krwawienie z kikuta'], { majorBleeding: true }),
+    inj('amp-podudzie', 3, ['amputacja urazowa podudzia lewego poniżej kolana, obfite krwawienie'], { majorBleeding: true }, '#3fa34d'),
+    inj('amp-dlon', 6, ['częściowa amputacja przedramienia prawego, tryskające krwawienie'], { majorBleeding: true }, '#d0d0d0'),
+    inj('oparzenia', 9, ['rozległe oparzenia II i III stopnia tułowia i ramion', 'oparzenia twarzy i szyi, osmalone brwi i rzęsy'], {}, '#7a3b8a'),
+    inj('nogi-nadpalone', 12, ['oparzenia II stopnia podudzia lewego i stopy, nadpalone nogawki', 'osmalone brwi i włosy']),
+    inj('sadza', -12, ['sadza wokół nosa i ust, bez oparzeń skóry'], { position: [-12, 4] }, '#d0d0d0'),
+    inj('pyl', -9, ['twarz, usta i nos zasypane pyłem'], { position: [-9, 4] }, '#c04a4a'),
+    inj('szklo-udo', -6, ['kawałek szkła wbity w udo prawe, niewielkie krwawienie wokół — nie usuwać'], { position: [-6, 4] }),
+    inj('pret-lydka', -3, ['metalowy odłamek wbity w łydkę lewą, krwawienie sączące'], { position: [-3, 4] }, '#e0d050'),
+    inj('pret-posladek', 0, ['pręt wbity w pośladek, niewielkie krwawienie — nie usuwać'], { position: [0, 4], pose: 'front' }, '#3fa34d'),
+  ],
+};
+
 const canvas = document.getElementById('c') as HTMLCanvasElement;
 const markerLayer = document.getElementById('markers') as HTMLDivElement;
 const bar = document.getElementById('bar') as HTMLDivElement;
@@ -171,8 +199,8 @@ const log = document.getElementById('log') as HTMLDivElement;
 // stan demo — z parametrów URL (?terrain=street&scene=props&fp=1), żeby łatwo linkować widoki
 const params = new URLSearchParams(location.search);
 let terrain: TerrainKind = (['road', 'street', 'field', 'highway', 'railway', 'snow'] as const).find((t) => t === params.get('terrain')) ?? 'road';
-type SceneKind = 'crash' | 'props' | 'vehicles' | 'models';
-let sceneKind: SceneKind = (['props', 'vehicles', 'models'] as const).find((k) => k === params.get('scene')) ?? 'crash';
+type SceneKind = 'crash' | 'props' | 'vehicles' | 'models' | 'injuries';
+let sceneKind: SceneKind = (['props', 'vehicles', 'models', 'injuries'] as const).find((k) => k === params.get('scene')) ?? 'crash';
 let showFootprints = params.get('fp') !== '0';
 
 let view: GameView;
@@ -184,6 +212,8 @@ function mount(): void {
   view?.dispose();
   scenario = sceneKind === 'vehicles'
     ? vehiclesScenario
+    : sceneKind === 'injuries'
+    ? injuriesScenario
     : sceneKind === 'models'
     ? modelsScenario
     : { ...(sceneKind === 'props' ? propsScenario : crashScenario), terrain };
@@ -235,6 +265,7 @@ function renderBar(): void {
   button('Rekwizyty', () => { sceneKind = 'props'; mount(); }, sceneKind === 'props');
   button('Pojazdy', () => { sceneKind = 'vehicles'; mount(); }, sceneKind === 'vehicles');
   button('Nowe modele', () => { sceneKind = 'models'; mount(); }, sceneKind === 'models');
+  button('Obrażenia', () => { sceneKind = 'injuries'; mount(); }, sceneKind === 'injuries');
   button('Obrysy', () => { showFootprints = !showFootprints; mount(); }, showFootprints);
   button('Przegląd', () => { selected = null; view.focusPatient(null); });
   if (sceneKind === 'models') {
@@ -247,6 +278,10 @@ function renderBar(): void {
     for (const p of scenario.patients) button(p.id, () => { selected = p.id; view.focusPatient(p.id); });
   }
   button('Chodzący do mnie', () => view.sendWalkersToCollectionPoint());
+  if (sceneKind === 'injuries') {
+    for (const p of scenario.patients) button(`🔍 ${p.id}`, () => view.lookAt(p.position[0], p.position[1], 1.4, 40));
+    button('Zatamuj wszystkie', () => scenario.patients.forEach((p) => p.majorBleeding && view.setBleedingControlled(p.id)));
+  }
   if (sceneKind === 'crash') {
     button('Zatamuj krwotok', () => view.setBleedingControlled('p1'));
     button('Tag red', () => view.setTag(selected ?? 'p1', 'red'));

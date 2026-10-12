@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Injuries are visible on the 3D casualties: massive bleeding spurts from the limb named in the
+  description (thigh, lower leg, upper arm, forearm, either side) and the tourniquet goes on that
+  limb; traumatic amputations show the missing foot, lower leg or hand with a bleeding stump; burns,
+  charred clothes, soot, dust and impaled glass or metal rods are drawn too. The render demo has an
+  "Obrażenia" scene for checking them.
+
 ### Changed
 
 - Scoring judges what you found out, not the order you did it in: a colour counts when the findings

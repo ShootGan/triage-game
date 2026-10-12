@@ -10,6 +10,8 @@ import { PROP_HALF_SIZE } from '../scenarios/propSizes';
 import { CAR_SEAT_Y, buildCollectionPoint, buildMedBag, buildProp, insideFootprint, propFootprint, type Footprint } from '../world/props';
 import { createHuman, type Human } from '../world/human';
 import { applyPose, placeHuman, walkCycle, type LyingBackOptions, type PoseName } from '../world/poses';
+import { applyInjuryLook, segmentPoint } from '../world/injuries';
+import { injuryLook, type InjuryLook } from '../scenarios/injuryLook';
 
 export type GameViewOptions = PixelPipelineOptions & {
   /** Tylko do debugowania (render-demo): rysuje obrysy rekwizytów (PROP_HALF_SIZE) na ziemi. */
@@ -82,10 +84,10 @@ interface MedicMove {
   phase: number;
 }
 
-/** Widoczny krwotok tętniczy: rana na udzie + pulsujące krople krwi. */
+/** Visible arterial bleeding: wound at the site from the injury text + pulsing drops. */
 interface Bleed {
-  wound: THREE.Object3D;   // punkt rany (na powierzchni uda)
-  axis: THREE.Object3D;    // środek uda na wysokości rany — kierunek wytrysku = rana − oś
+  wound: THREE.Object3D;   // wound point (limb surface, or the stump end)
+  axis: THREE.Object3D;    // limb axis behind it — spurt direction = wound − axis
   drops: THREE.Mesh[];
   vel: THREE.Vector3[];
   beat: number;
@@ -93,6 +95,7 @@ interface Bleed {
 
 interface PatientEntity {
   data: ScenarioPatient;
+  look: InjuryLook;
   bleed: Bleed | null;
   human: Human;
   breathOmega: number; // rad/s (0 = brak oddechu)
@@ -323,6 +326,8 @@ export class GameView implements IGameView {
       pregnant: a.pregnant,
     });
     h.root.userData.patientId = p.id;
+    const look = injuryLook(p);
+    applyInjuryLook(this.kit, h, look);
     this.scene.add(h.root);
     this.patientRoots.push(h.root);
     applyPose(h, POSE_MAP[p.pose], lyingVariation(p.id));
@@ -333,6 +338,7 @@ export class GameView implements IGameView {
     const br = p.vitals.breathing;
     const ent: PatientEntity = {
       data: p,
+      look,
       bleed: null,
       human: h,
       breathOmega: br.spontaneous && br.rate > 0 ? (2 * Math.PI * br.rate) / 60 : 0,
@@ -345,9 +351,10 @@ export class GameView implements IGameView {
       walked: false,
     };
 
-    if (p.majorBleeding) {
-      // kałuża pod udem (na tej nodze później opaska uciskowa)
-      h.legs[0].hip.localToWorld(_v.set(0, -0.22, 0));
+    if (p.majorBleeding && look.bleed) {
+      // pool under the wound (the tourniquet later goes on this limb)
+      const site = segmentPoint(h, look.bleed, !!look.amputation);
+      site.joint.localToWorld(_v.set(0, site.y, 0));
       if (p.trapped) {
         // the seat is above the road: blood runs over the door sill (patient's left, local +x) into a pool
         // outside — the legs themselves are hidden under the dashboard from most camera angles
@@ -367,20 +374,28 @@ export class GameView implements IGameView {
       pool.receiveShadow = true;
       this.scene.add(pool);
       ent.pool = pool;
-      ent.bleed = this.buildWound(h);
+      ent.bleed = this.buildWound(h, look);
     }
     this.patients.set(p.id, ent);
   }
 
-  /** Rana na przedniej powierzchni uda (prawa noga = legs[0]): przesiąknięta krwią nogawka, rana, krople. */
-  private buildWound(h: Human): Bleed {
-    const hip = h.legs[0].hip;
-    const y = -0.26;
-    this.kit.part(new THREE.CylinderGeometry(0.079, 0.075, 0.17, 12), '#7a0c0c', hip, 0, y, 0); // nogawka we krwi
-    this.kit.box(0.05, 0.085, 0.02, '#2a0303', 0, y, 0.077, hip); // rana
-    this.kit.box(0.03, 0.05, 0.012, '#c01818', 0.01, y, 0.086, hip); // świeża krew w ranie
-    const wound = this.kit.joint(hip, 0, y, 0.09);
-    const axis = this.kit.joint(hip, 0, y, 0);
+  /** Wound at the bleeding site: blood-soaked sleeve, wound, drops; on a stump the blood spurts from its end. */
+  private buildWound(h: Human, look: InjuryLook): Bleed {
+    const amputated = !!look.amputation;
+    const p = segmentPoint(h, look.bleed!, amputated);
+    let wound: THREE.Object3D;
+    let axis: THREE.Object3D;
+    if (amputated) {
+      wound = this.kit.joint(p.joint, 0, p.y - 0.03, 0);
+      axis = this.kit.joint(p.joint, 0, p.y + 0.08, 0);
+    } else {
+      const len = p.r > 0.06 ? 0.17 : 0.12;
+      this.kit.part(new THREE.CylinderGeometry(p.r, p.r * 0.95, len, 12), '#7a0c0c', p.joint, 0, p.y, 0); // blood-soaked sleeve
+      this.kit.box(p.r * 0.63, p.r * 1.08, 0.02, '#2a0303', 0, p.y, p.r - 0.002, p.joint); // wound
+      this.kit.box(p.r * 0.38, p.r * 0.63, 0.012, '#c01818', 0.01, p.y, p.r + 0.007, p.joint); // fresh blood in the wound
+      wound = this.kit.joint(p.joint, 0, p.y, p.r + 0.011);
+      axis = this.kit.joint(p.joint, 0, p.y, 0);
+    }
     const geo = this.dropGeo;
     const mat = this.kit.toon('#c01818');
     const drops: THREE.Mesh[] = [];
@@ -760,7 +775,7 @@ export class GameView implements IGameView {
     const e = this.patients.get(id);
     if (!e || e.bleedingControlled) return;
     e.bleedingControlled = true;
-    // opaska uciskowa „wysoko i ciasno" na udzie: czarny pas, pręt skręcający, czerwony znacznik czasu
+    // tourniquet "high and tight" on the bleeding limb (thigh or upper arm): black strap, windlass, red time tag
     const g = new THREE.Group();
     this.kit.part(new THREE.CylinderGeometry(0.104, 0.1, 0.075, 14), '#141416', g);
     this.kit.part(new THREE.CylinderGeometry(0.107, 0.103, 0.02, 14), '#3a3a40', g, 0, 0.03, 0); // rzep
@@ -769,8 +784,16 @@ export class GameView implements IGameView {
     rod.rotation.z = Math.PI / 2;
     this.kit.box(0.09, 0.05, 0.012, '#e0302a', 0.07, -0.05, 0.11, g); // znacznik czasu (czerwony)
     this.kit.box(0.05, 0.02, 0.013, '#f4f4f4', 0.07, -0.05, 0.112, g); // „T"
-    g.position.set(0, -0.08, 0);
-    e.human.legs[0].hip.add(g);
+    const site = e.look.bleed ?? { segment: 'thigh', side: 0 };
+    const arm = site.segment === 'arm' || site.segment === 'forearm' || site.segment === 'hand';
+    if (arm) {
+      g.scale.setScalar(0.62);
+      g.position.set(0, -0.07, 0);
+      e.human.arms[site.side].sh.add(g);
+    } else {
+      g.position.set(0, -0.08, 0);
+      e.human.legs[site.side].hip.add(g);
+    }
     e.tourniquet = g;
     // kałuża ciemnieje i przestaje rosnąć
     if (e.pool) e.pool.material = this.kit.toon('#5a0c0c');
