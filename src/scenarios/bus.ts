@@ -94,7 +94,9 @@ export const busScenario: Scenario = {
         obeysCommands: true,
         avpu: 'A',
       },
-      injuries: ['bolesność i obrzęk nadgarstka prawego', 'otarcie czoła'],
+      injuries: ['bolesność i obrzęk nadgarstka prawego, nie porusza ręką — podejrzenie złamania', 'otarcie czoła'],
+      // SALT: a suspected fracture is not "minor injuries only" → DELAYED although walking.
+      salt: { minorOnly: false },
       remark: 'Siedzi, trzymając się za nadgarstek: „Chyba złamałem rękę…"',
       appearance: { sex: 'm', child: false, skin: '#8d5524', hair: '#1b1b1b', hairStyle: 'short', beard: true, shirt: '#c0392b', pants: '#3b3b3b', sleeves: 'short' },
       pose: 'sitting',

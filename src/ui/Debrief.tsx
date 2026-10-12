@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { POINTS } from '../engine/scoring/points';
 import type { PatientDebrief, Verdict } from '../engine/scoring/types';
+import type { ScenarioPatient } from '../scenarios/types';
 import { CATEGORY_LABEL, type TriageCategory } from '../engine/triage';
 import { CATEGORY_COLOR, categoriesFor, formatClock } from '../game/constants';
 import { getDeps } from '../game/deps';
@@ -165,7 +166,7 @@ export function DebriefScreen() {
             <span />
           </div>
           {score.patients.map((p) => (
-            <PatientRow key={p.patientId} p={p} />
+            <PatientRow key={p.patientId} p={p} patient={scenario?.patients.find((x) => x.id === p.patientId)} />
           ))}
         </div>
       </div>
@@ -182,12 +183,13 @@ function Stat({ label, value, cls }: { label: string; value: string | number; cl
   );
 }
 
-function PatientRow({ p }: { p: PatientDebrief }) {
+function PatientRow({ p, patient }: { p: PatientDebrief; patient?: ScenarioPatient }) {
+  const injuries = patient?.injuries ?? [];
   const [open, setOpen] = useState(p.verdict !== 'correct');
   const { ACTION_LABEL } = getDeps();
   const tagAt = p.actionsBeforeTag ?? null;
   // Matches the exam panel: children get "peripheral pulse" even when START's colour was accepted.
-  const child = p.protocol === 'JumpSTART' || p.alternative?.protocol === 'JumpSTART';
+  const child = patient?.appearsChild ?? (p.protocol === 'JumpSTART' || p.alternative?.protocol === 'JumpSTART');
 
   return (
     <div className={`debrief-item verdict-${p.verdict}`}>
@@ -236,6 +238,16 @@ function PatientRow({ p }: { p: PatientDebrief }) {
       {open && (
         <div className="pd-detail">
           <div>
+            {injuries.length > 0 && (
+              <>
+                <div className="h-small">Obrażenia</div>
+                <ul className="injuries">
+                  {injuries.map((t, i) => (
+                    <li key={i}>{t}</li>
+                  ))}
+                </ul>
+              </>
+            )}
             <div className="h-small">Poprawna ścieżka ({p.protocol})</div>
             <ol className="steps">
               {p.steps.map((s, i) => (

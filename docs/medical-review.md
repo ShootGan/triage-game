@@ -68,13 +68,16 @@ o zespole zmiażdżenia), `r-dym-co` (zatrucie dymem/CO: AVPU V, nie wykonuje po
 ## 0b. SALT (2026-10-12) — do weryfikacji
 
 Tryb SALT ocenia tych samych poszkodowanych co START. Decyzje, które gra podejmuje za ratownika:
-- **Duszność** = dorosły > 30 lub < 10/min, dziecko < 15 lub > 45/min albo nieregularny. Wyjątek: hiperwentylacja z paniki
+- **Duszność** — gracz ocenia ją sam z objawów pokazanych przy „Oceń oddech” (mowa pojedynczymi słowami, wysiłek, sinica
+  albo spokojny oddech, pełne zdania). Za objawami stoi reguła: dorosły > 30 lub < 10/min, dziecko < 15 lub > 45/min albo nieregularny. Wyjątek: hiperwentylacja z paniki
   (`g-hiperwentylacja`, wzorzec koncertu `c01`) — szybko, ale mówi pełnymi zdaniami → bez duszności → ZIELONY. [do decyzji]
 - **Celowe ruchy** (zamiast poleceń) tylko u dzieci < 3 lat: AVPU A/V albo P z adekwatną reakcją. [do decyzji] Splątany dorosły
   (AVPU A, nie wykonuje poleceń, `r-splatany`) → CZERWONY.
 - **Tylko drobne obrażenia** = zielony wg START/JumpSTART, z wyjątkami → ŻÓŁTY mimo chodzenia: `g-reka` (podejrzenie złamania
   nadgarstka/obojczyka), nowy `g-chodzi-powazne` (głęboka rana przedramienia ze ścięgnami, otwarte złamanie palców, zwichnięcie
-  barku). [do decyzji] `g-dziecko-reka` zostaje „drobny” (warianty mieszane: obrzęk przedramienia / guz / krew z nosa).
+  barku). `g-dziecko-reka` ma teraz wyłącznie warianty z podejrzeniem złamania (→ ŻÓŁTY w SALT); guz i krew z nosa przeniesione do
+  `g-dziecko-ciche`. Wzorzec autobusu `p03` (nadgarstek) — podejrzenie złamania → ŻÓŁTY. Test pilnuje, żeby archetyp „nie tylko
+  drobny” nie miał drobnych wariantów.
 - **Dziecko w bezdechu**: SALT — 2 oddechy ratownicze po udrożnieniu (dane z JumpSTART: „oddycha po 5 oddechach” użyte też dla 2).
 - **Odma prężna** (`r-odma`): odbarczenie igłą = czynność ratująca życie; po odbarczeniu kategoria bez zmian (CZERWONY).
 - **SZARY**: reguła otwarta — na razie żaden pacjent nie jest „oczekujący”.

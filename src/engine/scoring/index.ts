@@ -1,5 +1,5 @@
 import type { ScenarioPatient } from '../../scenarios/types';
-import { initialExamState, performAction } from '../exam';
+import { breathingSigns, inDistress, initialExamState, performAction } from '../exam';
 import type { ExamActionId, PatientExamState } from '../exam/types';
 import {
   CATEGORY_LABEL,
@@ -125,15 +125,17 @@ function saltFinding(p: ScenarioPatient, category: TriageCategory, last: Decisio
   switch (last.id) {
     case 'salt-breathing':
       return `Nie oddycha mimo udrożnienia dróg oddechowych${p.appearsChild ? ' i 2 oddechów ratowniczych' : ''} → ${cat}`;
-    case 'salt-minor':
+    case 'salt-minor': {
+      const what = p.injuries[0] ? ` (${p.injuries[0]})` : '';
       return category === 'green'
         ? `${moves}, tętno obecne, bez duszności, tylko drobne obrażenia → ${cat}`
-        : `${moves}, tętno obecne, bez duszności, ale obrażenia nie tylko drobne${v.canWalk ? ' (chodzi, a mimo to)' : ''} → ${cat}`;
+        : `${moves}, tętno obecne, bez duszności, ale obrażenia nie tylko drobne${what}${v.canWalk ? ' — mimo że chodzi' : ''} → ${cat}`;
+    }
     case 'salt-survive': {
       const why: string[] = [];
       if (!purposeful(v, p.ageYears)) why.push(p.ageYears < 3 ? 'brak celowych ruchów' : 'nie wykonuje poleceń');
       if (!v.peripheralPulse) why.push('brak tętna obwodowego');
-      if (p.salt?.distress ?? respiratoryDistress(v, p.appearsChild)) why.push(`duszność (${v.breathing.rate}/min)`);
+      if (inDistress(p)) why.push(`duszność (${breathingSigns(p)})`);
       const reason = why.join(', ');
       return category === 'grey' ? `${reason}; przy dostępnych siłach i środkach nie przeżyje → ${cat}` : `${reason[0].toUpperCase()}${reason.slice(1)} → ${cat}`;
     }
@@ -487,6 +489,9 @@ function teachingNotes(p: ScenarioPatient, r: TriageResult, actions: ExamActionI
   }
   if (r.category !== 'black' && p.injuries.some(t => /długo przygniec/.test(t))) {
     out.push(`Długie przygniecenie kończyny: po uwolnieniu grozi zespół zmiażdżenia (hiperkaliemia, zaburzenia rytmu, nagłe zatrzymanie krążenia). Kolor wg ${r.protocol} się nie zmienia, ale pacjent wymaga pilnej segregacji wtórnej i obserwacji.`);
+  }
+  if (r.protocol === 'SALT' && p.salt?.distress === false && respiratoryDistress(p.vitals, p.appearsChild)) {
+    out.push('Szybki oddech bez wysiłku oddechowego (np. hiperwentylacja z paniki) to nie duszność — SALT ocenia wysiłek oddechowy i mowę, nie samą częstość.');
   }
   if (r.steps.some(s => s.id === 'infant-injury')) {
     out.push(`Istotne obrażenia zewnętrzne u niemowlęcia wg JumpSTART: ${INFANT_SIGNIFICANT_INJURIES.join(', ')}.`);

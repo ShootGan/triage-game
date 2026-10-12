@@ -79,13 +79,39 @@ export function isBreathingNow(p: ScenarioPatient, s: PatientExamState): boolean
 
 type Outcome = { text: string; seconds?: number; patch?: Partial<PatientExamState> };
 
-/** SALT reads breathing as "respiratory distress", not as a rate threshold. */
+/** Deterministic pick from a few phrasings (same patient → same text). */
+function pick<T>(id: string, list: readonly T[]): T {
+  let h = 0;
+  for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return list[h % list.length];
+}
+
+/** Whether the casualty is in respiratory distress (the description may override the rate reading). */
+export function inDistress(p: ScenarioPatient): boolean {
+  return p.salt?.distress ?? respiratoryDistress(p.vitals, p.appearsChild);
+}
+
+/**
+ * SALT has no rate thresholds: the rescuer judges respiratory distress from what is seen and heard.
+ * The exam shows the signs, not the verdict — the player decides.
+ */
+export function breathingSigns(p: ScenarioPatient): string {
+  const v = p.vitals;
+  const speaks = p.ageYears >= 2 && (v.avpu === 'A' || v.avpu === 'V');
+  const slow = p.appearsChild ? v.breathing.rate < 15 : v.breathing.rate < 10;
+  if (inDistress(p)) {
+    if (slow) return 'oddech wolny i płytki, z przerwami, sinica warg';
+    if (p.appearsChild && v.breathing.irregular) return 'oddech nieregularny, z przerwami, zaciąganie międzyżebrowe';
+    return speaks
+      ? pick(p.id, ['mówi pojedynczymi słowami, łapie powietrze', 'oddycha z wysiłkiem, pracują mięśnie szyi, mówi urywanymi słowami'])
+      : pick(p.id, ['oddech szybki i płytki, wyraźny wysiłek oddechowy, sinica warg', 'oddycha z trudem, zaciąganie międzyżebrowe, sinica warg']);
+  }
+  if (respiratoryDistress(v, p.appearsChild)) return 'oddycha szybko, ale mówi pełnymi zdaniami, bez wysiłku oddechowego';
+  return speaks ? 'oddech spokojny, mówi swobodnie' : 'oddech spokojny, bez wysiłku';
+}
+
 function distressText(p: ScenarioPatient, mode: ProtocolMode): string {
-  if (mode !== 'SALT') return '';
-  const fast = respiratoryDistress(p.vitals, p.appearsChild);
-  const distress = p.salt?.distress ?? fast;
-  if (fast && !distress) return ' — szybko, ale mówi pełnymi zdaniami, bez cech duszności';
-  return distress ? ' — duszność' : ' — bez duszności';
+  return mode === 'SALT' ? ` — ${breathingSigns(p)}` : '';
 }
 
 function breathingResult(p: ScenarioPatient, s: PatientExamState): Outcome {

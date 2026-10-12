@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   under 3 years "simple command" shows purposeful movement. New GREY (expectant) tag on key 5;
   GREY or BLACK for a survivor is a critical error. The rule for when a casualty is expectant is
   still open (no casualty is expectant yet).
+- SALT: "assess breathing" shows the signs (speaks in single words, effort, cyanosis — or calm,
+  full sentences) and the player judges respiratory distress; the debrief explains it, and panic
+  hyperventilation (fast but no effort) is not distress. The debrief lists each casualty's injuries.
 - SALT content: walkers with a suspected fracture (and a new walking casualty with a deep forearm
   wound, open finger fracture or dislocated shoulder) are DELAYED in SALT; tension pneumothorax needs
   needle decompression.

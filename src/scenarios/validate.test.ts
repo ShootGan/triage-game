@@ -52,3 +52,22 @@ describe('SALT: szybki oddech u chodzących', () => {
     }
   });
 });
+
+describe('SALT: chodzący z podejrzeniem złamania nie są „tylko drobni"', () => {
+  it('archetypy i wzorce: tekst z podejrzeniem złamania/zwichnięcia ⇒ salt.minorOnly === false', async () => {
+    const { ARCHETYPES } = await import('./generator/archetypes');
+    const { LAYOUTS } = await import('./generator/layouts');
+    const serious = /podejrzenie (złamania|zwichnięcia)|otwarte złamanie|ścięgna/;
+    for (const a of ARCHETYPES.filter((x) => x.category === 'green')) {
+      const texts = a.injuries.flat().map((t) => (typeof t === 'string' ? t : t.t));
+      if (texts.some((t) => serious.test(t))) expect(a.salt?.minorOnly, a.id).toBe(false);
+      // ...and the reverse: no mixed archetype where some variants are minor (the flag covers them all)
+      if (a.salt?.minorOnly === false) for (const t of a.injuries[0].map((x) => (typeof x === 'string' ? x : x.t))) expect(t, a.id).toMatch(serious);
+    }
+    for (const l of LAYOUTS) {
+      for (const p of l.template.patients) {
+        if (p.vitals.canWalk && p.injuries.some((t) => serious.test(t))) expect(p.salt?.minorOnly, `${l.id} ${p.id}`).toBe(false);
+      }
+    }
+  });
+});

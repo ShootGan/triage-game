@@ -390,8 +390,14 @@ export const ARCHETYPES: readonly Archetype[] = [
     ages: ['child'],
     mechanisms: ALL,
     vitals: WALKER(),
-    injuries: [['bolesność i obrzęk przedramienia lewego', 'bolesność nadgarstka prawego', 'guz na czole', 'krwawienie z nosa (niewielkie)']],
-    extraInjuries: ['otarcia dłoni'],
+    // SALT: a suspected fracture is not "minor injuries only" → DELAYED although walking.
+    salt: { minorOnly: false },
+    injuries: [[
+      'bolesność i obrzęk przedramienia lewego, oszczędza rękę — podejrzenie złamania',
+      'bolesność i obrzęk nadgarstka prawego — podejrzenie złamania',
+      'zniekształcenie przedramienia prawego — podejrzenie złamania',
+    ]],
+    extraInjuries: ['otarcia dłoni', 'guz na czole'],
     remarks: [
       'Trzyma się za rękę i pochlipuje: „Boli mnie…"',
       { t: 'Siedzi cicho i rozgląda się za rodzicami.', poses: ['sitting'] },
@@ -407,7 +413,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     ages: ['child'],
     mechanisms: ALL,
     vitals: WALKER(),
-    injuries: [['drobne otarcia przedramion', 'guz na czole', 'otarcie policzka', 'zasinienie uda']],
+    injuries: [['drobne otarcia przedramion', 'guz na czole', 'otarcie policzka', 'zasinienie uda', 'krwawienie z nosa (niewielkie)']],
     extraInjuries: ['podarte, zabrudzone ubranie'],
     remarks: [
       { t: 'Stoi bez słowa, kurczowo trzyma plecak. Na pytania kiwa głową.', poses: ['standing'] },

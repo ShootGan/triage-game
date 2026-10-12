@@ -648,15 +648,19 @@ describe('SALT — ocena', () => {
     const fracture = patient('f', { canWalk: true }, { salt: { minorOnly: false } });
     const d = salt(fracture, 'green', ['breathing', 'pulse', 'commands']);
     expect(d).toMatchObject({ expected: 'yellow', verdict: 'under' });
-    expect(d.explanation).toMatch(/obrażenia nie tylko drobne \(chodzi, a mimo to\) → ŻÓŁTY/);
+    expect(d.explanation).toMatch(/obrażenia nie tylko drobne — mimo że chodzi → ŻÓŁTY/);
   });
 
-  it('duszność → CZERWONY; wynik oddechu podaje duszność', () => {
+  it('duszność → CZERWONY; wynik oddechu pokazuje objawy, a ocenę zostawia graczowi', () => {
     const p = patient('r', { breathing: { rate: 34 } });
     const ex = examSalt(p, ['breathing']);
-    expect(ex.log[0].text).toBe('Oddycha, 34/min — duszność');
+    expect(ex.log[0].text).toBe('Oddycha, 34/min — mówi pojedynczymi słowami, łapie powietrze');
+    expect(ex.log[0].text).not.toMatch(/duszność/);
     expect(salt(p, 'red', ['breathing']).verdict).toBe('correct');
-    expect(salt(p, 'yellow', ['breathing']).explanation).toMatch(/^Duszność \(34\/min\) → CZERWONY/);
+    expect(salt(p, 'yellow', ['breathing']).explanation).toMatch(/^Duszność \(mówi pojedynczymi słowami, łapie powietrze\) → CZERWONY/);
+    const panic = patient('h', { canWalk: true, breathing: { rate: 36 } }, { salt: { distress: false } });
+    expect(examSalt(panic, ['breathing']).log[0].text).toBe('Oddycha, 36/min — oddycha szybko, ale mówi pełnymi zdaniami, bez wysiłku oddechowego');
+    expect(salt(panic, 'green', ['breathing', 'pulse', 'commands']).notes?.[0]).toMatch(/^Szybki oddech bez wysiłku oddechowego/);
   });
 
   it('SZARY albo CZARNY u przeżywającego = błąd krytyczny', () => {
