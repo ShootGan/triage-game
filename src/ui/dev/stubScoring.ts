@@ -5,7 +5,7 @@ import type { GameScore, PatientDebrief, Verdict } from '../../engine/scoring/ty
 import { CATEGORY_LABEL, triage, type TriageCategory } from '../../engine/triage';
 import type { ScenarioPatient } from '../../scenarios/types';
 
-const RANK: Record<TriageCategory, number> = { green: 0, yellow: 1, red: 2, black: -1 };
+const RANK: Record<TriageCategory, number> = { green: 0, yellow: 1, red: 2, grey: -0.5, black: -1 };
 
 export function scoreGame(
   patients: ScenarioPatient[],

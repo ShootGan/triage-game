@@ -4,31 +4,38 @@ import type { ExamActionId, PatientExamState } from '../exam/types';
 import {
   CATEGORY_LABEL,
   INFANT_SIGNIFICANT_INJURIES,
+  algorithmFor,
+  purposeful,
+  respiratoryDistress,
+  saltSortGroup,
   triage,
-  triageJumpStart,
-  triageStart,
+  triageFor,
   type DecisionStep,
   type Protocol,
+  type ProtocolMode,
   type TriageCategory,
   type TriageResult,
   type Vitals,
 } from '../triage';
 import { isDetermined, knownFindings } from './findings';
 import { POINTS } from './points';
-import type { GameScore, PatientDebrief, TagEvent, Verdict } from './types';
+import type { GameScore, PatientDebrief, SortInput, TagEvent, Verdict } from './types';
 
 export type * from './types';
 export { POINTS };
 
-const RANK: Record<Exclude<TriageCategory, 'black'>, number> = { green: 1, yellow: 2, red: 3 };
+/** Priority of care: BLACK and GREY (SALT expectant) get none or palliative care only. */
+const RANK: Record<TriageCategory, number> = { red: 4, yellow: 3, green: 2, grey: 1, black: 0 };
 
 export function verdictFor(expected: TriageCategory, given: TriageCategory | null): Verdict {
   if (given === null) return 'untagged';
   if (given === expected) return 'correct';
-  // CZARNY u pacjenta z szansą przeżycia — najgroźniejsze zaniżenie.
-  if (given === 'black') return 'under';
-  if (expected === 'black') return 'over';
   return RANK[given] > RANK[expected] ? 'over' : 'under';
+}
+
+/** BLACK or GREY given to someone the algorithm expects to survive — the gravest undertriage. */
+function isGiveUp(c: TriageCategory | null): boolean {
+  return c === 'black' || c === 'grey';
 }
 
 /** Rzeczowniki do zdania „Nie wykonano: …". */
@@ -41,12 +48,18 @@ const ACTION_NOUN: Record<ExamActionId, string> = {
   commands: 'sprawdzenia, czy wykonuje proste polecenia',
   avpu: 'oceny AVPU',
   bleeding: 'tamowania krwotoku',
+  decompression: 'odbarczenia odmy',
 };
+
+/** Noun for the protocol being scored (SALT gives 2 rescue breaths, not 5). */
+function noun(a: ExamActionId, mode: ProtocolMode): string {
+  return a === 'rescue-breaths' && mode === 'SALT' ? '2 oddechów ratowniczych' : ACTION_NOUN[a];
+}
 
 const num = (n: number) => String(n).replace('.', ',');
 
 /** Czynności potrzebne, by ustalić odpowiedź w danym kroku algorytmu. */
-function actionsForStep(step: DecisionStep, protocol: Protocol, v: Vitals): ExamActionId[] {
+function actionsForStep(step: DecisionStep, protocol: Protocol, v: Vitals, who: Who): ExamActionId[] {
   switch (step.id) {
     case 'breathing':
       // Bezdech ujawnia też samo udrożnienie (krok 'airway') — nie wymagamy osobnej oceny oddechu.
@@ -66,7 +79,15 @@ function actionsForStep(step: DecisionStep, protocol: Protocol, v: Vitals): Exam
       return [protocol === 'START' ? 'commands' : 'avpu'];
     case 'walk':
     case 'infant-injury':
+    case 'lsi':
+    case 'salt-minor':
+    case 'salt-survive':
       return [];
+    case 'salt-breathing':
+      if (v.breathing.spontaneous) return ['breathing'];
+      return v.breathing.afterAirway || !who.appearsChild ? ['airway'] : ['airway', 'rescue-breaths'];
+    case 'salt-criteria':
+      return ['breathing', 'pulse', who.ageYears < 3 ? 'avpu' : 'commands'];
   }
 }
 
@@ -77,10 +98,12 @@ function actionsForStep(step: DecisionStep, protocol: Protocol, v: Vitals): Exam
  * In the cold (`cold`) CRT is falsely prolonged, so only the radial pulse counts.
  * Returns the first missing action of each unmet requirement.
  */
-function assessmentActions(r: TriageResult, v: Vitals, done: ExamActionId[], cold = false): ExamActionId[] {
+type Who = { appearsChild: boolean; ageYears: number };
+
+function assessmentActions(r: TriageResult, v: Vitals, done: ExamActionId[], cold: boolean | undefined, who: Who): ExamActionId[] {
   const out: ExamActionId[] = [];
   for (const step of r.steps) {
-    let need = actionsForStep(step, r.protocol, v);
+    let need = actionsForStep(step, r.protocol, v, who);
     if (step.id === 'perfusion' && r.protocol === 'START') {
       const options: ExamActionId[] = cold
         ? ['pulse']
@@ -95,6 +118,29 @@ function assessmentActions(r: TriageResult, v: Vitals, done: ExamActionId[], col
 }
 
 /** Opis rozstrzygającego ustalenia, np. „Oddechy 34/min (> 30) → CZERWONY". */
+function saltFinding(p: ScenarioPatient, category: TriageCategory, last: DecisionStep): string {
+  const v = p.vitals;
+  const cat = CATEGORY_LABEL[category];
+  switch (last.id) {
+    case 'salt-breathing':
+      return `Nie oddycha mimo udrożnienia dróg oddechowych${p.appearsChild ? ' i 2 oddechów ratowniczych' : ''} → ${cat}`;
+    case 'salt-minor':
+      return category === 'green'
+        ? `Wykonuje polecenia, tętno obecne, bez duszności, tylko drobne obrażenia → ${cat}`
+        : `Wykonuje polecenia, tętno obecne, bez duszności, ale obrażenia nie tylko drobne${v.canWalk ? ' (chodzi, a mimo to)' : ''} → ${cat}`;
+    case 'salt-survive': {
+      const why: string[] = [];
+      if (!purposeful(v, p.ageYears)) why.push(p.ageYears < 3 ? 'brak celowych ruchów' : 'nie wykonuje poleceń');
+      if (!v.peripheralPulse) why.push('brak tętna obwodowego');
+      if (respiratoryDistress(v, p.appearsChild)) why.push(`duszność (${v.breathing.rate}/min)`);
+      const reason = why.join(', ');
+      return category === 'grey' ? `${reason}; przy dostępnych siłach i środkach nie przeżyje → ${cat}` : `${reason[0].toUpperCase()}${reason.slice(1)} → ${cat}`;
+    }
+    default:
+      return `→ ${cat}`;
+  }
+}
+
 function decisiveFinding(protocol: Protocol, category: TriageCategory, v: Vitals, last: DecisionStep, cold = false): string {
   const crt = cold ? 'CRT niewiarygodny (zimno)' : `CRT ${num(v.crtSeconds)} s (≤ 2 s)`;
   const b = v.breathing;
@@ -135,7 +181,12 @@ function decisiveFinding(protocol: Protocol, category: TriageCategory, v: Vitals
         ? `Dziecko niechodzące z powodu wieku, bez kryteriów czerwonych, z istotnymi obrażeniami → ${cat}`
         : `Dziecko niechodzące z powodu wieku, bez kryteriów czerwonych i istotnych obrażeń → ${cat}`;
     case 'breathing':
-      // Krok „Czy oddycha?" nigdy nie kończy algorytmu — zabezpieczenie.
+    case 'lsi':
+    case 'salt-breathing':
+    case 'salt-criteria':
+    case 'salt-minor':
+    case 'salt-survive':
+      // Never the last START/JumpSTART step (SALT has saltFinding) — a fallback.
       return `→ ${cat}`;
   }
 }
@@ -176,6 +227,23 @@ function procedureGaps(
   actionsBefore: ExamActionId[],
 ): ProcedureGap[] {
   const ids = r.steps.map(s => s.id);
+  if (r.protocol === 'SALT') {
+    if (p.vitals.breathing.spontaneous) return [];
+    const gaps: ProcedureGap[] = [];
+    if (!atTag.airwayOpened) {
+      gaps.push({
+        action: 'airway',
+        sentence: `Oznaczono jako ${CATEGORY_LABEL[given]} bez udrożnienia dróg oddechowych — wg SALT o kategorii decyduje oddech po udrożnieniu (czynność ratująca życie).`,
+      });
+    }
+    if (p.appearsChild && !p.vitals.breathing.afterAirway && !atTag.rescueBreathsGiven) {
+      gaps.push({
+        action: 'rescue-breaths',
+        sentence: `Oznaczono jako ${CATEGORY_LABEL[given]} bez 2 oddechów ratowniczych — wg SALT u dziecka w bezdechu po udrożnieniu podaje się 2 oddechy i dopiero potem ocenia oddech.`,
+      });
+    }
+    return gaps;
+  }
   if (!ids.includes('airway')) return []; // pacjent oddycha samodzielnie — reguła nie dotyczy
   const child = r.protocol === 'JumpSTART';
   const gaps: ProcedureGap[] = [];
@@ -235,19 +303,19 @@ function allGaps(
   const covered = new Set(gaps.map(g => g.action));
   // Apnoea branch: breaths given before opening the airway have no effect, so they don't count.
   const effective = actionsBefore.filter(a => a !== 'rescue-breaths' || atTag.rescueBreathsGiven);
-  for (const a of assessmentActions(r, p.vitals, effective, p.cold)) {
+  for (const a of assessmentActions(r, p.vitals, effective, p.cold, p)) {
     if (!covered.has(a) && !effective.includes(a)) gaps.push({ action: a, sentence: '' });
   }
   return gaps;
 }
 
-function procedureExplanation(gaps: ProcedureGap[]): string {
+function procedureExplanation(gaps: ProcedureGap[], mode: ProtocolMode): string {
   const guess = 'Kolor zgodny z algorytmem, ale ustalenia sprzed oznaczenia go nie rozstrzygały — trafienie „na ślepo".';
   if (!gaps.length) return guess;
   const [first, ...rest] = gaps;
-  if (!first.sentence) return `${guess} Nie wykonano: ${gaps.map(g => ACTION_NOUN[g.action]).join(', ')}.`;
+  if (!first.sentence) return `${guess} Nie wykonano: ${gaps.map(g => noun(g.action, mode)).join(', ')}.`;
   const parts = [first.sentence];
-  if (rest.length) parts.push(`Przed oznaczeniem nie wykonano też: ${rest.map(g => ACTION_NOUN[g.action]).join(', ')}.`);
+  if (rest.length) parts.push(`Przed oznaczeniem nie wykonano też: ${rest.map(g => noun(g.action, mode)).join(', ')}.`);
   parts.push('Kolor zgodny z algorytmem, ale ustalony bez wymaganego kroku.');
   return parts.join(' ');
 }
@@ -257,6 +325,7 @@ function missedLifesaving(
   final: PatientExamState,
   atTag: PatientExamState,
   given: TriageCategory | null,
+  mode: ProtocolMode,
 ): string[] {
   const v = p.vitals;
   const out: string[] = [];
@@ -265,9 +334,16 @@ function missedLifesaving(
     out.push('Krwotok zatamowano dopiero po oznaczeniu — tamowanie masywnego krwotoku wykonuje się w trakcie oceny, przed nadaniem kategorii');
   }
   const apnoeic = !v.breathing.spontaneous;
-  const gaveUp = given === 'black' || given === null;
+  const gaveUp = isGiveUp(given) || given === null;
   if (apnoeic && !atTag.airwayOpened && gaveUp) {
     out.push('Nie udrożniono dróg oddechowych u pacjenta bez oddechu');
+  }
+  if (mode === 'SALT') {
+    if (p.appearsChild && apnoeic && !v.breathing.afterAirway && !atTag.rescueBreathsGiven && gaveUp) {
+      out.push('Nie podano 2 oddechów ratowniczych dziecku w bezdechu');
+    }
+    if (p.salt?.tensionPneumothorax && !atTag.decompressed) out.push('Nie odbarczono odmy prężnej (czynność ratująca życie w SALT)');
+    return out;
   }
   if (p.appearsChild && apnoeic && !v.breathing.afterAirway && v.peripheralPulse && !atTag.rescueBreathsGiven && gaveUp) {
     out.push(
@@ -288,11 +364,13 @@ export function debriefPatient(
   given: TriageCategory | null,
   exam: PatientExamState | undefined,
   tagLogIndex?: number,
+  mode: ProtocolMode = 'START',
 ): PatientDebrief {
   const ex = exam ?? initialExamState();
-  const primary = triage(p.vitals, p.appearsChild);
+  const salt = mode === 'SALT';
+  const primary = salt ? triageFor('SALT', p) : triage(p.vitals, p.appearsChild);
   // Ages 9–12: schools differ on the JumpSTART age limit, so a colour from either algorithm counts.
-  const alt = isBorderlineAge(p) ? triage(p.vitals, !p.appearsChild) : undefined;
+  const alt = !salt && isBorderlineAge(p) ? triage(p.vitals, !p.appearsChild) : undefined;
   const alternative = alt && alt.category !== primary.category ? alt : undefined;
   // ...except BLACK while either algorithm gives a living colour (e.g. apnoea with a pulse:
   // JumpSTART gives 5 rescue breaths, START would give BLACK) — then the living colour is expected.
@@ -305,23 +383,23 @@ export function debriefPatient(
 
   let verdict = verdictFor(r.category, given);
   let explanation = '';
-  const critical = given === 'black' && r.category !== 'black';
+  const critical = isGiveUp(given) && !isGiveUp(r.category);
   if (verdict === 'correct' && given !== null) {
-    const algorithm = r.protocol === 'START' ? triageStart : triageJumpStart;
+    const algorithm = algorithmFor(mode, p, r.protocol);
     if (!isDetermined(algorithm, p.vitals, knownFindings(p, actionsBefore), given)) {
       verdict = 'procedure';
-      explanation = procedureExplanation(allGaps(p, r, given, atTag, actionsBefore));
+      explanation = procedureExplanation(allGaps(p, r, given, atTag, actionsBefore), mode);
     }
   } else if (verdict !== 'correct') {
     const last = r.steps[r.steps.length - 1];
-    const parts = [`${decisiveFinding(r.protocol, r.category, p.vitals, last, p.cold)}.`];
+    const parts = [`${salt ? saltFinding(p, r.category, last) : decisiveFinding(r.protocol, r.category, p.vitals, last, p.cold)}.`];
     parts.push(
       given === null
         ? 'Pacjenta nie oznaczono.'
         : `Oznaczono jako ${CATEGORY_LABEL[given]} — ${VERDICT_SUFFIX[verdict as 'over' | 'under']}.`,
     );
-    const missing = assessmentActions(r, p.vitals, actionsBefore, p.cold).filter(a => !actionsBefore.includes(a));
-    if (missing.length) parts.push(`Nie wykonano: ${missing.map(a => ACTION_NOUN[a]).join(', ')}.`);
+    const missing = assessmentActions(r, p.vitals, actionsBefore, p.cold, p).filter(a => !actionsBefore.includes(a));
+    if (missing.length) parts.push(`Nie wykonano: ${missing.map(a => noun(a, mode)).join(', ')}.`);
     const other = alternative && (r === alternative ? primary : alternative);
     if (other && living) {
       parts.push(`Wg ${other.protocol} byłby CZARNY, ale u dziecka 9–12 lat CZARNY nie jest zaliczany, gdy wg ${r.protocol} ma szansę przeżycia.`);
@@ -330,9 +408,9 @@ export function debriefPatient(
     }
     explanation = parts.join(' ');
   }
-  const missed = missedLifesaving(p, ex, atTag, given);
+  const missed = missedLifesaving(p, ex, atTag, given, mode);
   if (critical) {
-    explanation = `BŁĄD KRYTYCZNY: CZARNY u poszkodowanego z szansą przeżycia (wg ${r.protocol} ${CATEGORY_LABEL[r.category]}). ${explanation}`;
+    explanation = `BŁĄD KRYTYCZNY: ${CATEGORY_LABEL[given!]} u poszkodowanego z szansą przeżycia (wg ${r.protocol} ${CATEGORY_LABEL[r.category]}). ${explanation}`;
   }
 
   return {
@@ -352,7 +430,7 @@ export function debriefPatient(
     actionsDone,
     actionsBeforeTag: given === null ? null : tagIdx,
     missedLifesaving: missed,
-    notes: [...orderNote(r, verdict, actionsBefore), ...teachingNotes(p, r, actionsDone)],
+    notes: [...(salt ? [] : orderNote(r, verdict, actionsBefore)), ...teachingNotes(p, r, actionsDone)],
     explanation,
     points: patientPoints(verdict, critical, missed.length, r.category),
   };
@@ -404,10 +482,10 @@ function teachingNotes(p: ScenarioPatient, r: TriageResult, actions: ExamActionI
     out.push('Zimno: wychłodzona skóra fałszywie wydłuża nawrót kapilarny u każdego — perfuzję oceniaj tętnem promieniowym (modyfikacja START z 1996 r.). Nawrót kapilarny nie jest tu wiarygodny.');
   }
   if (r.category === 'yellow' && p.injuries.some(t => /^rana (brzucha|cięta boku)/.test(t))) {
-    out.push('Rana brzucha przy prawidłowych parametrach to wg START ŻÓŁTY, ale algorytm nie wykrywa krwawienia, które dopiero narasta. W segregacji wtórnej — pilna ocena chirurgiczna.');
+    out.push(`Rana brzucha przy prawidłowych parametrach to wg ${r.protocol} ŻÓŁTY, ale algorytm nie wykrywa krwawienia, które dopiero narasta. W segregacji wtórnej — pilna ocena chirurgiczna.`);
   }
   if (r.category !== 'black' && p.injuries.some(t => /długo przygniec/.test(t))) {
-    out.push('Długie przygniecenie kończyny: po uwolnieniu grozi zespół zmiażdżenia (hiperkaliemia, zaburzenia rytmu, nagłe zatrzymanie krążenia). Kolor wg START się nie zmienia, ale pacjent wymaga pilnej segregacji wtórnej i obserwacji.');
+    out.push(`Długie przygniecenie kończyny: po uwolnieniu grozi zespół zmiażdżenia (hiperkaliemia, zaburzenia rytmu, nagłe zatrzymanie krążenia). Kolor wg ${r.protocol} się nie zmienia, ale pacjent wymaga pilnej segregacji wtórnej i obserwacji.`);
   }
   if (r.steps.some(s => s.id === 'infant-injury')) {
     out.push(`Istotne obrażenia zewnętrzne u niemowlęcia wg JumpSTART: ${INFANT_SIGNIFICANT_INJURIES.join(', ')}.`);
@@ -433,8 +511,11 @@ export function scoreGame(
   exams: Record<string, PatientExamState | undefined>,
   elapsedSec: number,
   tagEvents: Record<string, TagEvent | undefined> = {},
+  opts: { mode?: ProtocolMode; sort?: SortInput } = {},
 ): GameScore {
-  const debriefs = patients.map(p => debriefPatient(p, tags[p.id] ?? null, exams[p.id], tagEvents[p.id]?.logIndex));
+  const mode = opts.mode ?? 'START';
+  const debriefs = patients.map(p => debriefPatient(p, tags[p.id] ?? null, exams[p.id], tagEvents[p.id]?.logIndex, mode));
+  const sortNotes = mode === 'SALT' ? applySortOrder(patients, debriefs, opts.sort) : undefined;
   const count = (v: Verdict) => debriefs.filter(d => d.verdict === v).length;
   const total = debriefs.length;
   const correct = count('correct');
@@ -456,5 +537,50 @@ export function scoreGame(
     elapsedSec,
     avgSecPerPatient: tagged ? elapsedSec / tagged : 0,
     patients: debriefs,
+    protocol: mode,
+    sortNotes,
   };
+}
+
+/**
+ * SALT sort: still casualties first, then those who waved, walkers last. A patient approached while
+ * someone from a more urgent group (as far as the player's commands revealed the groups) still waited
+ * untouched costs `POINTS.sortOrder`.
+ */
+function applySortOrder(patients: ScenarioPatient[], debriefs: PatientDebrief[], sort: SortInput | undefined): string[] {
+  const notes: string[] = [];
+  if (!sort?.walkersCalled) {
+    notes.push('Nie wydano komendy „Kto może chodzić — do mnie!" — w SALT sortowanie zaczyna się od niej (chodzący są oceniani na końcu).');
+    return notes;
+  }
+  if (!sort.waversCalled) {
+    notes.push('Nie wydano komendy „Kto mnie słyszy — pomachaj ręką!" — bez niej nie wiadomo, kto leży nieruchomo i wymaga oceny jako pierwszy.');
+  }
+  // Groups the player could know: without the wave command, still and waving look alike.
+  const group = (p: ScenarioPatient) => {
+    const g = saltSortGroup(p);
+    return !sort.waversCalled && g === 2 ? 1 : g;
+  };
+  const byId = new Map(patients.map(p => [p.id, p]));
+  const seen = new Set<string>();
+  let late = 0;
+  for (const id of sort.approachOrder) {
+    if (seen.has(id)) continue;
+    const p = byId.get(id);
+    if (!p) continue;
+    const g = group(p);
+    const skipped = patients.filter(o => o.id !== id && !seen.has(o.id) && group(o) < g);
+    seen.add(id);
+    if (!skipped.length) continue;
+    const d = debriefs.find(x => x.patientId === id)!;
+    d.sortLate = true;
+    d.points = (d.points ?? 0) + POINTS.sortOrder;
+    d.notes = [
+      ...(d.notes ?? []),
+      `Sortowanie SALT: oceniony, gdy ${skipped.length === 1 ? 'czekał jeszcze 1 poszkodowany' : `czekało jeszcze ${skipped.length} poszkodowanych`} z pilniejszej grupy (nieruchomi → machający → chodzący).`,
+    ];
+    late++;
+  }
+  if (late) notes.push(`Kolejność oceny: ${late} ${late === 1 ? 'poszkodowany oceniony' : 'poszkodowanych ocenionych'} przed pilniejszą grupą (${POINTS.sortOrder} pkt za każdego).`);
+  return notes;
 }

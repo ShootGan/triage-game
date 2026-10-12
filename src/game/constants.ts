@@ -1,5 +1,5 @@
 import type { ExamActionId } from '../engine/exam/types';
-import type { TriageCategory } from '../engine/triage';
+import type { ProtocolMode, TriageCategory } from '../engine/triage';
 
 /** Kolejność czynności w panelu badania + skróty klawiszowe. */
 export const ACTION_ORDER: { id: ExamActionId; key: string }[] = [
@@ -21,11 +21,19 @@ export const CATEGORY_ORDER: { id: TriageCategory; key: string; short: string }[
   { id: 'black', key: '4', short: 'C' },
 ];
 
+/** SALT adds GREY (expectant) on key 5 — the START keys stay where players learned them. */
+const GREY = { id: 'grey' as const, key: '5', short: 'S' };
+
+export function categoriesFor(mode: ProtocolMode): typeof CATEGORY_ORDER {
+  return mode === 'SALT' ? [...CATEGORY_ORDER.slice(0, 3), GREY, CATEGORY_ORDER[3]] : CATEGORY_ORDER;
+}
+
 export const CATEGORY_COLOR: Record<TriageCategory, string> = {
   red: '#d6303a',
   yellow: '#f2c230',
   green: '#3fa34d',
   black: '#1a1c2c',
+  grey: '#8a8f98',
 };
 
 export function formatClock(sec: number): string {

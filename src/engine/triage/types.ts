@@ -1,6 +1,23 @@
-export type TriageCategory = 'green' | 'yellow' | 'red' | 'black';
+/** `grey` (expectant) exists only in SALT. */
+export type TriageCategory = 'green' | 'yellow' | 'red' | 'black' | 'grey';
 
-export type Protocol = 'START' | 'JumpSTART';
+/** Categories of START / JumpSTART (no expectant). */
+export type StartCategory = Exclude<TriageCategory, 'grey'>;
+
+export type Protocol = 'START' | 'JumpSTART' | 'SALT';
+
+/** Algorithm family chosen for a game: START (with JumpSTART for children) or SALT. */
+export type ProtocolMode = 'START' | 'SALT';
+
+/** SALT facts that come from the casualty description, not from an exam (judgement calls). */
+export interface SaltInfo {
+  /** Minor injuries only (self-limited without treatment) — MINIMAL instead of DELAYED. */
+  minorOnly?: boolean;
+  /** Unlikely to survive given current resources — EXPECTANT. */
+  expectant?: boolean;
+  /** Tension pneumothorax: needle decompression is a life-saving intervention in SALT. */
+  tensionPneumothorax?: boolean;
+}
 
 export type Avpu = 'A' | 'V' | 'P' | 'U';
 
@@ -40,7 +57,13 @@ export type StepId =
   | 'resp-rate'
   | 'perfusion'
   | 'mental'
-  | 'infant-injury';
+  | 'infant-injury'
+  // SALT
+  | 'lsi'
+  | 'salt-breathing'
+  | 'salt-criteria'
+  | 'salt-minor'
+  | 'salt-survive';
 
 /** Jeden krok ścieżki decyzji — do debriefu. */
 export interface DecisionStep {
@@ -62,4 +85,5 @@ export const CATEGORY_LABEL: Record<TriageCategory, string> = {
   yellow: 'ŻÓŁTY',
   red: 'CZERWONY',
   black: 'CZARNY',
+  grey: 'SZARY',
 };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { triage, type TriageCategory } from '../../engine/triage';
+import { triage, type StartCategory } from '../../engine/triage';
 import { insidePropFootprint } from '../propSizes';
 import { MIN_PATIENT_SPACING, SCENE_HALF_X, SCENE_HALF_Z, scenarioIssues } from '../validate';
 import { APPEARS_CHILD, ARCHETYPES, archetypeById, type AgeGroup } from './archetypes';
@@ -182,8 +182,8 @@ describe('archetypy', () => {
   });
 
   it('wszystkie kategorie i oba algorytmy są reprezentowane', () => {
-    const has = (cat: TriageCategory, child: boolean) => ARCHETYPES.some((a) => a.category === cat && a.ages.some((g) => APPEARS_CHILD[g] === child));
-    for (const cat of ['green', 'yellow', 'red', 'black'] as TriageCategory[]) {
+    const has = (cat: StartCategory, child: boolean) => ARCHETYPES.some((a) => a.category === cat && a.ages.some((g) => APPEARS_CHILD[g] === child));
+    for (const cat of ['green', 'yellow', 'red', 'black'] as StartCategory[]) {
       expect(has(cat, true), `${cat} JumpSTART`).toBe(true);
       expect(has(cat, false), `${cat} START`).toBe(true);
     }
@@ -203,7 +203,7 @@ describe('archetypy', () => {
   it('w każdym scenariuszu: każda kategoria ma archetypy, a każdy archetyp ma opis obrażeń', () => {
     for (const l of LAYOUTS) {
       const pool = archetypesFor(l);
-      for (const cat of ['green', 'yellow', 'red', 'black'] as TriageCategory[]) {
+      for (const cat of ['green', 'yellow', 'red', 'black'] as StartCategory[]) {
         expect(pool.some((a) => a.category === cat), `${l.id}: ${cat}`).toBe(true);
       }
     }
@@ -265,13 +265,13 @@ describe('test właściwości: 300 losowych kodów na scenariusz', () => {
       const ids = s.patients.map((p) => p.id);
       expect(new Set(ids).size, where).toBe(n);
 
-      const counts: Record<TriageCategory, number> = { green: 0, yellow: 0, red: 0, black: 0 };
+      const counts: Record<StartCategory, number> = { green: 0, yellow: 0, red: 0, black: 0 };
       s.patients.forEach((p, i) => {
         const arch = archetypeById(g.archetypeIds![i])!;
         seenArchetypes.add(arch.id);
         const cat = triage(p.vitals, p.appearsChild).category;
         expect(cat, `${where} ${p.id} (${arch.id})`).toBe(arch.category);
-        counts[cat]++;
+        counts[cat as StartCategory]++;
 
         // spójność tekstów
         const all = [p.label, ...p.injuries, p.remark ?? ''].join(' ');
@@ -289,7 +289,7 @@ describe('test właściwości: 300 losowych kodów na scenariusz', () => {
         expect(p.appearance.child).toBe(p.appearsChild);
       });
 
-      for (const c of Object.keys(counts) as TriageCategory[]) {
+      for (const c of Object.keys(counts) as StartCategory[]) {
         expect(counts[c], `${where}: ${c}`).toBeGreaterThanOrEqual(Math.ceil(CATEGORY_MIX[c][0] * n - 1e-9));
         expect(counts[c], `${where}: ${c}`).toBeLessThanOrEqual(Math.floor(CATEGORY_MIX[c][1] * n + 1e-9));
       }
@@ -352,7 +352,7 @@ describe('zderzenie autobusów: ciężarne, dzieci, obsługa', () => {
 
   it(`${N} kodów: proporcje, ciąża tylko u dorosłych kobiet (START), obsługa`, () => {
     const stat = { child: [] as number[], preg: [] as number[], n: [] as number[] };
-    const pregCats = new Set<TriageCategory>();
+    const pregCats = new Set<StartCategory>();
     for (const code of codesFor('buses', N)) {
       const g = generateDetailed('buses', code);
       const s = g.scenario;
@@ -382,7 +382,7 @@ describe('zderzenie autobusów: ciężarne, dzieci, obsługa', () => {
         expect(r.category, `${code} ${p.id}`).toBe(arch.category);
         const text = p.injuries.join(' ');
         if (p.appearance.pregnant) {
-          pregCats.add(r.category);
+          pregCats.add(r.category as StartCategory);
           expect(p.appearance.sex, code).toBe('f');
           expect(p.appearsChild, code).toBe(false);
           expect(p.ageYears, code).toBeGreaterThanOrEqual(18);

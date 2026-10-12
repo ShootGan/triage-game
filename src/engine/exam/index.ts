@@ -1,5 +1,5 @@
 import type { ScenarioPatient } from '../../scenarios/types';
-import type { Vitals } from '../triage';
+import { respiratoryDistress, type ProtocolMode, type Vitals } from '../triage';
 import type { ExamActionId, ExamResult, PatientExamState } from './types';
 
 export type * from './types';
@@ -14,7 +14,21 @@ export const ACTION_LABEL: Record<ExamActionId, string> = {
   commands: 'Proste polecenie',
   avpu: 'Ocena AVPU',
   bleeding: 'Opaska uciskowa (krwotok)',
+  decompression: 'Odbarcz odmę (igła)',
 };
+
+/** Action labels that differ in SALT. */
+export function actionLabel(action: ExamActionId, mode: ProtocolMode = 'START'): string {
+  if (mode === 'SALT' && action === 'rescue-breaths') return '2 oddechy ratownicze';
+  return ACTION_LABEL[action];
+}
+
+/** Actions offered in each protocol: SALT has no CRT/AVPU but adds needle decompression. */
+export function actionsFor(mode: ProtocolMode): ExamActionId[] {
+  return mode === 'SALT'
+    ? ['breathing', 'airway', 'rescue-breaths', 'pulse', 'commands', 'bleeding', 'decompression']
+    : ['breathing', 'airway', 'rescue-breaths', 'pulse', 'crt', 'commands', 'avpu', 'bleeding'];
+}
 
 /** Pulse button/result label: radial for adults (START), peripheral for children, brachial for infants. */
 export function pulseLabel(appearsChild: boolean, ageYears: number): string {
@@ -32,6 +46,7 @@ export const ACTION_SECONDS: Record<ExamActionId, number> = {
   commands: 5,
   avpu: 5,
   bleeding: 10,
+  decompression: 10,
 };
 
 /** Koszt czynności, która okazała się zbędna / niemożliwa (szybkie stwierdzenie). */
@@ -64,6 +79,11 @@ export function isBreathingNow(p: ScenarioPatient, s: PatientExamState): boolean
 
 type Outcome = { text: string; seconds?: number; patch?: Partial<PatientExamState> };
 
+/** SALT reads breathing as "respiratory distress", not as a rate threshold. */
+function distressText(p: ScenarioPatient, mode: ProtocolMode): string {
+  return mode === 'SALT' ? (respiratoryDistress(p.vitals, p.appearsChild) ? ' — duszność' : ' — bez duszności') : '';
+}
+
 function breathingResult(p: ScenarioPatient, s: PatientExamState): Outcome {
   const b = p.vitals.breathing;
   if (b.spontaneous) return { text: `Oddycha${rateText(b)}` };
@@ -89,7 +109,7 @@ function airwayResult(p: ScenarioPatient, s: PatientExamState): Outcome {
     : { text: 'Udrożniono drogi oddechowe — nadal brak oddechu', patch };
 }
 
-function rescueBreathsResult(p: ScenarioPatient, s: PatientExamState): Outcome {
+function rescueBreathsResult(p: ScenarioPatient, s: PatientExamState, mode: ProtocolMode): Outcome {
   const b = p.vitals.breathing;
   if (b.spontaneous || (s.airwayOpened && b.afterAirway)) {
     return { text: 'Pacjent oddycha samodzielnie — oddechy ratownicze nie są wskazane', seconds: QUICK_SECONDS };
@@ -97,10 +117,12 @@ function rescueBreathsResult(p: ScenarioPatient, s: PatientExamState): Outcome {
   if (!s.airwayOpened) {
     return { text: 'Najpierw udrożnij drogi oddechowe', seconds: QUICK_SECONDS };
   }
-  const note = p.appearsChild ? '' : ' (oddechy ratownicze nie są elementem algorytmu START)';
+  const salt = mode === 'SALT';
+  const n = salt ? 2 : 5;
+  const note = p.appearsChild ? '' : ` (oddechy ratownicze nie są elementem algorytmu ${salt ? 'SALT u dorosłych' : 'START'})`;
   const text = b.afterRescueBreaths
-    ? `Po 5 oddechach ratowniczych pojawił się oddech własny${rateText(b)}`
-    : 'Brak oddechu po 5 oddechach ratowniczych';
+    ? `Po ${n} oddechach ratowniczych pojawił się oddech własny${rateText(b)}`
+    : `Brak oddechu po ${n} oddechach ratowniczych`;
   return { text: text + note, patch: { rescueBreathsGiven: true } };
 }
 
@@ -144,15 +166,23 @@ function bleedingResult(p: ScenarioPatient, s: PatientExamState): Outcome {
   return { text: 'Krwotok zatamowany opaską uciskową', patch: { bleedingControlled: true } };
 }
 
-function outcome(p: ScenarioPatient, s: PatientExamState, action: ExamActionId): Outcome {
+function decompressionResult(p: ScenarioPatient, s: PatientExamState): Outcome {
+  if (!p.salt?.tensionPneumothorax) return { text: 'Brak objawów odmy prężnej — odbarczenie niewskazane', seconds: QUICK_SECONDS };
+  if (s.decompressed) return { text: 'Odma już odbarczona', seconds: QUICK_SECONDS };
+  return { text: 'Odbarczono odmę igłą — syk powietrza, oddech nieco lżejszy', patch: { decompressed: true } };
+}
+
+function outcome(p: ScenarioPatient, s: PatientExamState, action: ExamActionId, mode: ProtocolMode): Outcome {
   const v = p.vitals;
   switch (action) {
-    case 'breathing':
-      return breathingResult(p, s);
+    case 'breathing': {
+      const o = breathingResult(p, s);
+      return isBreathingNow(p, s) ? { ...o, text: o.text + distressText(p, mode) } : o;
+    }
     case 'airway':
       return airwayResult(p, s);
     case 'rescue-breaths':
-      return rescueBreathsResult(p, s);
+      return rescueBreathsResult(p, s, mode);
     case 'pulse': {
       // Pulse is checked on an uninjured limb — a bleeding limb could hide a pulse (Romig).
       const site = p.majorBleeding ? ' (na kończynie bez urazu)' : '';
@@ -176,6 +206,8 @@ function outcome(p: ScenarioPatient, s: PatientExamState, action: ExamActionId):
       return avpuResult(v);
     case 'bleeding':
       return bleedingResult(p, s);
+    case 'decompression':
+      return decompressionResult(p, s);
   }
 }
 
@@ -184,8 +216,9 @@ export function performAction(
   p: ScenarioPatient,
   state: PatientExamState,
   action: ExamActionId,
+  mode: ProtocolMode = 'START',
 ): { state: PatientExamState; result: ExamResult } {
-  const o = outcome(p, state, action);
+  const o = outcome(p, state, action, mode);
   const result: ExamResult = { action, text: o.text, seconds: o.seconds ?? ACTION_SECONDS[action] };
   return { state: { ...state, ...o.patch, log: [...state.log, result] }, result };
 }

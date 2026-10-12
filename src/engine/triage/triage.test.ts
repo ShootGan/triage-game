@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { triage, triageJumpStart, triageStart, type Vitals } from './index';
+import { triage, triageFor, triageJumpStart, triageStart, type TriagePatient, type Vitals } from './index';
 
 /** Pacjent „żółty" w obu algorytmach — każdy test zmienia tylko to, co sprawdza. */
 function vitals(over: Partial<Omit<Vitals, 'breathing'>> & { breathing?: Partial<Vitals['breathing']> } = {}): Vitals {
@@ -143,5 +143,53 @@ describe('wybór algorytmu', () => {
     const v = vitals({ breathing: { rate: 40 } });
     expect(triage(v, true)).toMatchObject({ protocol: 'JumpSTART', category: 'yellow' });
     expect(triage(v, false)).toMatchObject({ protocol: 'START', category: 'red' });
+  });
+});
+
+describe('SALT', () => {
+  const adult = { appearsChild: false, ageYears: 40 };
+  const run = (v: Vitals, o: Partial<TriagePatient> = {}) => triageFor('SALT', { vitals: v, ...adult, ...o });
+
+  it('chodzący z drobnymi obrażeniami → zielony; chodzący z poważniejszym urazem → żółty', () => {
+    expect(run(vitals({ canWalk: true })).category).toBe('green');
+    const r = run(vitals({ canWalk: true }), { salt: { minorOnly: false } });
+    expect(r.category).toBe('yellow');
+    expect(stepIds(r)).toEqual(['lsi', 'salt-breathing', 'salt-criteria', 'salt-minor']);
+  });
+
+  it('niechodzący w normie → żółty (domyślnie nie „tylko drobne")', () => {
+    expect(run(vitals()).category).toBe('yellow');
+  });
+
+  it('bezdech mimo udrożnienia → czarny; oddycha po udrożnieniu → ocena kryteriów', () => {
+    expect(run(vitals({ breathing: { spontaneous: false, afterAirway: false, rate: 0 }, avpu: 'U', obeysCommands: false })).category).toBe('black');
+    expect(run(vitals({ breathing: { spontaneous: false, afterAirway: true, rate: 12 }, avpu: 'U', obeysCommands: false })).category).toBe('red');
+  });
+
+  it('dziecko: 2 oddechy ratownicze przywracają oddech → czerwony; bez tętna nie ma osobnego kroku', () => {
+    const v = vitals({ breathing: { spontaneous: false, afterAirway: false, afterRescueBreaths: true, rate: 12 }, avpu: 'U', obeysCommands: false });
+    expect(run(v, { appearsChild: true, ageYears: 6 }).category).toBe('red');
+    expect(run(v).category).toBe('black'); // dorosły: oddechy ratownicze nie są elementem SALT
+  });
+
+  it('którekolwiek kryterium nie → czerwony; nie przeżyje → szary', () => {
+    expect(run(vitals({ breathing: { rate: 34 } })).category).toBe('red');
+    expect(run(vitals({ breathing: { rate: 8 } })).category).toBe('red');
+    expect(run(vitals({ peripheralPulse: false })).category).toBe('red');
+    expect(run(vitals({ obeysCommands: false, avpu: 'V' })).category).toBe('red');
+    const g = run(vitals({ peripheralPulse: false }), { salt: { expectant: true } });
+    expect(g.category).toBe('grey');
+    expect(stepIds(g).at(-1)).toBe('salt-survive');
+  });
+
+  it('małe dziecko: celowe ruchy zamiast poleceń', () => {
+    const v = vitals({ obeysCommands: false, avpu: 'A', nonAmbulatoryByAge: true, breathing: { rate: 30 } });
+    expect(run(v, { appearsChild: true, ageYears: 1 }).category).toBe('green'); // niemowlę bez istotnych obrażeń: START zielony → drobne
+    expect(run(vitals({ obeysCommands: false, avpu: 'P', painResponseAppropriate: false }), { appearsChild: true, ageYears: 1 }).category).toBe('red');
+  });
+
+  it('czynności ratujące życie w ścieżce', () => {
+    const r = run(vitals({ peripheralPulse: false }), { majorBleeding: true, salt: { tensionPneumothorax: true } });
+    expect(r.steps[0].answer).toBe('opaska uciskowa, odbarczenie odmy');
   });
 });

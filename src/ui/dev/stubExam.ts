@@ -11,10 +11,11 @@ export const ACTION_LABEL: Record<ExamActionId, string> = {
   commands: 'Proste polecenia',
   avpu: 'Ocena AVPU',
   bleeding: 'Tamowanie krwotoku',
+  decompression: 'Odbarcz odmę',
 };
 
 export const ACTION_SECONDS: Record<ExamActionId, number> = {
-  breathing: 15, airway: 5, 'rescue-breaths': 10, pulse: 5, crt: 5, commands: 5, avpu: 5, bleeding: 20,
+  breathing: 15, airway: 5, 'rescue-breaths': 10, pulse: 5, crt: 5, commands: 5, avpu: 5, bleeding: 20, decompression: 10,
 };
 
 export function initialExamState(): PatientExamState {

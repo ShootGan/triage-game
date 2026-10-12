@@ -3,7 +3,7 @@ import type { TriageCategory } from '../../engine/triage';
 import type { IGameView, ScreenPoint } from '../../render/types';
 import type { Scenario } from '../../scenarios/types';
 
-const COLORS: Record<TriageCategory, string> = { red: '#d6303a', yellow: '#f2c230', green: '#3fa34d', black: '#1a1c2c' };
+const COLORS: Record<TriageCategory, string> = { red: '#d6303a', yellow: '#f2c230', green: '#3fa34d', black: '#1a1c2c', grey: '#8a8f98' };
 
 export function createStubGameView(canvas: HTMLCanvasElement, scenario: Scenario): IGameView {
   const ctx = canvas.getContext('2d')!;

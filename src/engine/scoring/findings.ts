@@ -108,8 +108,9 @@ export function knownFindings(p: ScenarioPatient, actionsBefore: ExamActionId[])
 
 const opts = <T>(known: T | undefined, domain: readonly T[]): readonly T[] => (known === undefined ? domain : [known]);
 
-/** Rate classes covering every START / JumpSTART threshold. */
+/** Rate classes covering every START / JumpSTART / SALT threshold. */
 const RATES: readonly { rate: number; irregular: boolean }[] = [
+  { rate: 8, irregular: false }, // SALT: adult < 10/min counts as respiratory distress
   { rate: 10, irregular: false },
   { rate: 20, irregular: false },
   { rate: 20, irregular: true },

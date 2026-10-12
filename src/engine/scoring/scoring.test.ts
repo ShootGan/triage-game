@@ -629,3 +629,80 @@ describe('JumpSTART: proste polecenie zamiast AVPU', () => {
     expect(debriefPatient(young, 'yellow', exam(young, ['breathing', 'pulse', 'commands'])).verdict).toBe('correct');
   });
 });
+
+describe('SALT — ocena', () => {
+  const salt = (p: ScenarioPatient, given: Parameters<typeof debriefPatient>[1], actions: ExamActionId[], idx?: number) =>
+    debriefPatient(p, given, examSalt(p, actions), idx, 'SALT');
+  const examSalt = (p: ScenarioPatient, actions: ExamActionId[]) =>
+    actions.reduce((s, a) => performAction(p, s, a, 'SALT').state, initialExamState());
+
+  it('niechodzący w normie: ŻÓŁTY po oddechu, tętnie i poleceniach', () => {
+    const p = patient('y');
+    expect(salt(p, 'yellow', ['breathing', 'pulse', 'commands'])).toMatchObject({ protocol: 'SALT', expected: 'yellow', verdict: 'correct' });
+    expect(salt(p, 'yellow', ['breathing', 'pulse']).verdict).toBe('procedure');
+  });
+
+  it('chodzący: ZIELONY tylko przy drobnych obrażeniach; złamanie → ŻÓŁTY', () => {
+    const minor = patient('g', { canWalk: true });
+    expect(salt(minor, 'green', ['breathing', 'pulse', 'commands']).verdict).toBe('correct');
+    const fracture = patient('f', { canWalk: true }, { salt: { minorOnly: false } });
+    const d = salt(fracture, 'green', ['breathing', 'pulse', 'commands']);
+    expect(d).toMatchObject({ expected: 'yellow', verdict: 'under' });
+    expect(d.explanation).toMatch(/obrażenia nie tylko drobne \(chodzi, a mimo to\) → ŻÓŁTY/);
+  });
+
+  it('duszność → CZERWONY; wynik oddechu podaje duszność', () => {
+    const p = patient('r', { breathing: { rate: 34 } });
+    const ex = examSalt(p, ['breathing']);
+    expect(ex.log[0].text).toBe('Oddycha, 34/min — duszność');
+    expect(salt(p, 'red', ['breathing']).verdict).toBe('correct');
+    expect(salt(p, 'yellow', ['breathing']).explanation).toMatch(/^Duszność \(34\/min\) → CZERWONY/);
+  });
+
+  it('SZARY albo CZARNY u przeżywającego = błąd krytyczny', () => {
+    const p = patient('r', { peripheralPulse: false, crtSeconds: 4 });
+    const d = salt(p, 'grey', ['breathing', 'pulse']);
+    expect(d).toMatchObject({ verdict: 'under', critical: true });
+    expect(d.explanation).toMatch(/^BŁĄD KRYTYCZNY: SZARY u poszkodowanego z szansą przeżycia/);
+    const e = { ...p, salt: { expectant: true } };
+    expect(salt(e, 'grey', ['breathing', 'pulse'])).toMatchObject({ expected: 'grey', verdict: 'correct' });
+    expect(salt(e, 'red', ['breathing', 'pulse']).verdict).toBe('over');
+  });
+
+  it('dziecko w bezdechu: 2 oddechy ratownicze; bez nich CZARNY zgadnięty + pominięta czynność', () => {
+    const c = { ...apnoeic('c', { afterRescueBreaths: false }), appearsChild: true, ageYears: 6 };
+    expect(salt(c, 'black', ['airway', 'rescue-breaths']).verdict).toBe('correct');
+    const d = salt(c, 'black', ['airway']);
+    expect(d.verdict).toBe('procedure');
+    expect(d.missedLifesaving).toContain('Nie podano 2 oddechów ratowniczych dziecku w bezdechu');
+    expect(examSalt(c, ['airway', 'rescue-breaths']).log[1].text).toBe('Brak oddechu po 2 oddechach ratowniczych');
+  });
+
+  it('odma prężna: brak odbarczenia = pominięta czynność ratująca życie', () => {
+    const p = patient('o', { breathing: { rate: 36 } }, { salt: { tensionPneumothorax: true } });
+    expect(salt(p, 'red', ['breathing']).missedLifesaving).toEqual(['Nie odbarczono odmy prężnej (czynność ratująca życie w SALT)']);
+    expect(salt(p, 'red', ['decompression', 'breathing']).missedLifesaving).toEqual([]);
+  });
+
+  it('sortowanie: kolejność nieruchomi → machający → chodzący', () => {
+    const still = apnoeic('s', {}, { peripheralPulse: false });
+    const waver = patient('w');
+    const walker = patient('g', { canWalk: true });
+    const ps = [still, waver, walker];
+    const tags = { s: 'black', w: 'yellow', g: 'green' } as const;
+    const ok = scoreGame(ps, tags, {}, 60, {}, { mode: 'SALT', sort: { walkersCalled: true, waversCalled: true, approachOrder: ['s', 'w', 'g'] } });
+    expect(ok.patients.map(p => p.sortLate ?? false)).toEqual([false, false, false]);
+    expect(ok.sortNotes).toEqual([]);
+    const bad = scoreGame(ps, tags, {}, 60, {}, { mode: 'SALT', sort: { walkersCalled: true, waversCalled: true, approachOrder: ['g', 'w', 's'] } });
+    expect(bad.patients.map(p => p.sortLate ?? false)).toEqual([false, true, true]);
+    expect(bad.sortNotes?.[0]).toMatch(/^Kolejność oceny: 2 poszkodowanych/);
+    // bez komendy „pomachaj" nieruchomi i machający wyglądają tak samo
+    const noWave = scoreGame(ps, tags, {}, 60, {}, { mode: 'SALT', sort: { walkersCalled: true, waversCalled: false, approachOrder: ['w', 's', 'g'] } });
+    expect(noWave.patients.map(p => p.sortLate ?? false)).toEqual([false, false, false]);
+    expect(noWave.sortNotes?.[0]).toMatch(/pomachaj ręką/);
+  });
+
+  it('START bez zmian: tryb domyślny', () => {
+    expect(scoreGame([patient('y')], { y: 'yellow' }, {}, 10).protocol).toBe('START');
+  });
+});

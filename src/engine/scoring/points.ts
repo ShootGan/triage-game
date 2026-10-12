@@ -12,4 +12,6 @@ export const POINTS = {
   critical: -5,
   /** Each missed life-saving intervention. */
   missedLifesaving: -3,
+  /** SALT: assessed while someone from a more urgent sort group still waited untouched. */
+  sortOrder: -1,
 } as const;

@@ -7,13 +7,16 @@ export type ExamActionId =
   | 'crt'              // nawrót kapilarny
   | 'commands'         // proste polecenia
   | 'avpu'             // ocena AVPU (dzieci)
-  | 'bleeding';        // tamowanie krwotoku (opaska uciskowa / ucisk)
+  | 'bleeding'         // tamowanie krwotoku (opaska uciskowa / ucisk)
+  | 'decompression';   // SALT: needle decompression of a tension pneumothorax
 
 /** Stan badania jednego pacjenta (to, co gracz już zrobił). */
 export interface PatientExamState {
   airwayOpened: boolean;
   rescueBreathsGiven: boolean;
   bleedingControlled: boolean;
+  /** SALT: tension pneumothorax decompressed (optional for states built before SALT). */
+  decompressed?: boolean;
   /** Kolejne wykonane czynności z wynikami. */
   log: ExamResult[];
 }

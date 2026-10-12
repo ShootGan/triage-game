@@ -1,4 +1,4 @@
-import type { Vitals } from '../engine/triage';
+import type { SaltInfo, Vitals } from '../engine/triage';
 import type { PropKind } from './propSizes';
 
 export type { PropKind } from './propSizes';
@@ -32,6 +32,8 @@ export interface ScenarioPatient {
   injuries: string[];
   /** Masywny krwotok zewnętrzny — kałuża krwi na scenie; da się zatamować. */
   majorBleeding?: boolean;
+  /** SALT judgement facts from the description (minor injuries only, expectant, tension pneumothorax). */
+  salt?: SaltInfo;
   /**
    * Trapped in a vehicle being cut open by firefighters: sits in the driver's seat (see `driverSeat`),
    * may be inside the car's footprint, can't walk. Exam works as usual (roof already removed).

@@ -1,4 +1,4 @@
-import type { Avpu, TriageCategory } from '../../engine/triage';
+import type { Avpu, SaltInfo, StartCategory } from '../../engine/triage';
 import type { PatientPose } from '../types';
 
 /**
@@ -74,7 +74,7 @@ export interface VitalsSpec {
 
 export interface Archetype {
   id: string;
-  category: TriageCategory;
+  category: StartCategory;
   /** Kryterium rozstrzygające (opis dydaktyczny). */
   criterion: string;
   /** Identyfikatory wzorcowych pacjentów, z których archetyp powstał. */
@@ -95,6 +95,8 @@ export interface Archetype {
   remarks?: readonly Text[];
   poses: readonly PatientPose[];
   majorBleeding?: boolean;
+  /** SALT judgement facts (default: minor injuries only ⇔ GREEN in START/JumpSTART). */
+  salt?: SaltInfo;
   /** Względna częstość (domyślnie 1). */
   weight?: number;
   /** Najwyżej raz w scenariuszu. */

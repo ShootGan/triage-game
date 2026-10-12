@@ -1,4 +1,4 @@
-import { triage, type TriageCategory, type Vitals } from '../../engine/triage';
+import { triage, type StartCategory, type TriageCategory, type Vitals } from '../../engine/triage';
 import type { PatientAppearance, PatientPose, Scenario, ScenarioPatient } from '../types';
 import { scenarioIssues } from '../validate';
 import {
@@ -44,7 +44,7 @@ export const TEMPLATE_SUFFIX = 'WZOR';
  * real incident (where most casualties walk): green patients need no decisions beyond "walkers to me",
  * so the training value is in yellow/red/black.
  */
-export const CATEGORY_MIX: Record<TriageCategory, Range> = {
+export const CATEGORY_MIX: Record<StartCategory, Range> = {
   green: [0.25, 0.4],
   yellow: [0.25, 0.35],
   red: [0.2, 0.3],
@@ -187,7 +187,7 @@ function structuredCloneScenario(s: Scenario): Scenario {
 
 /** Wszystkie dopuszczalne rozkłady [zielony, żółty, czerwony, czarny] dla n poszkodowanych. */
 export function categoryMixes(n: number): [number, number, number, number][] {
-  const ok = (c: TriageCategory, k: number) => k >= CATEGORY_MIX[c][0] * n - 1e-9 && k <= CATEGORY_MIX[c][1] * n + 1e-9;
+  const ok = (c: StartCategory, k: number) => k >= CATEGORY_MIX[c][0] * n - 1e-9 && k <= CATEGORY_MIX[c][1] * n + 1e-9;
   const out: [number, number, number, number][] = [];
   for (let r = MIN_RED; r <= n; r++) {
     for (let y = 0; y <= n - r; y++) {
@@ -664,6 +664,7 @@ function tryGenerate(layout: ScenarioLayout, code: string, rng: Rng): Generated 
     };
     if (pregnant) p.appearance.pregnant = true;
     if (d.arch.majorBleeding) p.majorBleeding = true;
+    if (d.arch.salt) p.salt = { ...d.arch.salt };
     if (remark) p.remark = remark;
     if (layout.cold) p.cold = true;
     if (slot.trapped) {

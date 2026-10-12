@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { CATEGORY_COLOR, CATEGORY_ORDER, formatClock } from '../game/constants';
 import { MODE_LABEL, timeLimitEnforced, useGame } from '../game/store';
-import { CATEGORY_LABEL } from '../engine/triage';
+import { CATEGORY_LABEL, type TriageCategory } from '../engine/triage';
 
 export function Hud() {
   const scenario = useGame((s) => s.scenario)!;
@@ -14,7 +14,7 @@ export function Hud() {
   const tagWalkersGreen = useGame((s) => s.tagWalkersGreen);
   const endTriage = useGame((s) => s.endTriage);
 
-  const counts = { red: 0, yellow: 0, green: 0, black: 0 };
+  const counts: Record<TriageCategory, number> = { red: 0, yellow: 0, green: 0, black: 0, grey: 0 };
   let untagged = 0;
   for (const p of scenario.patients) {
     const t = tags[p.id];

@@ -1,5 +1,13 @@
 import type { ExamActionId } from '../exam/types';
-import type { DecisionStep, Protocol, TriageCategory } from '../triage';
+import type { DecisionStep, Protocol, ProtocolMode, TriageCategory } from '../triage';
+
+/** SALT sort phase as the player ran it. */
+export interface SortInput {
+  walkersCalled: boolean;
+  waversCalled: boolean;
+  /** Patient ids in the order the player walked up to them (repeats allowed). */
+  approachOrder: string[];
+}
 
 /**
  * - `correct`   — right colour, and the findings established before the tag settle it (in any order);
@@ -45,6 +53,8 @@ export interface PatientDebrief {
   explanation: string;
   /** Points for this patient (see `POINTS`); optional for compatibility with mock scores. */
   points?: number;
+  /** SALT: assessed before a more urgent sort group. */
+  sortLate?: boolean;
 }
 
 export interface GameScore {
@@ -66,4 +76,8 @@ export interface GameScore {
   elapsedSec: number;
   avgSecPerPatient: number;
   patients: PatientDebrief[];
+  /** Algorithm the game was scored with (default START). */
+  protocol?: ProtocolMode;
+  /** SALT: notes about the sort phase (commands, order). */
+  sortNotes?: string[];
 }

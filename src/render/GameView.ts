@@ -23,6 +23,7 @@ const TAG_COLOR: Record<TriageCategory, string> = {
   yellow: '#f2c230',
   green: '#3fa34d',
   black: '#1a1c2c',
+  grey: '#8a8f98',
 };
 
 const POSE_MAP: Record<PatientPose, PoseName> = {
