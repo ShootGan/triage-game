@@ -174,6 +174,27 @@ export const ARCHETYPES: readonly Archetype[] = [
     poses: UPRIGHT,
   },
   {
+    id: 'g-chodzi-powazne',
+    category: 'green',
+    criterion: 'chodzi (SALT: obrażenia nie tylko drobne → ŻÓŁTY)',
+    source: [],
+    ages: ['teen', 'adult', 'elderly'],
+    mechanisms: ['komunikacyjny', 'wybuch', 'zmiazdzenie', 'kolejowy', 'upadek'],
+    vitals: WALKER(),
+    salt: { minorOnly: false },
+    injuries: [[
+      'głęboka rana cięta przedramienia prawego, widoczne ścięgna, krwawienie opanowane opatrunkiem uciskowym',
+      'otwarte złamanie palców dłoni lewej — kość widoczna w ranie',
+      'bark lewy zniekształcony, ręka w nienaturalnym ustawieniu — podejrzenie zwichnięcia',
+    ]],
+    remarks: [
+      'Podtrzymuje rękę drugą dłonią: „Mogę iść, tylko tej ręki nie czuję…"',
+      '„Idę, idę… tylko niech ktoś spojrzy na tę rękę."',
+    ],
+    poses: UPRIGHT,
+    weight: 0.7,
+  },
+  {
     id: 'g-reka',
     pregnancy: 'ok',
     category: 'green',
@@ -182,10 +203,12 @@ export const ARCHETYPES: readonly Archetype[] = [
     ages: ADULTLIKE,
     mechanisms: ALL,
     vitals: WALKER(),
+    // SALT: a suspected fracture is not "minor injuries only" → DELAYED although walking.
+    salt: { minorOnly: false },
     injuries: [[
-      'bolesność i obrzęk nadgarstka prawego',
+      'bolesność i obrzęk nadgarstka prawego, nie porusza ręką — podejrzenie złamania',
       'bolesność i zniekształcenie nadgarstka lewego — podejrzenie złamania',
-      'bolesność obojczyka prawego, ręka przyciśnięta do tułowia',
+      'bolesność obojczyka prawego, ręka przyciśnięta do tułowia — podejrzenie złamania',
     ]],
     extraInjuries: ['otarcie czoła', 'otarcia dłoni'],
     remarks: [
@@ -1152,6 +1175,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     pregnancy: 'ok',
     category: 'red',
     criterion: 'START: oddechy > 30/min (odma prężna)',
+    salt: { tensionPneumothorax: true },
     source: [],
     ages: ADULTLIKE,
     mechanisms: ['komunikacyjny', 'upadek', 'zmiazdzenie', 'wybuch', 'kolejowy', 'tlum'],
