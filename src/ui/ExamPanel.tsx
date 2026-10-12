@@ -109,13 +109,13 @@ export function ExamPanel() {
       {walkerIdx >= 0 && walkers.length > 1 && (
         <div className="walker-nav">
           <button className="btn" onClick={() => nextWalker(-1)} title="Poprzedni chodzący (B)">
-            <span className="key">B</span> ◀ Poprzedni
+            <span className="key">B</span> ◀<span className="lbl-long"> Poprzedni</span>
           </button>
-          <span className="muted">
+          <span className="muted walker-count">
             Punkt zbiórki {walkerIdx + 1}/{walkers.length}
           </span>
           <button className="btn" onClick={() => nextWalker(1)} title="Następny chodzący (N)">
-            Następny ▶ <span className="key">N</span>
+            <span className="lbl-long">Następny </span>▶ <span className="key">N</span>
           </button>
         </div>
       )}
