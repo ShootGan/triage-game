@@ -111,6 +111,9 @@ interface PatientEntity {
   wave: { t: number; delay: number; shX: number; shY: number; shZ: number; elX: number } | null;
 }
 
+/** Inset change (px) that re-frames the overview: the exam panel opening/closing, not HUD jitter. */
+const OVERVIEW_REFRAME_PX = 120;
+
 /** How long casualties wave after "Kto mnie słyszy — pomachaj ręką!". */
 const WAVE_SECONDS = 6;
 
@@ -744,9 +747,10 @@ export class GameView implements IGameView {
     this.insetsKnown = true;
     if (diff <= 2 && !first) return;
     this.insets = next;
-    // Przegląd: zoom dopasowujemy tylko za pierwszym razem (wysokość HUD-u może się zmieniać,
-    // np. przy potwierdzeniu — bez skoków zoomu). Badanie: zawsze (np. panel właśnie się pojawił).
-    if (this.focusedId || first) this.reframe();
+    // Przegląd: small changes (HUD height, e.g. the end-confirmation) don't move the camera, but the
+    // exam panel closing does — otherwise the overview stays framed for the half-covered screen and
+    // zooms far out after every tag. Badanie: zawsze (np. panel właśnie się pojawił).
+    if (this.focusedId || first || diff > OVERVIEW_REFRAME_PX) this.reframe();
   }
 
   onPatientClick(cb: (id: string) => void): void {

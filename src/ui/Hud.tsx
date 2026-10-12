@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CATEGORY_COLOR, categoriesFor, formatClock } from '../game/constants';
-import { gameProtocol, MODE_LABEL, timeLimitEnforced, useGame } from '../game/store';
+import { collectionWalkers, gameProtocol, MODE_LABEL, timeLimitEnforced, useGame } from '../game/store';
 import { CATEGORY_LABEL, type TriageCategory } from '../engine/triage';
 
 export function Hud() {
@@ -15,6 +15,8 @@ export function Hud() {
   const waversCalled = useGame((s) => s.waversCalled);
   const callWavers = useGame((s) => s.callWavers);
   const protocol = useGame(gameProtocol);
+  const goToCollectionPoint = useGame((s) => s.goToCollectionPoint);
+  const walkersLeft = useGame((s) => collectionWalkers(s).filter((p) => !s.tags[p.id]).length);
   const salt = protocol === 'SALT';
   const endTriage = useGame((s) => s.endTriage);
 
@@ -89,6 +91,12 @@ export function Hud() {
             <span className="lbl-long">Grupa chodzących: ZIELONI ✓</span>
             <span className="lbl-short">Chodzący: ZIELONI ✓</span>
           </span>
+        )}
+        {walkersLeft > 0 && (
+          <button className="btn" onClick={goToCollectionPoint} title="Podejdź do chodzących w punkcie zbiórki">
+            <span className="lbl-long">Punkt zbiórki ({walkersLeft})</span>
+            <span className="lbl-short">Zbiórka ({walkersLeft})</span>
+          </button>
         )}
         {!confirming ? (
           <button className="btn danger" onClick={() => setConfirming(true)} title="Zakończ segregację">

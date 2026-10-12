@@ -381,6 +381,8 @@ a { color: var(--accent); }
 .pd-points { font-family: var(--font-head); font-size: 12px; padding: 4px 0; color: var(--muted); white-space: nowrap; }
 .verdict.critical { background: #ff6b6b; color: var(--ink); border-color: #ff6b6b; }
 .debrief-note { margin: 10px 0 0; font-size: 17px; line-height: 1.2; }
+.walker-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 8px; }
+.walker-nav .btn { padding: 4px 8px; }
 .sort-summary { margin: 12px 0 0; padding: 8px 10px; border-left: 4px solid var(--orange); background: var(--panel-2); }
 .sort-summary p { margin: 4px 0 0; font-size: 17px; }
 .pd-detail { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; padding: 0 10px 10px; border-top: 2px dashed var(--panel); }

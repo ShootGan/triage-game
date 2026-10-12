@@ -76,6 +76,10 @@ export interface GameState {
   callWalkers(): void;
   /** SALT: everyone who can hear — wave (still ones are assessed first). */
   callWavers(): void;
+  /** Walk to the collection point: the first walker without a tag (or the first walker). */
+  goToCollectionPoint(): void;
+  /** At the collection point: the next (+1) or previous (−1) walker — no aiming at small markers. */
+  nextWalker(dir: 1 | -1): void;
   tagWalkersGreen(): void;
   endTriage(): void;
   restart(): void;
@@ -114,6 +118,11 @@ const freshRound = {
   approachOrder: [] as string[],
   score: null,
 } satisfies Partial<GameState>;
+
+/** Casualties standing at the collection point (after "walkers to me"), in scene order. */
+export function collectionWalkers(s: Pick<GameState, 'scenario' | 'walkersCalled'>): ScenarioPatient[] {
+  return s.walkersCalled ? (s.scenario?.patients.filter((p) => p.vitals.canWalk) ?? []) : [];
+}
 
 /** Algorithm of the game being played. */
 export function gameProtocol(s: Pick<GameState, 'scenario'>): ProtocolMode {
@@ -277,6 +286,22 @@ export const useGame = create<GameState>()((set, get) => {
       if (s.phase !== 'playing' || !s.walkersCalled || s.waversCalled || !s.scenario || gameProtocol(s) !== 'SALT') return;
       set({ waversCalled: true });
       view?.wave(s.scenario.patients.filter((p) => saltSortGroup(p) === 2).map((p) => p.id));
+    },
+
+    goToCollectionPoint() {
+      const s = get();
+      if (s.phase !== 'playing' || !s.walkersCalled) return;
+      const walkers = collectionWalkers(s);
+      const target = walkers.find((p) => !s.tags[p.id]) ?? walkers[0];
+      if (target) get().selectPatient(target.id);
+    },
+
+    nextWalker(dir) {
+      const s = get();
+      const walkers = collectionWalkers(s);
+      const i = walkers.findIndex((p) => p.id === s.selectedId);
+      if (i < 0 || walkers.length < 2) return;
+      get().selectPatient(walkers[(i + dir + walkers.length) % walkers.length].id);
     },
 
     tagWalkersGreen() {

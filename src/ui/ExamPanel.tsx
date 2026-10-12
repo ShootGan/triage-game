@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { actionsFor, pulseLabel } from '../engine/exam';
 import { CATEGORY_LABEL } from '../engine/triage';
 import { ACTION_ORDER, CATEGORY_COLOR, categoriesFor } from '../game/constants';
 import { getDeps } from '../game/deps';
-import { gameProtocol, useGame } from '../game/store';
+import { collectionWalkers, gameProtocol, useGame } from '../game/store';
 
 export function ExamPanel() {
   const selectedId = useGame((s) => s.selectedId);
@@ -16,6 +16,12 @@ export function ExamPanel() {
   const selectPatient = useGame((s) => s.selectPatient);
   const special = useGame((s) => !!s.scenario?.special);
   const mode = useGame(gameProtocol);
+  const scenario = useGame((s) => s.scenario);
+  const walkersCalled = useGame((s) => s.walkersCalled);
+  // derived, not selected: a fresh array from a zustand v5 selector would re-render forever
+  const walkers = useMemo(() => collectionWalkers({ scenario, walkersCalled }), [scenario, walkersCalled]);
+  const nextWalker = useGame((s) => s.nextWalker);
+  const walkerIdx = walkers.findIndex((p) => p.id === selectedId);
   const { ACTION_LABEL } = getDeps();
   // SALT: no CRT/AVPU, adds needle decompression, GREY tag; 2 (not 5) rescue breaths.
   const actions = ACTION_ORDER.filter((a) => actionsFor(mode).includes(a.id));
@@ -54,6 +60,11 @@ export function ExamPanel() {
         return;
       }
       const k = e.key.toUpperCase();
+      if (walkerIdx >= 0 && (k === 'N' || k === 'B')) {
+        e.preventDefault();
+        nextWalker(k === 'N' ? 1 : -1);
+        return;
+      }
       const act = actions.find((a) => a.key === k);
       if (act) {
         e.preventDefault();
@@ -68,7 +79,7 @@ export function ExamPanel() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [selectedId, doAction, tagPatient, selectPatient, actions, categories]);
+  }, [selectedId, doAction, tagPatient, selectPatient, actions, categories, walkerIdx, nextWalker]);
 
   if (!patient) {
     if (!approaching) return null;
@@ -95,6 +106,19 @@ export function ExamPanel() {
           ✕<span className="key">Esc</span>
         </button>
       </header>
+      {walkerIdx >= 0 && walkers.length > 1 && (
+        <div className="walker-nav">
+          <button className="btn" onClick={() => nextWalker(-1)} title="Poprzedni chodzący (B)">
+            <span className="key">B</span> ◀ Poprzedni
+          </button>
+          <span className="muted">
+            Punkt zbiórki {walkerIdx + 1}/{walkers.length}
+          </span>
+          <button className="btn" onClick={() => nextWalker(1)} title="Następny chodzący (N)">
+            Następny ▶ <span className="key">N</span>
+          </button>
+        </div>
+      )}
 
       <section className="exam-actions">
         <div className="h-small">Czynności</div>

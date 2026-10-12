@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Collection point button ("Punkt zbiórki (n)") walks to the walkers; in the exam panel
+  "◀ Poprzedni / Następny ▶" (keys B / N) switches between them — no aiming at small markers.
 - SALT mode: choose the algorithm in the menu (START/JumpSTART or SALT); a SALT code ends with
   `-SALT` and has the same casualties as the code without it. The sort phase uses two commands —
   "walkers to me" and "wave your hand" (casualties raise and wave an arm); markers then show the
@@ -25,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SALT content: walkers with a suspected fracture (and a new walking casualty with a deep forearm
   wound, open finger fracture or dislocated shoulder) are DELAYED in SALT; tension pneumothorax needs
   needle decompression.
+
+### Fixed
+
+- After tagging, the camera no longer zooms far out: the overview is re-framed once the exam panel
+  closes.
 
 ## [0.4.2] - 2026-10-12
 
