@@ -130,6 +130,16 @@ a { color: var(--accent); }
     radial-gradient(ellipse at 50% 30%, #29366f 0%, var(--ink) 70%);
 }
 .menu-panel { width: min(560px, 100%); max-height: 100%; overflow: auto; }
+.about-open { width: 100%; justify-content: center; margin-top: 10px; }
+
+/* ---------- O grze ---------- */
+.about { width: min(760px, 100%); }
+.about-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.about-list { margin: 0; padding-left: 20px; font-size: 20px; }
+.about-sources { margin: 0; padding-left: 24px; font-size: 17px; line-height: 1.15; }
+.about-sources li { margin-bottom: 10px; overflow-wrap: anywhere; }
+.about-sources .badge { font-size: 10px; padding: 2px 4px; }
+.about a { color: var(--accent); }
 .title {
   font-family: var(--font-title);
   font-size: 34px;
@@ -326,6 +336,47 @@ a { color: var(--accent); }
 .hint-list li.checked { color: var(--text); }
 .hint-mark { width: 14px; flex: none; color: var(--green); }
 .hint-warn { color: #ff8a8a; margin: 6px 0 0; }
+.hint-view { display: flex; gap: 6px; margin-top: 6px; }
+.hint-view .btn { font-size: 15px; padding: 2px 8px; color: var(--muted); }
+.hint-view .btn.active { color: var(--ink); background: var(--yellow); }
+
+/* Algorithm flowchart: main line in the left column, side exits on the right. */
+.flow { font-size: 16px; line-height: 1.1; margin-top: 4px; }
+.flow-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 50%); align-items: start; }
+.flow-box { position: relative; hyphens: auto; overflow-wrap: break-word; padding: 4px 6px; border: 2px solid var(--line); color: var(--muted); background: var(--panel-2); }
+.flow-box.q { border-color: var(--accent); }
+.flow-box.action { grid-column: 1 / -1; border-style: dashed; }
+.flow-box.checked { color: var(--text); border-color: var(--green); }
+.flow-box .hint-mark { display: inline-block; width: auto; margin-right: 4px; }
+/* line from the box to the side exit */
+.flow-side { position: relative; min-width: 0; padding: 2px 0 0 16px; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.flow-side::before { content: ''; position: absolute; left: 0; width: 12px; top: 12px; border-top: 2px solid var(--line); }
+.flow-side::after { content: ''; position: absolute; left: 7px; top: 8px; border: 5px solid transparent; border-left-color: var(--line); border-right: 0; }
+.flow-down { position: relative; width: 50%; height: 20px; }
+.flow-down::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; border-left: 2px solid var(--line); }
+.flow-down .flow-lbl { position: absolute; left: calc(50% + 6px); top: 2px; white-space: nowrap; }
+.flow-lbl { font-size: 13px; color: var(--yellow); text-transform: uppercase; }
+.flow-end { display: flex; justify-content: center; }
+.flow-out {
+  display: inline-block; padding: 1px 4px; font-family: var(--font-head); font-size: 10px;
+  border: 2px solid var(--ink); box-shadow: 0 0 0 1px var(--text);
+}
+.flow-out-green { background: var(--green); color: var(--text); }
+.flow-out-yellow { background: var(--yellow); color: var(--ink); }
+.flow-out-red { background: var(--red); color: var(--text); }
+.flow-out-black { background: var(--black); color: var(--text); }
+.flow-out-grey { background: #8a8f98; color: var(--ink); }
+.flow-sub-text { hyphens: auto; overflow-wrap: break-word; color: var(--muted); border: 2px dashed var(--line); padding: 2px 4px; }
+/* tree of outcomes under a side step */
+.flow-tree { list-style: none; margin: 0 0 0 4px; padding: 0; border-left: 2px solid var(--line); }
+.flow-tree li { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; padding: 3px 0 0 8px; }
+.flow-tree li::before { content: ''; position: absolute; left: 0; top: 12px; width: 6px; border-top: 2px solid var(--line); }
+.flow-sub { min-width: 0; max-width: 100%; }
+.flow-tree .flow-sub { flex-basis: 100%; }
+/* deeper levels: no extra indent, so the chart fits the narrow panel */
+.flow-tree .flow-tree { margin-left: 0; }
+.flow-tree .flow-tree li { padding-left: 7px; }
+.flow-tree .flow-tree li::before { width: 5px; }
 
 /* ---------- Debrief ---------- */
 .debrief { background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 2px, transparent 2px 4px), var(--ink); align-items: stretch; overflow: auto; }

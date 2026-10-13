@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Learn mode: the algorithm hint can be shown as a flowchart ("Schemat", default) with TAK/NIE
+  branches and colour outcomes, or as the previous text list ("Lista"); the choice is remembered.
+- "O grze i źródła" screen in the menu: authors and the verified literature the algorithms rely on
+  (DOI / PMID links), plus an educational-use disclaimer.
+
 ## [1.0.0] - 2026-10-12
 
 ### Added

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import type { ProtocolMode } from '../engine/triage';
 import { getDeps } from '../game/deps';
 import { MODE_LABEL, VARIANT_LABEL, useGame, type GameMode, type ScenarioVariant } from '../game/store';
+import { AboutScreen } from './About';
 import './code.css';
 
 const MODE_DESC: Record<GameMode, string> = {
@@ -38,6 +39,7 @@ export function MenuScreen() {
 
   const [codeInput, setCodeInput] = useState('');
   const [codeError, setCodeError] = useState<string | null>(null);
+  const [about, setAbout] = useState(false);
 
   const onLoad = (e: FormEvent) => {
     e.preventDefault();
@@ -53,6 +55,14 @@ export function MenuScreen() {
     }
     return `${templateCount} poszkodowanych`;
   };
+
+  if (about) {
+    return (
+      <div className="screen menu">
+        <AboutScreen onClose={() => setAbout(false)} />
+      </div>
+    );
+  }
 
   return (
     <div className="screen menu">
@@ -161,6 +171,9 @@ export function MenuScreen() {
 
         <button className="btn primary big" disabled={!selected} onClick={goToBriefing}>
           Start ▶
+        </button>
+        <button className="btn about-open" onClick={() => setAbout(true)}>
+          O grze i źródła
         </button>
         {isStub && <p className="stub-note">TRYB STUB — atrapy modułów (src/ui/dev)</p>}
         <p className="app-version" title="Wersja aplikacji">
