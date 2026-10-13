@@ -1121,7 +1121,7 @@ export const ARCHETYPES: readonly Archetype[] = [
       ['krwiak okularowy', 'krwawienie z nosa'],
     ],
     remarks: [
-      'Otwiera oczy na głos, mamrocze bez sensu, nie wykonuje poleceń.',
+      'Otwiera oczy na głos, mamrocze bez sensu.',
       'Na głos otwiera oczy, ale odpowiada nielogicznie.',
     ],
     poses: ['back'],

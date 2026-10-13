@@ -171,6 +171,8 @@ describe('archetypy', () => {
       if (a.majorBleeding) expect(a.vitals.walk, a.id).toBe(false);
       if (a.ages.includes('infant')) expect(a.ages, a.id).toEqual(['infant']);
       const texts = [...a.injuries.flat(), ...(a.extraInjuries ?? []), ...(a.remarks ?? [])].map((t) => (typeof t === 'string' ? t : t.t));
+      // Descriptions must not give away an exam result the player is meant to check (e.g. simple commands).
+      for (const t of texts) expect(t, a.id).not.toMatch(/polece/i);
       for (const t of texts) {
         // tylko pełne pary {męska|żeńska}
         const stripped = t.replace(/\{[^{}|]*\|[^{}|]*\}/g, '');

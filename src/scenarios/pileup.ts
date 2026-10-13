@@ -253,7 +253,7 @@ export const pileupScenario: Scenario = {
         avpu: 'V',
       },
       injuries: ['rana tłuczona okolicy skroniowej lewej', 'krwiak okularowy'],
-      remark: 'Otwiera oczy na głos, mamrocze bez sensu, nie wykonuje poleceń.',
+      remark: 'Otwiera oczy na głos, mamrocze bez sensu.',
       appearance: { sex: 'm', child: false, skin: '#f1c27d', hair: '#bdbdbd', hairStyle: 'bald', beard: false, shirt: '#16a085', pants: '#3b3b3b', sleeves: 'long' },
       pose: 'back',
       position: [8, -6.5],
