@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Menu — propozycje</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #1a1c2c; --panel: #333c57; --panel-2: #29304a; --line: #566c86; --text: #f4f4f4;
+    --accent: #94b0c2; --muted: #8b9bb4; --red: #d6303a; --yellow: #f2c230; --green: #3fa34d;
+    --head: 'Silkscreen', monospace; --title: 'Press Start 2P', monospace; --body: 'VT323', monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0f1020; color: var(--text); font: 20px/1.2 var(--body); -webkit-font-smoothing: none; }
+  .page { padding: 24px; }
+  h1.doc { font: 16px var(--head); color: var(--yellow); margin: 0 0 6px; }
+  .proposal { margin: 0 0 48px; }
+  .proposal > h2 { font: 22px var(--head); margin: 0; color: var(--text); }
+  .proposal > p { color: var(--muted); margin: 4px 0 12px; max-width: 900px; }
+  .row { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+  .frame { border: 3px solid var(--line); position: relative; overflow: hidden; flex: none;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 2px, transparent 2px 4px), radial-gradient(ellipse at 50% 30%, #29366f 0%, var(--ink) 70%); }
+  .frame::before { content: attr(data-label); position: absolute; top: -1px; right: 6px; z-index: 5; font: 10px var(--head); color: var(--muted); }
+  .desk { width: 880px; height: 560px; }
+  .phone { width: 360px; height: 720px; border-radius: 18px; }
+
+  /* shared bits */
+  .panel { background: var(--panel-2); border: 3px solid var(--line); box-shadow: 4px 4px 0 rgba(0,0,0,.45); padding: 14px 16px; }
+  .title { font: 30px var(--title); color: var(--text); text-shadow: 3px 3px 0 var(--red); margin: 0; letter-spacing: 2px; }
+  .sub { color: var(--muted); margin: 6px 0 0; }
+  .hs { font: 12px var(--head); color: var(--accent); letter-spacing: 2px; margin: 10px 0 4px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 6px 12px; background: var(--panel);
+    border: 2px solid var(--ink); box-shadow: 0 0 0 2px var(--accent), 3px 3px 0 2px rgba(0,0,0,.5); font: 13px var(--head); color: var(--text); cursor: pointer; }
+  .btn.primary { background: var(--red); box-shadow: 0 0 0 2px var(--text), 3px 3px 0 2px rgba(0,0,0,.5); }
+  .btn.big { font-size: 16px; padding: 12px 18px; }
+  .seg { display: inline-flex; border: 2px solid var(--line); }
+  .seg span { padding: 3px 10px; font: 12px var(--head); color: var(--muted); }
+  .seg span.on { background: var(--yellow); color: var(--ink); }
+  .links { display: flex; gap: 14px; flex-wrap: wrap; font-size: 18px; }
+  .links a { color: var(--yellow); }
+  .scen { display: flex; justify-content: space-between; gap: 8px; padding: 6px 10px; border: 2px solid var(--panel); margin-bottom: 6px; background: rgba(0,0,0,.15); }
+  .scen.on { border-color: var(--yellow); background: rgba(242,194,48,.08); }
+  .scen b { font-weight: normal; }
+  .scen small { color: var(--muted); font-size: 16px; white-space: nowrap; }
+  .ver { position: absolute; right: 12px; bottom: 8px; color: var(--muted); font-size: 14px; }
+  .code { display: flex; gap: 6px; }
+  .code input { flex: 1; min-width: 0; background: var(--ink); border: 2px solid var(--line); color: var(--text); font: 18px var(--body); padding: 2px 6px; }
+
+  .btn.sm { font-size: 11px; padding: 4px 8px; box-shadow: 0 0 0 2px var(--yellow), 2px 2px 0 2px rgba(0,0,0,.5); color: var(--yellow); }
+  .btn, .seg span, .scen, .tile, .d-cmd, .d .opt, .d .item { cursor: pointer; user-select: none; }
+  .btn:active { transform: translate(2px, 2px); }
+  .d-cmd { color: #7cf29a; text-decoration: underline; }
+  .d .item:hover, .d-cmd:hover, .d .opt:hover { background: rgba(124,242,154,.18); }
+  .overlay { position: absolute; inset: 0; z-index: 8; padding: 18px 20px; overflow: auto;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 2px, transparent 2px 4px), radial-gradient(ellipse at 50% 30%, #29366f 0%, var(--ink) 70%); }
+  .overlay .head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .overlay .title { font-size: 20px; }
+  .overlay p { color: var(--text); }
+  .d .overlay { background: #0b130d; color: #7cf29a; }
+  .d .overlay .title { color: #a8ffc0; text-shadow: none; }
+  .codebox { display: none; }
+  .codebox.on { display: flex; }
+  .toast { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); z-index: 9; background: var(--yellow); color: var(--ink); font: 13px var(--head); padding: 8px 12px; box-shadow: 3px 3px 0 rgba(0,0,0,.5); }
+
+  /* A: title screen */
+  .a-title { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+  .a-title .stripe { position: absolute; left: 0; right: 0; bottom: 0; height: 26px; background: repeating-linear-gradient(90deg, var(--red) 0 26px, var(--text) 26px 52px); opacity: .85; }
+  .a-menu { display: flex; flex-direction: column; gap: 12px; width: 300px; margin-top: 10px; }
+  .a-menu .btn { width: 100%; font-size: 15px; padding: 10px; }
+  .a-menu .btn.primary { font-size: 18px; padding: 14px; }
+  .phone .a-menu { width: 260px; }
+  .phone .title { font-size: 26px; }
+
+  /* B: two columns */
+  .b { position: absolute; inset: 14px; display: grid; grid-template-rows: auto 1fr; gap: 10px; }
+  .b-top { display: flex; justify-content: space-between; align-items: center; }
+  .b-top .title { font-size: 22px; }
+  .b-cols { display: grid; grid-template-columns: 300px 1fr; gap: 14px; min-height: 0; }
+  .b-cols .panel { overflow: hidden; }
+  .phone .b-cols { grid-template-columns: 1fr; }
+  .phone .b-cols .panel { display: flex; flex-direction: column; }
+  #b-list-p { flex: 1; min-height: 0; overflow: auto; }
+  .phone .b-top { flex-direction: column; align-items: flex-start; gap: 6px; }
+
+  /* C: tiles */
+  .c { position: absolute; inset: 14px; display: grid; grid-template-rows: auto auto 1fr auto; gap: 10px; }
+  .c-opts { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .c-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; align-content: start; overflow: hidden; }
+  .phone .c-grid { grid-template-columns: 1fr 1fr; }
+  .tile { border: 3px solid var(--panel); background: var(--panel-2); padding: 0 0 6px; box-shadow: 3px 3px 0 rgba(0,0,0,.4); }
+  .tile .pic { height: 64px; display: flex; align-items: center; justify-content: center; font: 22px var(--title); color: rgba(255,255,255,.85); }
+  .tile .nm { padding: 4px 8px 0; font-size: 18px; line-height: 1; }
+  .tile small { display: block; padding: 2px 8px 0; color: var(--muted); font-size: 15px; }
+  .tile.on { border-color: var(--yellow); }
+  .phone .tile .pic { height: 46px; font-size: 16px; }
+  .c-bottom { display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .c-bottom .btn.primary { flex: 1; max-width: 360px; }
+  .phone .c-bottom .btn.primary { max-width: none; width: 100%; }
+
+  /* D: dispatcher terminal */
+  .d { position: absolute; inset: 0; background: #0b130d; color: #7cf29a; font: 22px var(--body); padding: 22px 28px; text-shadow: 0 0 6px rgba(124,242,154,.45); }
+  .d::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,.25) 0 2px, transparent 2px 4px); }
+  .d .hd { font: 13px var(--head); color: #3aa85a; letter-spacing: 2px; }
+  .d .t { font: 24px var(--title); color: #a8ffc0; margin: 6px 0 14px; }
+  .d .ln { white-space: pre; }
+  .d .sel { background: #7cf29a; color: #0b130d; text-shadow: none; }
+  .d .dim { color: #3aa85a; }
+  .phone .d { font-size: 18px; padding: 16px; }
+  .phone .d .t { font-size: 18px; }
+  .phone .d .ln { white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1 class="doc">Menu — 4 propozycje · komputer + telefon</h1>
+
+  <section class="proposal">
+    <h2>A · Ekran tytułowy + ustawienia</h2>
+    <p>Pierwszy ekran to tylko tytuł i 4 duże przyciski — laik od razu widzi „Co to jest segregacja”. „Graj” otwiera ekran ustawień (jak w C). Najbardziej „growe”.</p>
+    <div class="row">
+      <div class="frame desk" data-label="KOMPUTER"><div class="a-title">
+        <h1 class="title">TRIAGE</h1>
+        <p class="sub">START · JumpSTART · SALT — zdarzenie masowe</p>
+        <div class="a-menu">
+          <span class="btn primary play">▶ GRAJ</span>
+          <span class="btn info" data-page="seg">Co to jest segregacja?</span>
+          <span class="btn info" data-page="how">Jak grać</span>
+          <span class="btn info" data-page="about">O grze i źródła</span>
+        </div>
+        <div class="stripe"></div><span class="ver">v1.0.0</span>
+      </div></div>
+      <div class="frame phone" data-label="TELEFON"><div class="a-title">
+        <h1 class="title">TRIAGE</h1>
+        <p class="sub">START · JumpSTART · SALT</p>
+        <div class="a-menu">
+          <span class="btn primary play">▶ GRAJ</span>
+          <span class="btn info" data-page="seg">Co to jest segregacja?</span>
+          <span class="btn info" data-page="how">Jak grać</span>
+          <span class="btn info" data-page="about">O grze i źródła</span>
+        </div>
+        <div class="stripe"></div>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="proposal">
+    <h2>B · Dwie kolumny</h2>
+    <p>Wszystko na jednym ekranie: ustawienia z lewej jako krótkie przełączniki, scenariusze z prawej, linki informacyjne w pasku u góry. Na telefonie jedno pod drugim.</p>
+    <div class="row">
+      <div class="frame desk" data-label="KOMPUTER"><div class="b">
+        <div class="b-top"><h1 class="title">TRIAGE</h1><div class="links"><span class="btn sm info" data-page="seg">Co to jest segregacja?</span><span class="btn sm info" data-page="how">Jak grać</span><span class="btn sm info" data-page="about">O grze</span></div></div>
+        <div class="b-cols">
+          <div class="panel">
+            <div class="hs">TRYB</div><div class="seg"><span class="on">Nauka</span><span>Ćwiczenie</span></div>
+            <div class="hs">ALGORYTM</div><div class="seg"><span class="on">START · JumpSTART</span><span>SALT</span></div>
+            <div class="hs">SYTUACJA</div><div class="seg"><span class="on">Losowa</span><span>Wzorzec</span></div>
+            <div class="hs">KOD ZADANIA</div><div class="code"><input placeholder="np. KAMIENICA-4F7K" /><span class="btn">OK</span></div>
+            <div style="margin-top:18px"><span class="btn primary big start" style="width:100%">START ▶</span></div>
+          </div>
+          <div class="panel">
+            <div class="hs" style="margin-top:0">SCENARIUSZ</div>
+            <div id="b-list"></div>
+          </div>
+        </div>
+      </div></div>
+      <div class="frame phone" data-label="TELEFON"><div class="b">
+        <div class="b-top"><h1 class="title">TRIAGE</h1><div class="links"><span class="btn sm info" data-page="seg">Segregacja?</span><span class="btn sm info" data-page="how">Jak grać</span><span class="btn sm info" data-page="about">O grze</span></div></div>
+        <div class="b-cols">
+          <div class="panel">
+            <div class="hs" style="margin-top:0">TRYB · ALGORYTM · SYTUACJA</div>
+            <div class="seg"><span class="on">Nauka</span><span>Ćwiczenie</span></div>
+            <div class="seg" style="margin-top:6px"><span class="on">START</span><span>SALT</span></div>
+            <div class="seg" style="margin-top:6px"><span class="on">Losowa</span><span>Wzorzec</span></div>
+            <div class="hs">SCENARIUSZ</div>
+            <div id="b-list-p"></div>
+            <span class="btn primary big start" style="width:100%;margin-top:8px">START ▶</span>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="proposal">
+    <h2>C · Kafelki scenariuszy</h2>
+    <p>Jak wybór poziomu w grze: przełączniki u góry, scenariusze jako kafelki z ikoną, kod zadania schowany pod „Mam kod ▸”, Start zawsze na dole. Linki informacyjne pod Startem.</p>
+    <div class="row">
+      <div class="frame desk" data-label="KOMPUTER"><div class="c">
+        <h1 class="title" style="font-size:22px">TRIAGE</h1>
+        <div class="c-opts"><div class="seg"><span class="on">Nauka</span><span>Ćwiczenie</span></div><div class="seg"><span class="on">START · JumpSTART</span><span>SALT</span></div><div class="seg"><span class="on">Losowa</span><span>Wzorzec</span></div><span class="btn sm code-toggle">Mam kod ▸</span></div>
+        <div class="c-grid" id="c-grid"></div>
+        <div class="c-bottom"><span class="btn primary big start">START ▶</span><div class="links"><span class="btn sm info" data-page="seg">Co to jest segregacja?</span><span class="btn sm info" data-page="how">Jak grać</span><span class="btn sm info" data-page="about">O grze</span></div></div>
+      </div></div>
+      <div class="frame phone" data-label="TELEFON"><div class="c">
+        <h1 class="title" style="font-size:18px">TRIAGE</h1>
+        <div class="c-opts"><div class="seg"><span class="on">Nauka</span><span>Ćwiczenie</span></div><div class="seg"><span class="on">START</span><span>SALT</span></div><span class="btn sm code-toggle">Mam kod ▸</span></div>
+        <div class="c-grid" id="c-grid-p"></div>
+        <span class="btn primary big start" style="width:100%">START ▶</span>
+        <div class="links"><span class="btn sm info" data-page="seg">Segregacja?</span><span class="btn sm info" data-page="how">Jak grać</span><span class="btn sm info" data-page="about">O grze</span></div>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="proposal">
+    <h2>D · Terminal dyspozytora</h2>
+    <p>Menu w stylu ekranu dyspozytora — jak odprawa w grze (zielony tekst, linie skanowania). Wybór strzałkami/klawiszami lub kliknięciem. Najbardziej klimatyczne, mniej „przyciskowe”.</p>
+    <div class="row">
+      <div class="frame desk" data-label="KOMPUTER"><div class="d">
+        <div class="hd">CENTRUM POWIADAMIANIA RATUNKOWEGO · TERMINAL 03</div>
+        <div class="t">TRIAGE</div>
+        <div class="ln dim">&gt; ZGŁOSZENIE: ZDARZENIE MASOWE. WYBIERZ:</div>
+        <div class="ln" id="d-list"></div>
+        <div class="ln"> </div>
+        <div class="ln">  TRYB ......... ◂ <span class="sel opt" data-vals="NAUKA|ĆWICZENIE"> NAUKA </span> ▸        ALGORYTM ... ◂ <span class="sel opt" data-vals="START/JumpSTART|SALT"> START/JumpSTART </span> ▸</div>
+        <div class="ln">  SYTUACJA ..... ◂ <span class="sel opt" data-vals="LOSOWA|WZORZEC"> LOSOWA </span> ▸       KOD ........ [____________]</div>
+        <div class="ln"> </div>
+        <div class="ln">  <span class="sel start"> [ENTER] WYJAZD ▶ </span>     <span class="info d-cmd" data-page="seg">[S] segregacja?</span>  <span class="info d-cmd" data-page="how">[J] jak grać</span>  <span class="info d-cmd" data-page="about">[O] o grze</span></div>
+      </div></div>
+      <div class="frame phone" data-label="TELEFON"><div class="d">
+        <div class="hd">CPR · TERMINAL 03</div>
+        <div class="t">TRIAGE</div>
+        <div class="ln dim">&gt; ZDARZENIE MASOWE. WYBIERZ:</div>
+        <div class="ln" id="d-list-p"></div>
+        <div class="ln"> </div>
+        <div class="ln">TRYB ◂ <span class="sel opt" data-vals="NAUKA|ĆWICZENIE"> NAUKA </span> ▸</div>
+        <div class="ln">ALG. ◂ <span class="sel opt" data-vals="START|SALT"> START </span> ▸</div>
+        <div class="ln"> </div>
+        <div class="ln"><span class="sel start"> WYJAZD ▶ </span></div>
+        <div class="ln"><span class="info d-cmd" data-page="seg">[S] segregacja?</span></div><div class="ln"><span class="info d-cmd" data-page="how">[J] jak grać</span>  <span class="info d-cmd" data-page="about">[O] o grze</span></div>
+      </div></div>
+    </div>
+  </section>
+</div>
+<script>
+  const S = [
+    ['Wypadek autobusu szkolnego', '10–14 os. · 10 min', 'BUS', '#b9770e'],
+    ['Zderzenie autobusów', '22 os. · 12 min', 'BUS', '#8e5a0e'],
+    ['Karambol na autostradzie', '10–15 os. · 11 min', 'A4', '#566c86'],
+    ['Wybuch gazu w kamienicy', '11–15 os. · 12 min', 'GAZ', '#b13e53'],
+    ['Panika na koncercie', '11–15 os. · 11 min', '♪', '#5d275d'],
+    ['Zawalenie trybuny', '11–15 os. · 12 min', '▲', '#38b764'],
+    ['Zawalenie dachu hali', '12–16 os. · 12 min', '▦', '#3b5dc9'],
+    ['Katastrofa kolejowa', '24–30 os. · 13 min', '═', '#41a6f6'],
+  ];
+  const list = (n) => S.slice(0, n).map((s, i) => `<div class="scen ${i ? '' : 'on'}"><b>${s[0]}</b><small>${s[1]}</small></div>`).join('');
+  document.getElementById('b-list').innerHTML = list(8);
+  document.getElementById('b-list-p').innerHTML = list(6);
+  const tiles = (n) => S.slice(0, n).map((s, i) => `<div class="tile ${i ? '' : 'on'}"><div class="pic" style="background:${s[3]}">${s[2]}</div><div class="nm">${s[0]}</div><small>${s[1]}</small></div>`).join('');
+  document.getElementById('c-grid').innerHTML = tiles(8);
+  document.getElementById('c-grid-p').innerHTML = tiles(8);
+  const term = (short) => S.map((s, i) => `<span class="item${i ? '' : ' sel'}" data-i="${i}">${i ? '  ' : '▶ '}[${i + 1}] ${short ? s[0].split(' ').slice(0, 2).join(' ') : s[0].padEnd(30, '.') + ' ' + s[1]}</span>`).join('\n');
+  document.getElementById('d-list').innerHTML = term(false);
+  document.getElementById('d-list-p').innerHTML = term(true);
+
+  // ---- interactions (mock only) ----
+  const PAGES = {
+    seg: ['SEGREGACJA', 'W przypadku zdarzeń, w których poszkodowanych jest więcej, nie da się pomóc wszystkim naraz… (tu ekran „Co to jest segregacja medyczna?”)'],
+    how: ['JAK GRAĆ', 'Cel, przebieg, punktacja, kody zadań… (tu ekran „Jak grać”)'],
+    about: ['O GRZE', 'Autorzy i źródła… (tu ekran „O grze i źródła”)'],
+  };
+  const host = (el) => el.closest('.d') || el.closest('.frame');
+  const overlay = (el, title, html) => {
+    const o = document.createElement('div');
+    o.className = 'overlay';
+    o.innerHTML = `<div class="head"><h1 class="title">${title}</h1><span class="btn back">◂ Menu</span></div>${html}`;
+    host(el).appendChild(o);
+    return o;
+  };
+  const toast = (el, text) => {
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = text;
+    host(el).appendChild(t);
+    setTimeout(() => t.remove(), 1400);
+  };
+  const selectedName = (el) => {
+    const f = host(el);
+    const on = f.querySelector('.tile.on .nm, .scen.on b, .item.sel');
+    return on ? on.textContent.replace(/^[▶\s]*\[\d+\]\s*/, '').replace(/\.{2,}.*$/, '').trim() : '';
+  };
+  const setupHTML = (phone) => `
+    <div class="c-opts" style="margin:10px 0"><div class="seg"><span class="on">Nauka</span><span>Ćwiczenie</span></div><div class="seg"><span class="on">START${phone ? '' : ' · JumpSTART'}</span><span>SALT</span></div>${phone ? '' : '<div class="seg"><span class="on">Losowa</span><span>Wzorzec</span></div>'}<span class="btn sm code-toggle">Mam kod ▸</span></div>
+    <div class="c-grid">${tiles(8)}</div>
+    <div style="margin-top:12px"><span class="btn primary big start" style="width:100%">START ▶</span></div>`;
+
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    const seg = t.closest('.seg span');
+    if (seg) { seg.parentElement.querySelectorAll('span').forEach((x) => x.classList.toggle('on', x === seg)); return; }
+    const pick = t.closest('.tile, .scen');
+    if (pick) { pick.parentElement.querySelectorAll('.tile, .scen').forEach((x) => x.classList.toggle('on', x === pick)); return; }
+    const item = t.closest('.item');
+    if (item) {
+      item.parentElement.querySelectorAll('.item').forEach((x) => {
+        const on = x === item;
+        x.classList.toggle('sel', on);
+        x.textContent = (on ? '▶ ' : '  ') + x.textContent.replace(/^[▶\s]*/, '');
+      });
+      return;
+    }
+    const opt = t.closest('.opt');
+    if (opt) {
+      const vals = opt.dataset.vals.split('|');
+      const cur = opt.textContent.trim();
+      opt.textContent = ` ${vals[(vals.indexOf(cur) + 1) % vals.length]} `;
+      return;
+    }
+    if (t.closest('.back')) { t.closest('.overlay').remove(); return; }
+    const info = t.closest('.info');
+    if (info) { const [title, text] = PAGES[info.dataset.page]; overlay(info, title, `<p>${text}</p>`); return; }
+    if (t.closest('.play')) { overlay(t, 'TRIAGE', setupHTML(!!t.closest('.phone'))); return; }
+    const code = t.closest('.code-toggle');
+    if (code) {
+      const next = code.nextElementSibling;
+      if (next && next.classList.contains('code')) next.remove();
+      else code.insertAdjacentHTML('afterend', '<div class="code" style="flex-basis:100%"><input placeholder="np. KAMIENICA-4F7K" /><span class="btn">OK</span></div>');
+      return;
+    }
+    if (t.closest('.start')) { toast(t, `Start: ${selectedName(t) || 'scenariusz'}`); return; }
+  });
+
+  // Fit the desktop + phone pair (≈1290 px) into narrow windows.
+  const fit = () => document.querySelectorAll('.row').forEach((r) => (r.style.zoom = Math.min(1, (innerWidth - 48) / 1290)));
+  addEventListener('resize', fit);
+  fit();
+</script>
+</body>
+</html>
