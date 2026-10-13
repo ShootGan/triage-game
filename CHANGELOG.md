@@ -7,8 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-13
+
 ### Added
 
+- Collection point button ("Punkt zbiórki (n)") walks to the walkers; in the exam panel
+  "◀ Poprzedni / Następny ▶" (keys B / N) switches between them, and tagging a walker moves straight
+  on to the next untagged one — no aiming at small markers.
+- SALT mode: choose the algorithm in the menu (START/JumpSTART or SALT); a SALT code ends with
+  `-SALT` and has the same casualties as the code without it. The sort phase uses two commands —
+  "walkers to me" and "wave your hand" (casualties raise and wave an arm); markers then show the
+  sort group (1 still, 2 waving, 3 walking) and the debrief scores the order of assessment
+  (−1 per casualty assessed while someone from a more urgent group waited). Walkers are assessed one
+  by one and may be DELAYED. Life-saving interventions include needle decompression and, in children,
+  2 rescue breaths; respiratory distress replaces the rate thresholds, CRT and AVPU are not used;
+  under 3 years "simple command" shows purposeful movement. New GREY (expectant) tag on key 5;
+  GREY or BLACK for a survivor is a critical error. The rule for when a casualty is expectant is
+  still open (no casualty is expectant yet).
+- SALT: "assess breathing" shows the signs (speaks in single words, effort, cyanosis — or calm,
+  full sentences) and the player judges respiratory distress; the debrief explains it, and panic
+  hyperventilation (fast but no effort) is not distress. The debrief lists each casualty's injuries.
+- SALT content: walkers with a suspected fracture (and a new walking casualty with a deep forearm
+  wound, open finger fracture or dislocated shoulder) are DELAYED in SALT; tension pneumothorax needs
+  needle decompression.
 - Learn mode: the algorithm hint can be shown as a flowchart ("Schemat", default) with TAK/NIE
   branches and colour outcomes, or as the previous text list ("Lista"); the choice is remembered.
 - "O grze i źródła" screen in the menu: authors and the verified literature the algorithms rely on
@@ -38,6 +59,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- After tagging, the camera no longer zooms far out: the overview is re-framed once the exam panel
+  closes.
 - Ages 9–12: a colour both algorithms agree on counts as settled when the findings follow START's path
   (e.g. simple commands instead of AVPU) — it was marked as a guess.
 - A head-injury description no longer gives away the simple-commands result; a test keeps
@@ -50,35 +73,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Debrief no longer lists an assessment as missing when its finding was already known another way
   (an alert infant during the commands check).
 - "Sytuacja stała" is named the same in the menu, "Jak grać" and the task-code badge.
-
-## [1.0.0] - 2026-10-12
-
-### Added
-
-- Collection point button ("Punkt zbiórki (n)") walks to the walkers; in the exam panel
-  "◀ Poprzedni / Następny ▶" (keys B / N) switches between them, and tagging a walker moves straight
-  on to the next untagged one — no aiming at small markers.
-- SALT mode: choose the algorithm in the menu (START/JumpSTART or SALT); a SALT code ends with
-  `-SALT` and has the same casualties as the code without it. The sort phase uses two commands —
-  "walkers to me" and "wave your hand" (casualties raise and wave an arm); markers then show the
-  sort group (1 still, 2 waving, 3 walking) and the debrief scores the order of assessment
-  (−1 per casualty assessed while someone from a more urgent group waited). Walkers are assessed one
-  by one and may be DELAYED. Life-saving interventions include needle decompression and, in children,
-  2 rescue breaths; respiratory distress replaces the rate thresholds, CRT and AVPU are not used;
-  under 3 years "simple command" shows purposeful movement. New GREY (expectant) tag on key 5;
-  GREY or BLACK for a survivor is a critical error. The rule for when a casualty is expectant is
-  still open (no casualty is expectant yet).
-- SALT: "assess breathing" shows the signs (speaks in single words, effort, cyanosis — or calm,
-  full sentences) and the player judges respiratory distress; the debrief explains it, and panic
-  hyperventilation (fast but no effort) is not distress. The debrief lists each casualty's injuries.
-- SALT content: walkers with a suspected fracture (and a new walking casualty with a deep forearm
-  wound, open finger fracture or dislocated shoulder) are DELAYED in SALT; tension pneumothorax needs
-  needle decompression.
-
-### Fixed
-
-- After tagging, the camera no longer zooms far out: the overview is re-framed once the exam panel
-  closes.
 
 ## [0.4.2] - 2026-10-12
 
