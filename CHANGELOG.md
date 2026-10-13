@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (DOI / PMID links), plus an educational-use disclaimer.
 - "Co to jest segregacja medyczna?" link under the menu title: a plain-language page for newcomers —
   what triage is and why, what each colour means, how assessing one casualty looks, and the three
-  algorithms in one line each.
+  algorithms (short history, what each checks, expandable flowchart; AVPU explained on hover/tap).
 
 ## [1.0.0] - 2026-10-12
 

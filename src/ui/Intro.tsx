@@ -1,3 +1,9 @@
+import type { ExamActionId } from '../engine/exam/types';
+import { AlgorithmFlow, JUMPSTART_FLOW, SALT_FLOW, START_FLOW } from './AlgorithmFlow';
+import { Term } from './Term';
+
+const NONE = new Set<ExamActionId>();
+
 /** Plain-language intro for people who have never heard of triage. Opened from the menu. */
 export function IntroScreen({ onClose, onAbout }: { onClose: () => void; onAbout: () => void }) {
   return (
@@ -52,19 +58,68 @@ export function IntroScreen({ onClose, onAbout }: { onClose: () => void; onAbout
         poszkodowanego kolorem i idzie dalej. Potem zwykle przeprowadza się ponowną segregację, bo stan poszkodowanych się zmienia.
       </p>
 
-      <h2 className="h-small">Algorytmy w grze</h2>
-      <ul className="about-list intro-list">
-        <li>
-          <strong>START</strong> — najpopularniejszy algorytm dla dorosłych.
-        </li>
-        <li>
-          <strong>JumpSTART</strong> — wersja dla dzieci (mniej więcej do 8 lat). Dzieci normalnie oddychają szybciej,
-          a u nich częściej najpierw ustaje oddech, a dopiero potem praca serca.
-        </li>
-        <li>
-          <strong>SALT</strong> — nowszy algorytm, jeden dla dorosłych i dzieci, z dodatkową kategorią SZARĄ.
-        </li>
-      </ul>
+      <h2 className="h-small">Algorytmy</h2>
+      <p>
+        Segregacja wywodzi się z medycyny wojennej — za jej ojca uważa się Dominique’a Larreya, chirurga armii
+        Napoleona. Dziś ratownicy korzystają z prostych algorytmów, dzięki którym każdy ocenia poszkodowanych tak samo.
+        W grze są trzy:
+      </p>
+
+      <section className="intro-algo">
+        <h3 className="intro-algo-name">START · dorośli</h3>
+        <p>
+          Powstał w 1983 r. w Kalifornii. Ocenia cztery rzeczy: czy poszkodowany chodzi, jak oddycha, krążenie i czy
+          wykonuje polecenia. Kto chodzi — od razu ZIELONY.
+        </p>
+        <details className="intro-flow">
+          <summary>Schemat START</summary>
+          <AlgorithmFlow flow={START_FLOW} done={NONE} />
+        </details>
+      </section>
+
+      <section className="intro-algo">
+        <h3 className="intro-algo-name">JumpSTART · dzieci do ok. 8 lat</h3>
+        <p>
+          Wersja START dla dzieci, opracowana przez dr Lou Romig: inne normy oddechu, przytomność w skali{' '}
+          <Term
+            explain={
+              <>
+                <b>A</b> (alert) — przytomne
+                <br />
+                <b>V</b> (voice) — reaguje na głos
+                <br />
+                <b>P</b> (pain) — reaguje tylko na ból
+                <br />
+                <b>U</b> (unresponsive) — nie reaguje
+                <br />W JumpSTART CZERWONY: „P” z nieadekwatną reakcją na ból (np. bez celowego ruchu) albo „U”.
+              </>
+            }
+          >
+            AVPU
+          </Term>
+          , a dziecku, które nie oddycha, ale ma tętno, daje się 5 oddechów ratowniczych.
+        </p>
+        <details className="intro-flow">
+          <summary>Schemat JumpSTART</summary>
+          <AlgorithmFlow flow={JUMPSTART_FLOW} done={NONE} />
+          <p className="muted">
+            Niemowlę, które nie chodzi z powodu wieku: na końcu zamiast ŻÓŁTEGO — istotne obrażenia → ŻÓŁTY, brak →
+            ZIELONY.
+          </p>
+        </details>
+      </section>
+
+      <section className="intro-algo">
+        <h3 className="intro-algo-name">SALT · dorośli i dzieci</h3>
+        <p>
+          Opracowany w 2008 r. w USA jako wspólny standard, jeden dla wszystkich. Zaczyna od komend do całej grupy,
+          każdego — także chodzącego — ocenia osobno i ma piąty kolor: SZARY.
+        </p>
+        <details className="intro-flow">
+          <summary>Schemat SALT</summary>
+          <AlgorithmFlow flow={SALT_FLOW} done={NONE} />
+        </details>
+      </section>
 
       <p className="muted">
         Zacznij od trybu <strong>Nauka</strong> — klawisz H (albo przycisk „Algorytm”) pokazuje schemat krok po kroku.
