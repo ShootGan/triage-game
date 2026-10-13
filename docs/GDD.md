@@ -31,6 +31,11 @@
 - Ratownik: mundur z pasami odblaskowymi, rękawiczki, napis „RATOWNIK MEDYCZNY".
 - **Znaczniki triage w UI**: kółko w kolorze kategorii obok pacjenta (nakładka HTML śledząca pozycję postaci); szare pulsujące „?" = niezbadany. Bez obiektów 3D typu chorągiewka.
 - **Widok badania**: kamera robi zbliżenie na pacjenta (ten sam model).
+- **Cała grafika jest proceduralna — bez plików graficznych** (żadnych PNG, sprite'ów ani modeli 3D): postacie
+  (`world/human.ts`, `poses.ts`, `hair.ts`), pojazdy (`vehicles.ts`, `train.ts`), budynki i hala (`buildings.ts`,
+  `hall.ts`), teren i otoczenie (`terrain.ts`, `scenery.ts`, `dressing.ts`), rekwizyty (`props.ts`), obrażenia
+  (`injuries.ts` — krwotok w miejscu z opisu, amputacje, oparzenia, sadza, pył, ciała obce). Efekt pikseli robi
+  `render/pixelPipeline.ts`. Podgląd modeli: `render-demo.html`.
 
 ### Sterowanie
 - Kliknięcie na ziemi → gracz idzie; kliknięcie pacjenta → podejście i otwarcie widoku badania.
@@ -215,14 +220,13 @@ Scenariusz = plik TS (`src/scenarios/*.ts`, typy w `types.ts`) + test; ogólne r
 src/
   engine/
     triage/        start.ts, jumpstart.ts, salt.ts, types.ts  (+ testy)
-    patient/       model, pogarszanie stanu
-    scoring/       ocena, debrief
+    exam/          czynności przy pacjencie i ich wyniki
+    scoring/       ocena (silnik ustaleń findings.ts, punkty), debrief
   game/            stan gry, zegar, akcje gracza
   render/          Three.js: renderer, pipeline pixel art, kamera, światło
-  world/           scena zdarzenia (teren, pojazdy), postacie proceduralne, pozy
+  world/           proceduralna grafika: postacie, pozy, pojazdy, budynki, teren, rekwizyty, obrażenia
   ui/              React: menu, panel badania, znaczniki triage, debrief
-  scenarios/       *.json (pacjenci + układ sceny)
-  assets/          dźwięki, czcionki
+  scenarios/       wzorce *.ts (pacjenci + układ sceny), generator losowych kodów, injuryLook.ts
 ```
 
 Zasada: `engine/` nie zna Three.js ani Reacta — czysta logika, w pełni testowalna.
@@ -269,6 +273,6 @@ Bieżąca lista otwartych spraw: [`TODO.md`](TODO.md).
 ## 11. Otwarte pytania
 
 - Kto zweryfikuje merytorycznie algorytmy i przypadki?
-- Źródło grafiki: własny pixel art (Aseprite), darmowe paczki, czy generowane placeholdery na start?
+- ~~Źródło grafiki~~ — rozstrzygnięte: cała grafika generowana proceduralnie w kodzie (rozdz. 2).
 - Zapisywanie wyników — lokalnie czy z kontem/backendem?
 - (Później) członkowie zespołu, którym gracz wydaje polecenia — poza zakresem na teraz.
