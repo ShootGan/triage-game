@@ -5,11 +5,13 @@ Lista otwartych spraw po wydaniu 1.0.0. Decyzje medyczne mają szczegóły w [`m
 
 ## Do dokończenia (kolejna sesja)
 
-- [ ] Ekran „Segregacja”: rozpisać START, JumpSTART i SALT (do czego służą, dla kogo, różnice) ze schematami
+- [x] Ekran „Segregacja”: rozpisać START, JumpSTART i SALT (do czego służą, dla kogo, różnice) ze schematami
       z panelu podpowiedzi.
-- [ ] Zasady gry i punktacja (tryby, przebieg rozgrywki, kody zadań, punkty, błędy krytyczne, „zgadnięty” kolor) —
+- [x] Zasady gry i punktacja (tryby, przebieg rozgrywki, kody zadań, punkty, błędy krytyczne, „zgadnięty” kolor) —
       zgodnie z `src/engine/scoring/points.ts`; osobna pozycja w menu („Jak grać”) albo część ekranu „Segregacja”.
 - [ ] Źródło recenzowane dla „ocena jednej osoby trwa zwykle krócej niż minutę” (ekran „Segregacja”).
+- [ ] Pomysł: kod wyniku (kolory + „na ślepo” + pominięte czynności, ok. 12–18 znaków przy 10–15 osobach)
+      i ekran porównania wyników grupy — bez serwera.
 - [ ] **Na koniec:** przeprojektować menu (obecne jest przeciętne) — razem z wejściami do „Segregacja”, „Jak grać”
       i „O grze i źródła”.
 
