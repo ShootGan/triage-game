@@ -52,7 +52,7 @@ export function triageSalt(v: Vitals, p: SaltPatient): TriageResult {
   const b = v.breathing;
 
   const lsi: string[] = [];
-  if (p.majorBleeding) lsi.push('opaska uciskowa');
+  if (p.majorBleeding) lsi.push('staza');
   if (!b.spontaneous) lsi.push(child && !b.afterAirway ? 'udrożnienie dróg oddechowych, 2 oddechy ratownicze' : 'udrożnienie dróg oddechowych');
   if (p.salt.tensionPneumothorax) lsi.push('odbarczenie odmy');
   steps.push({ id: 'lsi', question: 'Czynności ratujące życie?', answer: lsi.length ? lsi.join(', ') : 'nie są potrzebne' });
@@ -73,7 +73,7 @@ export function triageSalt(v: Vitals, p: SaltPatient): TriageResult {
   steps.push({
     id: 'salt-criteria',
     question: 'Wykonuje polecenia lub celowe ruchy, tętno obwodowe, bez duszności, krwotok opanowany?',
-    answer: `polecenia/celowe ruchy: ${yesNo(moves)}, tętno: ${yesNo(pulse)}, duszność: ${yesNo(distress)}${p.majorBleeding ? ', krwotok: opanowany opaską' : ''} — ${ok ? 'wszystkie tak' : 'nie'}`,
+    answer: `polecenia/celowe ruchy: ${yesNo(moves)}, tętno: ${yesNo(pulse)}, duszność: ${yesNo(distress)}${p.majorBleeding ? ', krwotok: opanowany stazą' : ''} — ${ok ? 'wszystkie tak' : 'nie'}`,
   });
   if (ok) {
     steps.push({ id: 'salt-minor', question: 'Tylko drobne obrażenia?', answer: yesNo(p.salt.minorOnly) });

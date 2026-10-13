@@ -190,6 +190,6 @@ describe('SALT', () => {
 
   it('czynności ratujące życie w ścieżce', () => {
     const r = run(vitals({ peripheralPulse: false }), { majorBleeding: true, salt: { tensionPneumothorax: true } });
-    expect(r.steps[0].answer).toBe('opaska uciskowa, odbarczenie odmy');
+    expect(r.steps[0].answer).toBe('staza, odbarczenie odmy');
   });
 });

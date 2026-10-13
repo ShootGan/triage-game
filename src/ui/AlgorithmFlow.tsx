@@ -33,7 +33,7 @@ const CAT_LABEL: Record<TriageCategory, string> = {
   grey: 'SZARY',
 };
 
-const BLEEDING: FlowNode = { text: 'Masywny krwotok? Tamuj od razu — opaska uciskowa', needs: ['bleeding'], action: true };
+const BLEEDING: FlowNode = { text: 'Masywny krwotok? Tamuj od razu — staza', needs: ['bleeding'], action: true };
 
 export const START_FLOW: Flow = {
   nodes: [
@@ -101,7 +101,7 @@ export const SALT_FLOW: Flow = {
       action: true,
     },
     {
-      text: 'Czynności ratujące życie: opaska na krwotok, udrożnienie dróg oddechowych (dziecko: 2 oddechy ratownicze), odbarczenie odmy prężnej',
+      text: 'Czynności ratujące życie: staza na krwotok, udrożnienie dróg oddechowych (dziecko: 2 oddechy ratownicze), odbarczenie odmy prężnej',
       needs: ['bleeding', 'airway', 'rescue-breaths', 'decompression'],
       action: true,
     },

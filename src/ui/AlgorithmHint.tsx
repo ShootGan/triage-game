@@ -11,7 +11,7 @@ interface Criterion {
 }
 
 /** Life-saving and done the moment it's seen — before any further assessment, not at the perfusion step. */
-const BLEEDING: Criterion = { text: 'Masywny krwotok → tamuj od razu (opaska uciskowa), przed dalszą oceną', needs: ['bleeding'] };
+const BLEEDING: Criterion = { text: 'Masywny krwotok → tamuj od razu (staza), przed dalszą oceną', needs: ['bleeding'] };
 
 const START: Criterion[] = [
   BLEEDING,

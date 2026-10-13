@@ -59,7 +59,7 @@ export function performAction(
     case 'bleeding':
       if (p.majorBleeding && !s.bleedingControlled) {
         s.bleedingControlled = true;
-        text = 'Założono opaskę uciskową — krwotok opanowany';
+        text = 'Założono stazę — krwotok opanowany';
       } else text = 'Brak masywnego krwotoku do zatamowania';
       break;
   }

@@ -54,7 +54,7 @@ export function IntroScreen({ onClose, onAbout }: { onClose: () => void; onAbout
       <p>
         Ocena jednej osoby trwa zwykle krócej niż minutę. Ratownik sprawdza, w zależności od algorytmu, takie rzeczy
         jak: czy poszkodowany chodzi, czy oddycha i jak szybko, czy ma tętno, czy wykonuje polecenia. Wykonuje tylko czynności potrzebne
-        natychmiast — np. zakłada opaskę uciskową, żeby zatamować krwotok, albo udrażnia drogi oddechowe — oznacza
+        natychmiast — np. zakłada stazę, żeby zatamować krwotok, albo udrażnia drogi oddechowe — oznacza
         poszkodowanego kolorem i idzie dalej. Potem zwykle przeprowadza się ponowną segregację, bo stan poszkodowanych się zmienia.
       </p>
 

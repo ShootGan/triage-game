@@ -13,7 +13,7 @@ export const ACTION_LABEL: Record<ExamActionId, string> = {
   crt: 'Nawrót kapilarny',
   commands: 'Proste polecenie',
   avpu: 'Ocena AVPU',
-  bleeding: 'Opaska uciskowa (krwotok)',
+  bleeding: 'Staza (krwotok)',
   decompression: 'Odbarcz odmę (igła)',
 };
 
@@ -53,7 +53,7 @@ export const ACTION_SECONDS: Record<ExamActionId, number> = {
 const QUICK_SECONDS = 2;
 /** Szybkie spojrzenie, gdy nie ma masywnego krwotoku do zatamowania. */
 const BLEEDING_LOOK_SECONDS = 3;
-/** Sprawdzenie już założonej opaski uciskowej. */
+/** Sprawdzenie już założonej stazy. */
 const BLEEDING_RECHECK_SECONDS = 1;
 
 export function initialExamState(): PatientExamState {
@@ -202,9 +202,9 @@ function avpuResult(v: Vitals): Outcome {
 function bleedingResult(p: ScenarioPatient, s: PatientExamState): Outcome {
   if (!p.majorBleeding) return { text: 'Brak masywnego krwotoku zewnętrznego', seconds: BLEEDING_LOOK_SECONDS };
   if (s.bleedingControlled) {
-    return { text: 'Krwotok już zatamowany — opaska uciskowa założona', seconds: BLEEDING_RECHECK_SECONDS };
+    return { text: 'Krwotok już zatamowany — staza założona', seconds: BLEEDING_RECHECK_SECONDS };
   }
-  return { text: 'Krwotok zatamowany opaską uciskową', patch: { bleedingControlled: true } };
+  return { text: 'Krwotok zatamowany stazą', patch: { bleedingControlled: true } };
 }
 
 function decompressionResult(p: ScenarioPatient, s: PatientExamState): Outcome {

@@ -232,7 +232,7 @@ describe('tamowanie krwotoku', () => {
 
   it('masywny krwotok → zatamowany', () => {
     const { state, result } = run(bleeder, ['bleeding']);
-    expect(result).toEqual({ action: 'bleeding', text: 'Krwotok zatamowany opaską uciskową', seconds: 10 });
+    expect(result).toEqual({ action: 'bleeding', text: 'Krwotok zatamowany stazą', seconds: 10 });
     expect(state.bleedingControlled).toBe(true);
   });
 
