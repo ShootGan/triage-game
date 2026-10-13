@@ -50,9 +50,9 @@ export function Hud() {
             {counts[c.id]}
           </span>
         ))}
-        <span className="count untagged" title="Niezbadani">
+        <span className="count untagged" title="Nieoznaczeni — bez opaski">
           <span className="chip chip-pending">?</span>
-          <span className="lbl-long">niezbadani: </span>
+          <span className="lbl-long">nieoznaczeni: </span>
           {untagged}
         </span>
       </div>

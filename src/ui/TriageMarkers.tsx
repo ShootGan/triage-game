@@ -66,7 +66,7 @@ export function TriageMarkers() {
             }}
             className={`${cls} ${selectedId === p.id ? 'mk-selected' : ''}`}
             style={{ display: 'none' }}
-            title={`${p.label}${tag ? ' — ' + CATEGORY_LABEL[tag] : group ? ` — grupa sortowania ${group}` : ' — niezbadany'}`}
+            title={`${p.label}${tag ? ' — ' + CATEGORY_LABEL[tag] : group ? ` — grupa sortowania ${group}` : ' — nieoznaczony'}`}
             onClick={() => selectPatient(p.id)}
           >
             {tag === 'black' ? '✝' : tag ? '' : group ?? '?'}
