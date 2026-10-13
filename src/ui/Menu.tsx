@@ -1,29 +1,112 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import type { ProtocolMode } from '../engine/triage';
 import { getDeps } from '../game/deps';
-import { MODE_LABEL, VARIANT_LABEL, useGame, type GameMode, type ScenarioVariant } from '../game/store';
+import { MODE_LABEL, useGame, type GameMode, type ScenarioVariant } from '../game/store';
 import { AboutScreen } from './About';
 import { HowToScreen } from './HowTo';
 import { IntroScreen } from './Intro';
+import { SCENARIO_COLOR, ScenarioIcon } from './ScenarioIcon';
 import './code.css';
 
 const MODE_DESC: Record<GameMode, string> = {
-  learn: 'Panel z algorytmem (klawisz H), stoper bez limitu czasu.',
-  practice: 'Bez podpowiedzi, limit czasu scenariusza, pełny debrief.',
+  learn: 'Z podpowiedzią, bez limitu czasu.',
+  practice: 'Bez podpowiedzi, z limitem czasu.',
 };
 
 const PROTOCOL_NAME: Record<ProtocolMode, string> = { START: 'START · JumpSTART', SALT: 'SALT' };
 const PROTOCOL_DESC: Record<ProtocolMode, string> = {
-  START: 'Dorośli START, dzieci JumpSTART. Chodzący → ZIELONI grupowo.',
-  SALT: 'Sortowanie komendami, czynności ratujące życie, kategoria SZARA. Chodzących ocenia się na końcu.',
+  START: 'Dorośli START, dzieci JumpSTART.',
+  SALT: 'Jeden dla dorosłych i dzieci.',
 };
 
+const VARIANT_NAME: Record<ScenarioVariant, string> = { random: 'Losowa', template: 'Stała' };
 const VARIANT_DESC: Record<ScenarioVariant, string> = {
-  random: 'Inni poszkodowani przy każdym starcie — jak w prawdziwym zdarzeniu.',
-  template: 'Stały, ręcznie ułożony zestaw scenariusza.',
+  random: 'Za każdym razem inni poszkodowani.',
+  template: 'Zawsze ten sam zestaw.',
 };
 
-export function MenuScreen() {
+type Page = 'title' | 'setup' | 'intro' | 'howto' | 'about';
+
+/** Remembered between visits (e.g. back from a game): returning players land on the setup screen. */
+let lastPage: Page = 'title';
+const LAST_CODE_KEY = 'triage.lastCode';
+
+function readLastCode(): string | null {
+  try {
+    return localStorage.getItem(LAST_CODE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/** Labelled radio group shown as a segmented switch, with a one-line description of the chosen option. */
+function Segmented<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  name,
+  desc,
+  disabled,
+}: {
+  label: string;
+  options: T[];
+  value: T;
+  onChange: (v: T) => void;
+  name: (v: T) => string;
+  desc: (v: T) => ReactNode;
+  disabled?: boolean;
+}) {
+  return (
+    <div className={`setting ${disabled ? 'dimmed' : ''}`}>
+      <div className="setting-label">{label}</div>
+      <div className="seg" role="radiogroup" aria-label={label}>
+        {options.map((o) => (
+          <button key={o} role="radio" aria-checked={value === o} className={value === o ? 'on' : ''} onClick={() => onChange(o)}>
+            {name(o)}
+          </button>
+        ))}
+      </div>
+      <div className="setting-desc">{desc(value)}</div>
+    </div>
+  );
+}
+
+function InfoButtons({ go }: { go: (p: Page) => void }) {
+  return (
+    <div className="title-buttons">
+      <button className="btn big" onClick={() => go('intro')}>
+        Co to jest segregacja?
+      </button>
+      <button className="btn big" onClick={() => go('howto')}>
+        Jak grać
+      </button>
+      <button className="btn big" onClick={() => go('about')}>
+        O grze i źródła
+      </button>
+    </div>
+  );
+}
+
+function TitleScreen({ go }: { go: (p: Page) => void }) {
+  const { isStub } = getDeps();
+  return (
+    <div className="panel title-screen">
+      <h1 className="title">Triage</h1>
+      <p className="title-sub">Gra szkoleniowa: segregacja poszkodowanych w zdarzeniu masowym</p>
+      <button className="btn primary big title-play" onClick={() => go('setup')}>
+        ▶ Graj
+      </button>
+      <InfoButtons go={go} />
+      {isStub && <p className="stub-note">TRYB STUB — atrapy modułów (src/ui/dev)</p>}
+      <p className="app-version" title="Wersja aplikacji">
+        v{__APP_VERSION__}
+      </p>
+    </div>
+  );
+}
+
+function SetupScreen({ go }: { go: (p: Page) => void }) {
   const mode = useGame((s) => s.mode);
   const scenarioId = useGame((s) => s.scenarioId);
   const variant = useGame((s) => s.variant);
@@ -36,18 +119,30 @@ export function MenuScreen() {
   const loadCode = useGame((s) => s.loadCode);
   const clearLoadedCode = useGame((s) => s.clearLoadedCode);
   const goToBriefing = useGame((s) => s.goToBriefing);
-  const { scenarios, codes, isStub } = getDeps();
+  const { scenarios, codes } = getDeps();
   const selected = scenarioId ?? scenarios[0]?.id;
+  const selectedScenario = scenarios.find((s) => s.id === selected);
 
+  const [codeOpen, setCodeOpen] = useState(false);
   const [codeInput, setCodeInput] = useState('');
   const [codeError, setCodeError] = useState<string | null>(null);
-  const [page, setPage] = useState<'about' | 'intro' | 'howto' | null>(null);
+  const [lastCode] = useState(readLastCode);
 
+  const load = (input: string) => {
+    const err = loadCode(input);
+    setCodeError(err);
+    if (err) return;
+    setCodeInput('');
+    setCodeOpen(false);
+    try {
+      localStorage.setItem(LAST_CODE_KEY, input.trim().toUpperCase());
+    } catch {
+      // storage unavailable — the code just isn't remembered
+    }
+  };
   const onLoad = (e: FormEvent) => {
     e.preventDefault();
-    const err = loadCode(codeInput);
-    setCodeError(err);
-    if (!err) setCodeInput('');
+    load(codeInput);
   };
 
   const countText = (id: string, templateCount: number) => {
@@ -58,144 +153,151 @@ export function MenuScreen() {
     return `${templateCount} poszkodowanych`;
   };
 
-  if (page) {
-    return (
-      <div className="screen menu">
-        {page === 'about' ? (
-          <AboutScreen onClose={() => setPage(null)} />
-        ) : page === 'howto' ? (
-          <HowToScreen onClose={() => setPage(null)} />
-        ) : (
-          <IntroScreen onClose={() => setPage(null)} onAbout={() => setPage('about')} />
-        )}
-      </div>
-    );
-  }
+  const start = () => {
+    lastPage = 'setup';
+    goToBriefing();
+  };
 
   return (
-    <div className="screen menu">
-      <div className="panel menu-panel">
-        <h1 className="title">Triage</h1>
-        <p className="muted">START · JumpSTART · SALT — zdarzenie masowe</p>
-        <div className="intro-links">
-          <button className="link-btn" onClick={() => setPage('intro')}>
-            Co to jest segregacja medyczna? ▸
-          </button>
-          <button className="link-btn" onClick={() => setPage('howto')}>
-            Jak grać? ▸
-          </button>
-        </div>
+    <div className="panel setup">
+      <div className="setup-head">
+        <button className="btn" onClick={() => go('title')}>
+          ◂ Menu
+        </button>
+        <h1 className="title setup-title">Triage</h1>
+      </div>
 
-        <h2 className="h-small">Tryb</h2>
-        <div className="choice-list">
-          {(['learn', 'practice'] as GameMode[]).map((m) => (
-            <button key={m} className={`choice ${mode === m ? 'active' : ''}`} onClick={() => setMode(m)}>
-              <span className="choice-name">{MODE_LABEL[m]}</span>
-              <span className="choice-desc">{MODE_DESC[m]}</span>
-            </button>
-          ))}
-        </div>
+      <div className="settings">
+        <Segmented
+          label="Tryb"
+          options={['learn', 'practice'] as GameMode[]}
+          value={mode}
+          onChange={setMode}
+          name={(m) => MODE_LABEL[m]}
+          desc={(m) => MODE_DESC[m]}
+        />
+        <Segmented
+          label="Algorytm"
+          options={['START', 'SALT'] as ProtocolMode[]}
+          value={protocolMode}
+          onChange={setProtocol}
+          name={(p) => PROTOCOL_NAME[p]}
+          desc={(p) => PROTOCOL_DESC[p]}
+        />
+        <Segmented
+          label="Sytuacja"
+          options={['random', 'template'] as ScenarioVariant[]}
+          value={variant}
+          onChange={setVariant}
+          name={(v) => VARIANT_NAME[v]}
+          desc={(v) => (loadedCode ? 'Ustala ją kod zadania.' : VARIANT_DESC[v])}
+          disabled={!!loadedCode}
+        />
+      </div>
 
-        <h2 className="h-small">Algorytm</h2>
-        <div className="variant-row" role="radiogroup" aria-label="Algorytm">
-          {(['START', 'SALT'] as ProtocolMode[]).map((m) => (
-            <button
-              key={m}
-              role="radio"
-              aria-checked={protocolMode === m}
-              className={`choice ${protocolMode === m ? 'active' : ''}`}
-              onClick={() => setProtocol(m)}
-            >
-              <span className="choice-name">{PROTOCOL_NAME[m]}</span>
-              <span className="choice-desc">{PROTOCOL_DESC[m]}</span>
-            </button>
-          ))}
-        </div>
-
-        <h2 className="h-small">Scenariusz</h2>
-        <div className="choice-list">
-          {scenarios.map((s) => (
-            <button
-              key={s.id}
-              className={`choice ${selected === s.id ? 'active' : ''}`}
-              onClick={() => setScenario(s.id)}
-            >
-              <span className="choice-name">
-                {s.title} {s.special && <span className="badge special">Specjalny</span>}
-              </span>
-              <span className="choice-desc">
-                {countText(s.id, s.patients.length)} · limit ok. {Math.round(s.timeLimitSec / 60)} min
-                {s.special && ' · klasyk szkoleń ratowniczych'}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        <h2 className="h-small">Sytuacja</h2>
-        <div className="variant-row" role="radiogroup" aria-label="Sytuacja">
-          {(['random', 'template'] as ScenarioVariant[]).map((v) => (
-            <button
-              key={v}
-              role="radio"
-              aria-checked={!loadedCode && variant === v}
-              className={`choice ${!loadedCode && variant === v ? 'active' : ''} ${loadedCode ? 'dimmed' : ''}`}
-              onClick={() => setVariant(v)}
-            >
-              <span className="choice-name">{VARIANT_LABEL[v]}</span>
-              <span className="choice-desc">{VARIANT_DESC[v]}</span>
-            </button>
-          ))}
-        </div>
-
-        <h2 className="h-small">
-          <label htmlFor="task-code">Kod zadania</label>
-        </h2>
-        <form className="code-form" onSubmit={onLoad}>
-          <input
-            id="task-code"
-            className="code-input"
-            value={codeInput}
-            onChange={(e) => {
-              setCodeInput(e.target.value);
-              if (codeError) setCodeError(null);
-            }}
-            placeholder="np. KAMIENICA-4F7K"
-            autoComplete="off"
-            autoCapitalize="characters"
-            spellCheck={false}
-            aria-invalid={codeError ? true : undefined}
-            aria-describedby={codeError ? 'task-code-error' : undefined}
-          />
-          <button type="submit" className="btn" disabled={!codeInput.trim()}>
-            Wczytaj
-          </button>
-        </form>
-        {codeError && (
-          <p id="task-code-error" className="code-error" role="alert">
-            {codeError}
-          </p>
-        )}
-        {loadedCode && (
-          <div className="code-loaded">
+      <div className="code-area">
+        {loadedCode ? (
+          <div className="code-loaded" role="status">
+            <span className="setting-label">Zadanie</span>
             <span className="code-value">{loadedCode}</span>
-            <span className="muted">wczytany — Start uruchomi dokładnie tę sytuację</span>
+            <span className="code-what">
+              {selectedScenario?.title} · {loadedCode.endsWith('-SALT') ? 'SALT' : 'START · JumpSTART'} · {MODE_LABEL[mode]}
+            </span>
             <button type="button" className="btn icon" onClick={clearLoadedCode} title="Usuń kod" aria-label="Usuń wczytany kod">
               ✕
             </button>
           </div>
+        ) : (
+          <button type="button" className="btn info-btn" aria-expanded={codeOpen} onClick={() => setCodeOpen(!codeOpen)}>
+            Mam kod zadania {codeOpen ? '▾' : '▸'}
+          </button>
         )}
+        {codeOpen && !loadedCode && (
+          <>
+            <form className="code-form" onSubmit={onLoad}>
+              <input
+                id="task-code"
+                className="code-input"
+                value={codeInput}
+                onChange={(e) => {
+                  setCodeInput(e.target.value);
+                  if (codeError) setCodeError(null);
+                }}
+                placeholder="np. KAMIENICA-4F7K"
+                aria-label="Kod zadania"
+                autoComplete="off"
+                autoCapitalize="characters"
+                spellCheck={false}
+                autoFocus
+                aria-invalid={codeError ? true : undefined}
+                aria-describedby={codeError ? 'task-code-error' : undefined}
+              />
+              <button type="submit" className="btn" disabled={!codeInput.trim()}>
+                Wczytaj
+              </button>
+            </form>
+            {lastCode && (
+              <button type="button" className="link-btn last-code" onClick={() => load(lastCode)}>
+                Ostatni kod: {lastCode} ▸
+              </button>
+            )}
+            {codeError && (
+              <p id="task-code-error" className="code-error" role="alert">
+                {codeError}
+              </p>
+            )}
+          </>
+        )}
+      </div>
 
-        <button className="btn primary big" disabled={!selected} onClick={goToBriefing}>
+      <div className="setting-label">Scenariusz</div>
+      <div className={`tiles ${loadedCode ? 'locked' : ''}`} role="radiogroup" aria-label="Scenariusz">
+        {scenarios.map((s) => (
+          <button
+            key={s.id}
+            role="radio"
+            aria-checked={selected === s.id}
+            className={`tile ${selected === s.id ? 'on' : ''}`}
+            disabled={!!loadedCode && selected !== s.id}
+            onClick={() => setScenario(s.id)}
+          >
+            <span className="tile-pic" style={{ background: SCENARIO_COLOR[s.id] ?? 'var(--panel)' }}>
+              <ScenarioIcon id={s.id} />
+              {s.special && <span className="badge special">Specjalny</span>}
+            </span>
+            <span className="tile-name">{s.title}</span>
+            <span className="tile-meta">
+              {countText(s.id, s.patients.length)} · ok. {Math.round(s.timeLimitSec / 60)} min
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <div className="setup-start">
+        <button className="btn primary big" disabled={!selected} onClick={start}>
           Start ▶
         </button>
-        <button className="btn about-open" onClick={() => setPage('about')}>
-          O grze i źródła
-        </button>
-        {isStub && <p className="stub-note">TRYB STUB — atrapy modułów (src/ui/dev)</p>}
-        <p className="app-version" title="Wersja aplikacji">
-          v{__APP_VERSION__}
-        </p>
       </div>
+    </div>
+  );
+}
+
+export function MenuScreen() {
+  const [page, setPageState] = useState<Page>(lastPage);
+  const go = (p: Page) => {
+    if (p === 'title' || p === 'setup') lastPage = p;
+    setPageState(p);
+  };
+  // Info pages return to where they were opened from.
+  const back = () => setPageState(lastPage);
+
+  return (
+    <div className="screen menu">
+      {page === 'title' && <TitleScreen go={go} />}
+      {page === 'setup' && <SetupScreen go={go} />}
+      {page === 'intro' && <IntroScreen onClose={back} onAbout={() => go('about')} />}
+      {page === 'howto' && <HowToScreen onClose={back} />}
+      {page === 'about' && <AboutScreen onClose={back} />}
     </div>
   );
 }

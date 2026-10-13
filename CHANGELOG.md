@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- New menu: a title screen (Graj / Co to jest segregacja? / Jak grać / O grze i źródła) and a setup
+  screen with labelled switches (Tryb, Algorytm, Sytuacja — "Wzorzec" is now "Stała"), scenario tiles
+  with pixel pictograms and a Start button that is always visible. "Mam kod zadania" shows what the
+  code will start and locks the other tiles; the last code is remembered. Back from a game the menu
+  opens on the setup screen.
 - Debrief numbers the casualties (1., 2., …) in scenario order — the same for everyone playing the
   same task code, so results can be compared patient by patient.
 - Debrief note on JumpSTART undertriage cites only Vassallo et al. 2022 (the in-game source list).
