@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Debrief numbers the casualties (1., 2., …) in scenario order — the same for everyone playing the
+  same task code, so results can be compared patient by patient.
 - Debrief note on JumpSTART undertriage cites only Vassallo et al. 2022 (the in-game source list).
 
 ## [1.0.0] - 2026-10-12

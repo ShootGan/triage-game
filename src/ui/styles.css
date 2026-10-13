@@ -413,6 +413,7 @@ a { color: var(--accent); }
 .flow-tree .flow-tree li::before { width: 5px; }
 
 /* ---------- Debrief ---------- */
+.pd-num { color: var(--yellow); }
 .debrief { background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 2px, transparent 2px 4px), var(--ink); align-items: stretch; overflow: auto; }
 .debrief-panel { width: min(1100px, 100%); margin: 0 auto; height: fit-content; }
 .debrief-head { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px; border-bottom: 2px solid var(--panel); padding-bottom: 12px; }

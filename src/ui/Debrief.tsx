@@ -165,8 +165,8 @@ export function DebriefScreen() {
             <span>Ocena</span>
             <span />
           </div>
-          {score.patients.map((p) => (
-            <PatientRow key={p.patientId} p={p} patient={scenario?.patients.find((x) => x.id === p.patientId)} />
+          {score.patients.map((p, i) => (
+            <PatientRow key={p.patientId} n={i + 1} p={p} patient={scenario?.patients.find((x) => x.id === p.patientId)} />
           ))}
         </div>
       </div>
@@ -183,7 +183,8 @@ function Stat({ label, value, cls }: { label: string; value: string | number; cl
   );
 }
 
-function PatientRow({ p, patient }: { p: PatientDebrief; patient?: ScenarioPatient }) {
+/** `n` — stable number in scenario order (same for every player with the same task code). */
+function PatientRow({ n, p, patient }: { n: number; p: PatientDebrief; patient?: ScenarioPatient }) {
   const injuries = patient?.injuries ?? [];
   const [open, setOpen] = useState(p.verdict !== 'correct');
   const { ACTION_LABEL } = getDeps();
@@ -195,7 +196,7 @@ function PatientRow({ p, patient }: { p: PatientDebrief; patient?: ScenarioPatie
     <div className={`debrief-item verdict-${p.verdict}`}>
       <div className="debrief-row" onClick={() => setOpen((o) => !o)}>
         <span className="pd-label">
-          {p.label} <span className="muted">· {p.protocol}</span>
+          <span className="pd-num">{n}.</span> {p.label} <span className="muted">· {p.protocol}</span>
         </span>
         <span>
           <Chip cat={p.given} />
