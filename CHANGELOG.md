@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with pixel pictograms and a Start button that is always visible. "Mam kod zadania" shows what the
   code will start and locks the other tiles; the last code is remembered. Back from a game the menu
   opens on the setup screen.
+- Debrief summary at medium widths (~760–1050 px): score and report side by side, statistics below
+  across the full width instead of a squeezed single column.
 - Debrief numbers the casualties (1., 2., …) in scenario order — the same for everyone playing the
   same task code, so results can be compared patient by patient.
 - Debrief note on JumpSTART undertriage cites only Vassallo et al. 2022 (the in-game source list).
