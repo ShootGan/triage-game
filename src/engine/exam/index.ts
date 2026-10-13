@@ -168,8 +168,10 @@ function purposefulResult(p: ScenarioPatient): Outcome {
 function commandsResult(p: ScenarioPatient): Outcome {
   const v = p.vitals;
   // Niemowlę / małe dziecko nie wykonuje poleceń z powodu wieku — to nie jest objaw.
-  if (p.ageYears < 2 && v.avpu === 'A') {
-    return { text: 'Niemowlę — za małe na polecenia; przytomne, wodzi wzrokiem (oceń AVPU)' };
+  if (p.ageYears < 2) {
+    return {
+      text: v.avpu === 'A' ? 'Niemowlę — za małe na polecenia; przytomne, wodzi wzrokiem (oceń AVPU)' : 'Niemowlę — za małe na polecenia (oceń AVPU)',
+    };
   }
   if (v.obeysCommands) return { text: 'Wykonuje proste polecenia' };
   switch (v.avpu) {

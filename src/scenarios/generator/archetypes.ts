@@ -1086,7 +1086,7 @@ export const ARCHETYPES: readonly Archetype[] = [
     ages: ADULTLIKE,
     mechanisms: ['komunikacyjny', 'zmiazdzenie', 'upadek', 'kolejowy'],
     vitals: { walk: false, breathing: 'spontaneous', rate: [20, 28], pulse: false, crt: [2.5, 4], avpu: 'A', obeys: true },
-    injuries: [['silny ból miednicy, niestabilność przy delikatnym ucisku'], ['skóra blada, chłodna']],
+    injuries: [['silny ból miednicy, krwiak w okolicy pachwiny i krocza'], ['skóra blada, chłodna']],
     remarks: ['Jęczy: „Wszystko mnie boli na dole… nie mogę się ruszyć."'],
     poses: ['back'],
   },

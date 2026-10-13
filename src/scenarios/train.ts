@@ -267,7 +267,7 @@ export const trainScenario: Scenario = {
         obeysCommands: true,
         avpu: 'A',
       },
-      injuries: ['silny ból miednicy, niestabilność przy delikatnym ucisku', 'skóra blada, chłodna'],
+      injuries: ['silny ból miednicy, krwiak w okolicy pachwiny i krocza', 'skóra blada, chłodna'],
       remark: 'Jęczy: „Przygniótł mnie fotel… Wszystko mnie boli na dole."',
       appearance: { sex: 'f', child: false, skin: '#e8b98f', hair: '#7a4a2a', hairStyle: 'long', shirt: '#2e86c1', pants: '#1c2833', sleeves: 'long' },
       pose: 'back',

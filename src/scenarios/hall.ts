@@ -511,7 +511,7 @@ export const hallScenario: Scenario = {
         obeysCommands: true,
         avpu: 'A',
       },
-      injuries: ['silny ból miednicy, niestabilność przy delikatnym ucisku', 'skóra blada, spocona'],
+      injuries: ['silny ból miednicy, krwiak w okolicy pachwiny i krocza', 'skóra blada, spocona'],
       remark: 'Wyniesiona przez strażaków spod stoiska, jęczy: „Nogi… nie czuję się dobrze…"',
       appearance: { sex: 'f', child: false, skin: '#f1c27d', hair: '#2b1d14', hairStyle: 'ponytail', shirt: '#b03a3a', pants: '#2c2c2c', sleeves: 'long' },
       pose: 'back',

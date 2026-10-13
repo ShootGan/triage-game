@@ -294,7 +294,7 @@ export const pileupScenario: Scenario = {
         obeysCommands: true,
         avpu: 'A',
       },
-      injuries: ['silny ból miednicy, niestabilność przy delikatnym ucisku', 'skóra blada, chłodna'],
+      injuries: ['silny ból miednicy, krwiak w okolicy pachwiny i krocza', 'skóra blada, chłodna'],
       remark: 'Wyciągnięta przez świadków z auta, jęczy: „Wszystko mnie boli na dole… Gdzie mąż?"',
       appearance: { sex: 'f', child: false, skin: '#ffe0bd', hair: '#a0522d', hairStyle: 'short', shirt: '#2e86c1', pants: '#566573', sleeves: 'long' },
       pose: 'back',

@@ -82,9 +82,9 @@ function reveal(p: ScenarioPatient, s: PatientExamState, action: ExamActionId, f
         if (v.avpu === 'P') f.painAppropriate = !!v.painResponseAppropriate;
         return;
       }
-      // Infant: too young for commands — only shows it is alert.
-      if (p.ageYears < 2 && v.avpu === 'A') {
-        f.avpu = 'A';
+      // Infant: too young for commands — only shows whether it is alert.
+      if (p.ageYears < 2) {
+        if (v.avpu === 'A') f.avpu = 'A';
         return;
       }
       f.obeys = v.obeysCommands;

@@ -641,6 +641,14 @@ describe('JumpSTART: proste polecenie zamiast AVPU', () => {
   });
 });
 
+describe('niemowlę: proste polecenie', () => {
+  it('za małe na polecenia także gdy nie jest przytomne — wynik nie udaje objawu', () => {
+    const p = { ...patient('n', { avpu: 'P', obeysCommands: false, painResponseAppropriate: false }), appearsChild: true, ageYears: 0.5 };
+    const r = performAction(p, initialExamState(), 'commands').result;
+    expect(r.text).toBe('Niemowlę — za małe na polecenia (oceń AVPU)');
+  });
+});
+
 describe('SALT — ocena', () => {
   const salt = (p: ScenarioPatient, given: Parameters<typeof debriefPatient>[1], actions: ExamActionId[], idx?: number) =>
     debriefPatient(p, given, examSalt(p, actions), idx, 'SALT');
