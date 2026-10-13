@@ -388,8 +388,13 @@ export function debriefPatient(
   let explanation = '';
   const critical = isGiveUp(given) && !isGiveUp(r.category);
   if (verdict === 'correct' && given !== null) {
-    const algorithm = algorithmFor(mode, p, r.protocol);
-    if (!isDetermined(algorithm, p.vitals, knownFindings(p, actionsBefore, mode), given)) {
+    const known = knownFindings(p, actionsBefore, mode);
+    const settles = (protocol: Protocol) => isDetermined(algorithmFor(mode, p, protocol), p.vitals, known, given);
+    // Ages 9–12: findings that settle the colour along either algorithm's path count (e.g. START's commands
+    // instead of JumpSTART's AVPU), as long as that algorithm gives the same colour.
+    const other: Protocol = r.protocol === 'START' ? 'JumpSTART' : 'START';
+    const otherCounts = !salt && isBorderlineAge(p) && triage(p.vitals, other === 'JumpSTART').category === given;
+    if (!settles(r.protocol) && !(otherCounts && settles(other))) {
       verdict = 'procedure';
       explanation = procedureExplanation(allGaps(p, r, given, atTag, actionsBefore), mode);
     }

@@ -449,6 +449,17 @@ describe('dziecko 9–12 lat — zaliczany kolor wg JumpSTART i START', () => {
     expect(d.explanation).toMatch(/Wg START: CZERWONY — dla dziecka 9–12 lat zaliczany jest kolor z każdego z algorytmów\.$/);
   });
 
+  it('10 lat: ten sam kolor wg obu — ustalenia ze ścieżki START wystarczą (zgłoszenie z gry)', () => {
+    // Doesn't obey commands, AVPU P with an inappropriate response: RED in both algorithms.
+    const p = { ...patient('k', { obeysCommands: false, avpu: 'P', painResponseAppropriate: false }), appearsChild: true, ageYears: 10 };
+    const d = debriefPatient(p, 'red', exam(p, ['breathing', 'pulse', 'commands']));
+    expect(d.verdict).toBe('correct');
+    expect(d.points).toBe(10);
+    // 8 years: JumpSTART only — commands don't settle the AVPU step.
+    const young = { ...p, ageYears: 8 };
+    expect(debriefPatient(young, 'red', exam(young, ['breathing', 'pulse', 'commands'])).verdict).toBe('procedure');
+  });
+
   it('8 lat: tylko JumpSTART', () => {
     const p = kid(8);
     expect(debriefPatient(p, 'red', full(p)).verdict).toBe('over');
