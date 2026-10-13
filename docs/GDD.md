@@ -229,6 +229,8 @@ Zasada: `engine/` nie zna Three.js ani Reacta — czysta logika, w pełni testow
 
 ## 10. Etapy
 
+Bieżąca lista otwartych spraw: [`TODO.md`](TODO.md).
+
 **MVP**
 - [x] Szkielet projektu (Vite + Three.js + React), pipeline pixel art z prototypu
 - [x] Generator postaci i póz (przeniesiony z prototypu), scena „autobus"
@@ -236,10 +238,10 @@ Zasada: `engine/` nie zna Three.js ani Reacta — czysta logika, w pełni testow
 - [x] Scenariusz „autobus" (12 pacjentów)
 - [x] Panel badania + opaski + zegar
 - [x] Debrief
-- [ ] 4 kolejne scenariusze (w toku, gałąź `scenariusze`)
+- [x] Kolejne scenariusze (7 + generator losowych kodów)
 
 **Etap 2**
-- [ ] SALT
+- [x] SALT (1.0.0) — otwarte decyzje w [`TODO.md`](TODO.md)
 - [ ] Pogarszanie stanu, re-triage
 - [ ] Dźwięk (oddechy, otoczenie, krzyki)
 
