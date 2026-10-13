@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   branches and colour outcomes, or as the previous text list ("Lista"); the choice is remembered.
 - "O grze i źródła" screen in the menu: authors and the verified literature the algorithms rely on
   (DOI / PMID links), plus an educational-use disclaimer.
+- "Co to jest segregacja medyczna?" link under the menu title: a plain-language page for newcomers —
+  what triage is and why, what each colour means, how assessing one casualty looks, and the three
+  algorithms in one line each.
 
 ## [1.0.0] - 2026-10-12
 

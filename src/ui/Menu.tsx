@@ -3,6 +3,7 @@ import type { ProtocolMode } from '../engine/triage';
 import { getDeps } from '../game/deps';
 import { MODE_LABEL, VARIANT_LABEL, useGame, type GameMode, type ScenarioVariant } from '../game/store';
 import { AboutScreen } from './About';
+import { IntroScreen } from './Intro';
 import './code.css';
 
 const MODE_DESC: Record<GameMode, string> = {
@@ -39,7 +40,7 @@ export function MenuScreen() {
 
   const [codeInput, setCodeInput] = useState('');
   const [codeError, setCodeError] = useState<string | null>(null);
-  const [about, setAbout] = useState(false);
+  const [page, setPage] = useState<'about' | 'intro' | null>(null);
 
   const onLoad = (e: FormEvent) => {
     e.preventDefault();
@@ -56,10 +57,14 @@ export function MenuScreen() {
     return `${templateCount} poszkodowanych`;
   };
 
-  if (about) {
+  if (page) {
     return (
       <div className="screen menu">
-        <AboutScreen onClose={() => setAbout(false)} />
+        {page === 'about' ? (
+          <AboutScreen onClose={() => setPage(null)} />
+        ) : (
+          <IntroScreen onClose={() => setPage(null)} onAbout={() => setPage('about')} />
+        )}
       </div>
     );
   }
@@ -69,6 +74,9 @@ export function MenuScreen() {
       <div className="panel menu-panel">
         <h1 className="title">Triage</h1>
         <p className="muted">START · JumpSTART · SALT — zdarzenie masowe</p>
+        <button className="link-btn intro-open" onClick={() => setPage('intro')}>
+          Co to jest segregacja medyczna? ▸
+        </button>
 
         <h2 className="h-small">Tryb</h2>
         <div className="choice-list">
@@ -172,7 +180,7 @@ export function MenuScreen() {
         <button className="btn primary big" disabled={!selected} onClick={goToBriefing}>
           Start ▶
         </button>
-        <button className="btn about-open" onClick={() => setAbout(true)}>
+        <button className="btn about-open" onClick={() => setPage('about')}>
           O grze i źródła
         </button>
         {isStub && <p className="stub-note">TRYB STUB — atrapy modułów (src/ui/dev)</p>}

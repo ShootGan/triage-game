@@ -210,6 +210,8 @@ DOI, PMID).
 - „nieregularny oddech” → CZERWONY w JumpSTART,
 - definicja reakcji „P” adekwatnej (lokalizuje / odsuwa) i nieadekwatnej (ułożenie, jęk) — pośrednio Malik 2021 (GCS ruchowa ≤ 3),
 - „tętno promieniowe **albo** CRT” w START — każdy wariant ma osobne źródło (Benson / Malik), łącznie tylko CHEMM.
+- „ocena jednej osoby trwa zwykle krócej niż minutę” (ekran „Segregacja”) — zasada START z materiałów (CHEMM); w
+  badaniach zmierzono np. ok. 15 s na osobę w SALT (Cone 2009) — szukać recenzowanego źródła.
 
 **Sprawdzone i odrzucone:**
 - Załącznik nr 2 do „Zasad organizacji ratownictwa medycznego w KSRG” (KG PSP; dawny „załącznik gov.pl”, aktualne
