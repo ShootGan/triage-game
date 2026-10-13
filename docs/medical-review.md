@@ -191,11 +191,39 @@ Wariant C odradzam jako domyślny.
 
 ## 6. Źródła
 
-- CHEMM (U.S. HHS/ASPR), START Triage: https://chemm.hhs.gov/incident-primer/triage/start-triage (pochodzenie: Newport Beach Fire & Marine / Hoag Hospital 1983, aktualizacja 1996; START dla wyglądających na > 8 lat).
-- CHEMM, JumpSTART Triage: https://chemm.hhs.gov/incident-primer/triage/jumpstart-triage (wygląda na < 8 lat; RR 15–45; wyczuwalne tętno; AVPU).
-- „Pediatric Disaster Triage Training Scenarios: Utilizing the JumpSTART© Method” (2016; dokument powołuje się na przepisy Illinois Department of Public Health; treść JumpSTART wg jumpstarttriage.com, autor algorytmu Lou Romig, M.D.). Kopia: https://eclass-b.uoa.gr/modules/document/file.php/NURS519/jumpstarttrainingscenarios20164.pdf ; katalog: https://resources.pedspandemicnetwork.org/library/8545/pediatric-disaster-triage-training-scenarios-utilizing-the-jumpstart-method-8545 . Źródło kroków START/JumpSTART, 5 oddechów ok. 15 s, kryteriów „P nieadekwatne”, modyfikacji dla dzieci niechodzących i listy „significant external injury”.
-- jumpstarttriage.com (oficjalna strona JumpSTART) — w tej sesji nie udało się pobrać treści, cytuję za dokumentem powyżej.
-- Załącznik nr 2 „Zdarzenia masowe – zasady segregacji poszkodowanych” (gov.pl): https://www.gov.pl/attachment/f4c280a1-540a-43e6-9021-151e82f10ab1 (docx) oraz wersja PDF „Segregacja poszkodowanych w zdarzeniach masowych”: https://www.gov.pl/attachment/a78f2f7d-276a-4b7b-86fa-feae1b54af1c . Organu wydającego nie zidentyfikowałem (prawdopodobnie część wojewódzkiego planu działania systemu PRM — **niepewne**).
-- M. Koszowski, „Triaż – od START do SALT”, Medycyna Praktyczna — Ratownictwo: https://www.mp.pl/ratownictwo/algorytmy/168777,triaz-od-start-do-salt
-- Wikipedia, „JumpSTART triage” (źródło wtórne, przegląd walidacji): https://en.wikipedia.org/wiki/JumpSTART_triage
-- Cytowane z pamięci, niepobrane w tej sesji: Benson M, Koenig KL, Schultz CH. Disaster triage: START, then SAVE. Prehosp Disaster Med. 1996;11(2):117–124 · Romig LE. Pediatric triage: a system to JumpSTART your triage of young patients at MCIs. JEMS. 2002;27(7):52–58 · Lerner EB i wsp. Mass casualty triage: an evaluation of the data and development of a proposed national guideline (SALT). Disaster Med Public Health Prep. 2008;2(Suppl 1):S25–S34.
+**Stan na 2026-10-13.** Gra cytuje wyłącznie źródła, na których faktycznie opierają się jej reguły (lista w
+`src/ui/sources.ts`, ekran „O grze i źródła”). Pozycje recenzowane sprawdzone w PubMed / Crossref (autorzy, czasopismo,
+DOI, PMID).
+
+| Reguła w grze | Źródło |
+|---|---|
+| START z tętnem promieniowym | Benson M, Koenig KL, Schultz CH. Prehosp Disaster Med. 1996;11(2):117-24. doi:10.1017/s1049023x0004276x, PMID 10159733 |
+| START z CRT i pełne kryteria (oddechy > 30, CRT > 2 s, polecenia) | Malik NS i wsp. The BCD Triage Sieve… EClinicalMedicine. 2021;36:100888. doi:10.1016/j.eclinm.2021.100888, PMID 34308306 (tab. 1) |
+| JumpSTART — modyfikacja dla niemowląt (istotne obrażenia → ŻÓŁTY) | Romig LE. JEMS. 2002;27(7):52-8, 60-3. PMID 12141119 — **czasopismo branżowe, nierecenzowane**; jedyne znane źródło tej reguły |
+| JumpSTART: oddechy < 15 / > 45, 5 oddechów ratowniczych, AVPU, wiek do ok. 8 lat; zaniżanie kategorii u dzieci (debrief) | Vassallo J i wsp. Emerg Med J. 2022;39(10):779-85. doi:10.1136/emermed-2021-211706, PMID 34706900 |
+| JumpSTART (5 oddechów, progi oddechu); SALT u dzieci — 2 oddechy ratownicze | Cheng T i wsp. J Am Coll Emerg Physicians Open. 2022;3(1):e12613. doi:10.1002/emp2.12613, PMID 35059689 (tab. 1) |
+| SALT: sortowanie, czynności ratujące życie, ocena indywidualna, kategoria SZARA | Lerner EB i wsp. Disaster Med Public Health Prep. 2008;2 Suppl 1:S25-34. doi:10.1097/DMP.0b013e318182194e, PMID 18769263 |
+| Opracowanie polskie (historia START, zmiana CRT → tętno, SALT) | Koszowski M. Triaż – od START do SALT. Medycyna Praktyczna – Ratownictwo, https://www.mp.pl/ratownictwo/algorytmy/168777,triaz-od-start-do-salt |
+
+**Bez recenzowanego źródła (do świadomej decyzji):**
+- czas 5 oddechów ratowniczych ok. 15 s (S6) — tylko materiał szkoleniowy Illinois 2016,
+- „nieregularny oddech” → CZERWONY w JumpSTART,
+- definicja reakcji „P” adekwatnej (lokalizuje / odsuwa) i nieadekwatnej (ułożenie, jęk) — pośrednio Malik 2021 (GCS ruchowa ≤ 3),
+- „tętno promieniowe **albo** CRT” w START — każdy wariant ma osobne źródło (Benson / Malik), łącznie tylko CHEMM.
+
+**Sprawdzone i odrzucone:**
+- Załącznik nr 2 do „Zasad organizacji ratownictwa medycznego w KSRG” (KG PSP; dawny „załącznik gov.pl”, aktualne
+  wydanie 2026) — dokument straży pożarnej, bez bibliografii; obowiązuje jednostki KSRG. Zaleca START/JumpSTART;
+  niemowlę z jakimikolwiek obrażeniami → ŻÓŁTY.
+- Polskie wytyczne towarzystw naukowych (PTMR), konsultanta krajowego, MZ — nie znaleziono. Recenzowanych polskich badań
+  trafności START/JumpSTART/SALT — nie znaleziono.
+- WHO — brak algorytmu segregacji; „Mass casualty management systems” (2007) dotyczy organizacji systemu, „Basic
+  Emergency Care” (WHO-ICRC 2018) pojedynczego pacjenta.
+- „Wszystkie niemowlęta CZERWONE” (mp.pl) — brak przypisu; żadna z 5 prac z bibliografii artykułu (Lerner 2008, Cone
+  2009, Bhalla 2015, Lee 2016, Iserson & Moskop 2007) ani przeszukanie PubMed / Europe PMC tego nie potwierdza. Gra
+  zostaje przy regule Romig.
+- Materiał szkoleniowy Illinois 2016, CHEMM, Wikipedia, preprint Research Square — nierecenzowane.
+- Rzetelne, ale nieużywane przez reguły gry (pominięte, żeby nie dublować): Model Uniform Core Criteria 2011, Stéfani
+  2022, Malik 2021 (dzieci), Franc 2022, Marcussen 2022, Bazyar 2022, Price 2016, Jones 2014, Heffernan 2019, Ko 2024,
+  Teixeira 2018, Suda 2025 (niemieckie S3: żaden algorytm nie jest lepszy pod każdym względem; szkolenie, także
+  wirtualne, poprawia segregację).

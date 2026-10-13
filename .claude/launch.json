@@ -4,8 +4,24 @@
     {
       "name": "triage-dev",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["vite", "--port", "5173"],
+      "runtimeArgs": [
+        "vite",
+        "--port",
+        "5173"
+      ],
       "port": 5173
+    },
+    {
+      "name": "triage-dev-2",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vite",
+        "--port",
+        "5174",
+        "--strictPort"
+      ],
+      "port": 5174,
+      "autoPort": false
     }
   ]
 }
