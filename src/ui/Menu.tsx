@@ -3,6 +3,7 @@ import type { ProtocolMode } from '../engine/triage';
 import { getDeps } from '../game/deps';
 import { MODE_LABEL, VARIANT_LABEL, useGame, type GameMode, type ScenarioVariant } from '../game/store';
 import { AboutScreen } from './About';
+import { HowToScreen } from './HowTo';
 import { IntroScreen } from './Intro';
 import './code.css';
 
@@ -40,7 +41,7 @@ export function MenuScreen() {
 
   const [codeInput, setCodeInput] = useState('');
   const [codeError, setCodeError] = useState<string | null>(null);
-  const [page, setPage] = useState<'about' | 'intro' | null>(null);
+  const [page, setPage] = useState<'about' | 'intro' | 'howto' | null>(null);
 
   const onLoad = (e: FormEvent) => {
     e.preventDefault();
@@ -62,6 +63,8 @@ export function MenuScreen() {
       <div className="screen menu">
         {page === 'about' ? (
           <AboutScreen onClose={() => setPage(null)} />
+        ) : page === 'howto' ? (
+          <HowToScreen onClose={() => setPage(null)} />
         ) : (
           <IntroScreen onClose={() => setPage(null)} onAbout={() => setPage('about')} />
         )}
@@ -74,9 +77,14 @@ export function MenuScreen() {
       <div className="panel menu-panel">
         <h1 className="title">Triage</h1>
         <p className="muted">START · JumpSTART · SALT — zdarzenie masowe</p>
-        <button className="link-btn intro-open" onClick={() => setPage('intro')}>
-          Co to jest segregacja medyczna? ▸
-        </button>
+        <div className="intro-links">
+          <button className="link-btn" onClick={() => setPage('intro')}>
+            Co to jest segregacja medyczna? ▸
+          </button>
+          <button className="link-btn" onClick={() => setPage('howto')}>
+            Jak grać? ▸
+          </button>
+        </div>
 
         <h2 className="h-small">Tryb</h2>
         <div className="choice-list">

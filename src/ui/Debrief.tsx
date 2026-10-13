@@ -150,7 +150,7 @@ export function DebriefScreen() {
 
         {score.patients.some((p) => p.protocol === 'JumpSTART' || p.alternative) && (
           <p className="debrief-note muted">
-            JumpSTART: badania (Vassallo i wsp., Emerg Med J 2022; Stefani i wsp., Prehosp Disaster Med 2022) pokazują, że
+            JumpSTART: badania (Vassallo i wsp., Emerg Med J 2022) pokazują, że
             algorytm często zaniża kategorię u ciężko rannych dzieci. Po segregacji wstępnej dzieci wymagają szybkiej
             segregacji wtórnej. Dzieci 9–12 lat: źródła różnią się granicą wieku (JumpSTART do ok. 8 lat albo „wygląda na
             dziecko”), więc zaliczamy kolor zarówno wg JumpSTART, jak i START.

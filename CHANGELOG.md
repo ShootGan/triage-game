@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - "Co to jest segregacja medyczna?" link under the menu title: a plain-language page for newcomers —
   what triage is and why, what each colour means, how assessing one casualty looks, and the three
   algorithms (short history, what each checks, expandable flowchart; AVPU explained on hover/tap).
+- "Jak grać?" link next to it: goal, the course of a game (START/JumpSTART and SALT described
+  separately), scoring taken straight from the scoring weights, and what task codes are for.
+
+### Changed
+
+- Debrief note on JumpSTART undertriage cites only Vassallo et al. 2022 (the in-game source list).
 
 ## [1.0.0] - 2026-10-12
 
