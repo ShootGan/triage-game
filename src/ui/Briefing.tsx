@@ -45,7 +45,7 @@ export function CodeBadge({ code, note, className }: { code: string; note?: stri
 
   return (
     <div className={`code-badge ${className ?? ''}`}>
-      <span className="code-badge-label">Kod zadania{template ? ' · wzorzec' : ''}</span>
+      <span className="code-badge-label">Kod zadania{template ? ' · sytuacja stała' : ''}</span>
       <span className="code-value">{code}</span>
       <button type="button" className="btn" onClick={onCopy}>
         Kopiuj

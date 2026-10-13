@@ -72,7 +72,7 @@ export function HowToScreen({ onClose }: { onClose: () => void }) {
       <h2 className="h-small">Kody zadań</h2>
       <p>
         Każda rozgrywka ma kod, np. KAMIENICA-4F7K. Wpisz go w menu, żeby zagrać dokładnie tę samą sytuację — np. drugi
-        raz albo z kimś innym, żeby porównać wyniki. Sytuacja <strong>Wzorzec</strong> to stały, ręcznie ułożony zestaw
+        raz albo z kimś innym, żeby porównać wyniki. Sytuacja <strong>Stała</strong> to stały, ręcznie ułożony zestaw
         poszkodowanych.
       </p>
     </div>

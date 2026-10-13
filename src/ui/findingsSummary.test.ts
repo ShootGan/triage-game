@@ -46,3 +46,15 @@ describe('findingsSummary', () => {
     expect(findingsSummary(base, undefined, 'START')).toEqual([]);
   });
 });
+
+describe('findingsSummary — skąd wiadomo', () => {
+  it('commands only: consciousness described, not shown as an AVPU score', () => {
+    const p = { ...base, vitals: { ...base.vitals, obeysCommands: false, avpu: 'V' as const } };
+    expect(findingsSummary(p, examOf(p, ['commands']), 'START')).toEqual(['nie wykonuje poleceń', 'reaguje na głos']);
+  });
+
+  it('a talking patient: breathing known from speech', () => {
+    const p = { ...base, remark: '„Boli mnie noga!”' };
+    expect(findingsSummary(p, examOf(p, ['pulse']), 'START')).toEqual(['mówi, więc oddycha', 'tętno obecne']);
+  });
+});

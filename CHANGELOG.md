@@ -45,6 +45,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pelvic injury is described without springing the pelvis; "simple command" on an infant always says
   it is too young for commands instead of reading as a symptom.
 - Info page titles scale down on phones instead of breaking mid-word.
+- "Ustalono" line says where a finding came from: "mówi, więc oddycha" before a breathing check,
+  "przytomny" / "reaguje na głos" seen during the commands check instead of an AVPU score.
+- Debrief no longer lists an assessment as missing when its finding was already known another way
+  (an alert infant during the commands check).
+- "Sytuacja stała" is named the same in the menu, "Jak grać" and the task-code badge.
 
 ## [1.0.0] - 2026-10-12
 

@@ -11,10 +11,12 @@ const num = (n: number) => String(n).replace('.', ',');
  */
 export function findingsSummary(p: ScenarioPatient, exam: PatientExamState | undefined, mode: ProtocolMode): string[] {
   if (!exam?.log.length) return [];
-  const f = knownFindings(p, exam.log.map((r) => r.action), mode);
+  const actions = exam.log.map((r) => r.action);
+  const f = knownFindings(p, actions, mode);
   const out: string[] = [];
   const rate = f.rate !== undefined ? ` ${f.rate}/min${f.irregular ? ', nieregularny' : ''}` : '';
-  if (f.spontaneous) out.push(rate ? `oddech${rate}` : 'oddycha');
+  // Without a breathing check, spontaneous breathing is known only because the patient talks.
+  if (f.spontaneous) out.push(rate ? `oddech${rate}` : 'mówi, więc oddycha');
   else if (f.spontaneous === false) {
     if (f.afterAirway) out.push(`oddycha po udrożnieniu${rate}`);
     else if (f.afterRescueBreaths) out.push(`oddycha po oddechach ratowniczych${rate}`);
@@ -25,7 +27,11 @@ export function findingsSummary(p: ScenarioPatient, exam: PatientExamState | und
   if (f.pulse !== undefined) out.push(f.pulse ? 'tętno obecne' : 'brak tętna');
   if (f.crtSeconds !== undefined) out.push(`CRT ${num(f.crtSeconds)} s`);
   if (f.obeys !== undefined) out.push(f.obeys ? 'wykonuje polecenia' : 'nie wykonuje poleceń');
-  if (f.avpu !== undefined) {
+  // Consciousness seen during the commands check (no AVPU done): describe it, don't label it as an AVPU score.
+  if (f.avpu !== undefined && !actions.includes('avpu')) {
+    if (f.avpu === 'V') out.push('reaguje na głos');
+    else if (f.avpu === 'A') out.push(p.ageYears < 2 ? 'przytomne' : 'przytomny');
+  } else if (f.avpu !== undefined) {
     const pain = f.avpu === 'P' && f.painAppropriate !== undefined ? (f.painAppropriate ? ' adekwatnie' : ' nieadekwatnie') : '';
     out.push(`AVPU ${f.avpu}${pain}`);
   }

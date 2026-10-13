@@ -406,7 +406,12 @@ export function debriefPatient(
         ? 'Pacjenta nie oznaczono.'
         : `Oznaczono jako ${CATEGORY_LABEL[given]} — ${VERDICT_SUFFIX[verdict as 'over' | 'under']}.`,
     );
-    const missing = assessmentActions(r, p.vitals, actionsBefore, p.cold, p).filter(a => !actionsBefore.includes(a));
+    // An action whose finding is already known another way (e.g. an infant's "too young for commands, alert"
+    // shows AVPU A) isn't listed as missing.
+    const seen = knownFindings(p, actionsBefore, mode);
+    const missing = assessmentActions(r, p.vitals, actionsBefore, p.cold, p).filter(
+      a => !actionsBefore.includes(a) && !(a === 'avpu' && seen.avpu !== undefined) && !(a === 'commands' && seen.obeys !== undefined),
+    );
     if (missing.length) parts.push(`Nie wykonano: ${missing.map(a => noun(a, mode)).join(', ')}.`);
     const other = alternative && (r === alternative ? primary : alternative);
     if (other && living) {
