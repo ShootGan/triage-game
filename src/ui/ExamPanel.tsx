@@ -4,6 +4,7 @@ import { CATEGORY_LABEL } from '../engine/triage';
 import { ACTION_ORDER, CATEGORY_COLOR, categoriesFor } from '../game/constants';
 import { getDeps } from '../game/deps';
 import { collectionWalkers, gameProtocol, useGame } from '../game/store';
+import { findingsSummary } from './findingsSummary';
 
 export function ExamPanel() {
   const selectedId = useGame((s) => s.selectedId);
@@ -94,6 +95,7 @@ export function ExamPanel() {
     );
   }
   const log = exam?.log ?? [];
+  const known = findingsSummary(patient, exam, mode);
 
   return (
     <aside className="exam-panel panel">
@@ -152,6 +154,11 @@ export function ExamPanel() {
           <span key={log.length} className="exam-last-text">{log[log.length - 1].text}</span>
         )}
       </div>
+      {known.length > 0 && (
+        <div className="exam-known">
+          <span className="muted">Ustalono:</span> {known.join(' · ')}
+        </div>
+      )}
 
       <div className="exam-scroll">
         <section className="exam-results">

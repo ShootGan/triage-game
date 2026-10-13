@@ -28,9 +28,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   opens on the setup screen.
 - Debrief summary at medium widths (~760–1050 px): score and report side by side, statistics below
   across the full width instead of a squeezed single column.
+- On phones the casualty card adds an "Ustalono: …" line with every finding so far (breathing, pulse,
+  CRT, commands, AVPU, tourniquet), since only the latest result fits there.
+- The tourniquet is called "staza" everywhere, so "opaska" only means the triage tag.
+- HUD counter reads "nieoznaczeni" (casualties without a tag), matching the debrief.
 - Debrief numbers the casualties (1., 2., …) in scenario order — the same for everyone playing the
   same task code, so results can be compared patient by patient.
 - Debrief note on JumpSTART undertriage cites only Vassallo et al. 2022 (the in-game source list).
+
+### Fixed
+
+- Ages 9–12: a colour both algorithms agree on counts as settled when the findings follow START's path
+  (e.g. simple commands instead of AVPU) — it was marked as a guess.
+- A head-injury description no longer gives away the simple-commands result; a test keeps
+  descriptions free of it.
+- Pelvic injury is described without springing the pelvis; "simple command" on an infant always says
+  it is too young for commands instead of reading as a symptom.
+- Info page titles scale down on phones instead of breaking mid-word.
 
 ## [1.0.0] - 2026-10-12
 

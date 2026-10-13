@@ -12,8 +12,19 @@ Lista otwartych spraw po wydaniu 1.0.0. Decyzje medyczne mają szczegóły w [`m
 - [ ] Źródło recenzowane dla „ocena jednej osoby trwa zwykle krócej niż minutę” (ekran „Segregacja”).
 - [ ] Pomysł: kod wyniku (kolory + „na ślepo” + pominięte czynności, ok. 12–18 znaków przy 10–15 osobach)
       i ekran porównania wyników grupy — bez serwera.
-- [ ] **Na koniec:** przeprojektować menu (obecne jest przeciętne) — razem z wejściami do „Segregacja”, „Jak grać”
+- [x] **Na koniec:** przeprojektować menu (obecne jest przeciętne) — razem z wejściami do „Segregacja”, „Jak grać”
       i „O grze i źródła”.
+
+## Wersja 1.1 (z testów person, 2026-10-13)
+
+- [ ] Panel „Algorytm” obok karty pacjenta (nie pod nią) i podświetlanie ścieżki bieżącego pacjenta w schemacie.
+- [ ] Kamera po nadaniu koloru nie oddala widoku pod kursorem; zbliżenie nie zasłonięte pojazdem; znaczniki „?” przy
+      wraku nie zlewają się na telefonie.
+- [ ] Model 3D zgodny z opisem: „wyrzucony daleko od pojazdu” leży z dala od auta, niemowlę w skali niemowlęcia.
+- [ ] Telefon: „Esc – rezygnuj” nachodzi na przycisk; przy długim opisie ✕ wypada za ekran; ukryć skróty klawiszy na
+      ekranach dotykowych; w poziomie widać obrażenia i opis pacjenta.
+- [ ] Kod zadania ustala też tryb (Nauka/Ćwiczenie), żeby wyniki grupy były porównywalne.
+- [ ] „Ostatni kod” w menu — zapamiętywać ostatnio rozegrany kod, nie tylko wpisany.
 
 ## SALT — decyzje i braki
 
@@ -33,8 +44,7 @@ Lista otwartych spraw po wydaniu 1.0.0. Decyzje medyczne mają szczegóły w [`m
 
 - [ ] Opisy reakcji bez cudzysłowu (np. „otwiera oczy na głos”) nie liczą się jako dowód oddechu — potrzebna flaga
       w danych pacjenta.
-- [ ] Część starszych wypowiedzi zdradza wynik badania (np. „wykonuje polecenia”, „nie reaguje na polecenia”) —
-      przejrzeć archetypy i wzorce.
+- [x] Część starszych wypowiedzi zdradza wynik badania — poprawione; test pilnuje, by opisy nie mówiły o poleceniach.
 - [ ] Wagi punktów (`src/engine/scoring/points.ts`) i kara za kolejność sortowania w SALT (−1) — do weryfikacji
       na większej liczbie rozgrywek.
 

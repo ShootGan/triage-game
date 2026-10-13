@@ -406,6 +406,8 @@ a { color: var(--accent); }
 }
 /* Pasek ostatniego wyniku — domyślnie ukryty (na komputerze lista wyników jest dość duża). */
 .exam-last { display: none; }
+/* phones: all findings so far, since the result list is hidden there */
+.exam-known { display: none; }
 .exam-last-text { display: block; animation: result-flash 0.9s steps(3) 1; }
 @keyframes result-flash { 0% { background: var(--yellow); color: var(--ink); } 100% { background: transparent; } }
 .exam-tags { flex: none; border-top: 2px solid var(--panel); padding-top: 4px; margin-top: 6px; }
@@ -624,6 +626,7 @@ a { color: var(--accent); }
     display: block; flex: none; margin-top: 6px; padding: 6px 10px; min-height: 40px;
     background: var(--panel); border-left: 4px solid var(--yellow); font-size: 20px;
   }
+  .exam-known { display: block; flex: none; margin-top: 4px; font-size: 17px; line-height: 1.1; color: var(--text); }
   /* telefon: tylko ostatnie badanie (pasek .exam-last) — bez przewijanej listy wyników */
   .exam-results, .exam-actions .h-small { display: none; }
   .exam-actions { padding-top: 6px; }
@@ -664,6 +667,7 @@ a { color: var(--accent); }
     background: var(--panel); border-left: 4px solid var(--yellow); font-size: 17px;
   }
   .exam-results { display: none; } /* jak w pionie — tylko ostatnie badanie */
+  .exam-known { display: block; flex: none; margin-top: 3px; font-size: 15px; line-height: 1.1; color: var(--text); }
   .btn.action { min-height: 30px; }
   .btn.tag { min-height: 34px; }
   .hint-panel { top: 6px; }
