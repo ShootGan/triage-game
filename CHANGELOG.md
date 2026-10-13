@@ -7,10 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-12
+
 ### Added
 
 - Collection point button ("Punkt zbiórki (n)") walks to the walkers; in the exam panel
-  "◀ Poprzedni / Następny ▶" (keys B / N) switches between them — no aiming at small markers.
+  "◀ Poprzedni / Następny ▶" (keys B / N) switches between them, and tagging a walker moves straight
+  on to the next untagged one — no aiming at small markers.
 - SALT mode: choose the algorithm in the menu (START/JumpSTART or SALT); a SALT code ends with
   `-SALT` and has the same casualties as the code without it. The sort phase uses two commands —
   "walkers to me" and "wave your hand" (casualties raise and wave an arm); markers then show the
@@ -233,7 +236,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Debrief with accuracy, over-/undertriage and per-patient decision paths.
 - Learn and practice modes.
 
-[Unreleased]: https://github.com/ShootGan/triage-game/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/ShootGan/triage-game/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/ShootGan/triage-game/compare/v0.4.2...v1.0.0
 [0.4.2]: https://github.com/ShootGan/triage-game/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/ShootGan/triage-game/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/ShootGan/triage-game/compare/v0.3.0...v0.4.0

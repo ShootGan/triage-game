@@ -270,8 +270,18 @@ export const useGame = create<GameState>()((set, get) => {
         tagEvents: { ...s.tagEvents, [id]: { category: cat, logIndex: s.exams[id]?.log.length ?? 0 } },
       });
       view?.setTag(id, cat);
+      if (s.selectedId !== id) return;
+      // At the collection point: straight on to the next walker without a tag (they stand together,
+      // zooming out and aiming at a small marker again would only slow the player down).
+      const walkers = collectionWalkers(s);
+      const i = walkers.findIndex((p) => p.id === id);
+      if (i >= 0) {
+        const tags = get().tags;
+        const next = [...walkers.slice(i + 1), ...walkers.slice(0, i)].find((p) => !tags[p.id]);
+        if (next) return get().selectPatient(next.id);
+      }
       // kategoria nadana — zamykamy panel badania i wracamy do przeglądu
-      if (s.selectedId === id) get().selectPatient(null);
+      get().selectPatient(null);
     },
 
     callWalkers() {

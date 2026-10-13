@@ -58,7 +58,7 @@ export function MenuScreen() {
     <div className="screen menu">
       <div className="panel menu-panel">
         <h1 className="title">Triage</h1>
-        <p className="muted">START · JumpSTART — zdarzenie masowe - SYSTEM OCENY JEST W PRZEBUDOWIE I MOŻE WYPLUWAĆ GŁUPOTY</p>
+        <p className="muted">START · JumpSTART · SALT — zdarzenie masowe</p>
 
         <h2 className="h-small">Tryb</h2>
         <div className="choice-list">
